@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+._*
+
+# OMC (oh-my-claudecode) local state
+.omc/
+.claude/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Node (if we ever add tooling)
+node_modules/
+dist/
+build/
+*.log
+
+# Local test outputs
+/outputs/
+/references/
+/tmp/

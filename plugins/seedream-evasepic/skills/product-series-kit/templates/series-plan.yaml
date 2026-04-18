@@ -1,0 +1,65 @@
+# Series plan scaffold — Claude fills this out after intake
+# One block per episode (5 total). Used internally before composing prompts.
+
+series_plan:
+  product_anchor: ""                # one-line product identity statement used in every episode
+  model_anchor: ""                  # one-line model identity statement used in every episode
+  visual_signature: ""              # the single defining visual across all 5 eps
+
+  episodes:
+    - number: 1
+      archetype: "hook"             # references episode-archetypes/01-hook.md
+      title: ""                     # e.g., "속당김의 진실"
+      beat_intent: ""               # hook → what emotion/thought to trigger
+      image_brief:
+        shot_type: ""               # close-up / medium / wide / macro / overhead
+        mood: ""                    # from k-beauty-mood-library.md
+        lighting: ""                # from seedance-2-platform.md lighting table
+        composition: ""             # rule-of-thirds / centered / leading-lines
+      video_brief:
+        camera_movement: ""         # single primary movement
+        duration: 15
+        beats:                      # 2-3 beats per 15s
+          - timestamp: "[00:00]"
+            action: ""
+            framing: ""
+          - timestamp: "[00:05]"
+            action: ""
+            framing: ""
+          - timestamp: "[00:10]"
+            action: ""
+            framing: ""
+        dialogue: ""                # quoted line, fits 15s at natural pace
+        silent_beats: []            # which beats are silent action
+
+    - number: 2
+      archetype: "benefit"
+      title: ""
+      # ... same structure
+
+    - number: 3
+      archetype: "demo"
+      title: ""
+
+    - number: 4
+      archetype: "testimonial"
+      title: ""
+
+    - number: 5
+      archetype: "cta"
+      title: ""
+
+  cross_episode_checks:
+    model_consistency: false        # set true after verification
+    product_consistency: false
+    wardrobe_consistency: false     # or wardrobe_arc for deliberate progression
+    setting_consistency: false
+    palette_referenced_all: false
+    voice_tone_aligned: false
+    no_forbidden_words: false
+
+  stitch_plan:
+    order: [1, 2, 3, 4, 5]
+    transitions: "hard-cut"         # hard-cut / dissolve / match-cut
+    total_runtime: 75
+    ffmpeg_command: ""              # auto-generated after confirmation

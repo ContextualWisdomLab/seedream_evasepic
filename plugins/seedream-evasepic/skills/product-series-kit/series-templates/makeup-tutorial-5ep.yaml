@@ -1,0 +1,70 @@
+# Makeup Tutorial 5-Episode Arc
+# Use for makeup products — lip tint, BB cushion, mascara, etc.
+# Narrative: bare face → prep → application → finish → reveal
+
+arc_name: makeup-tutorial
+use_when:
+  - Product is a makeup item (color cosmetic)
+  - Brand wants a before/after transformation arc
+  - Target: social-first viewers who want "how-to" value
+
+episode_count: 5
+total_duration: 75
+
+episodes:
+  - number: 1
+    title: "시작 — 민낯"
+    archetype: hook
+    adaptation: |
+      Opens on the model's bare face, honest and direct.
+      - Extreme close-up of natural skin
+      - Model gaze at camera, confident vulnerability
+      - Dialogue: "오늘은 {제품} 하나로 이렇게 바뀔 거예요."
+    camera: slow dolly-in on face, tripod-locked
+
+  - number: 2
+    title: "준비 — 베이스"
+    archetype: benefit
+    adaptation: |
+      Quick base prep (skincare / primer) so product lands on ready skin.
+      - Show the product being unveiled clearly
+      - Feature/ingredient call-out
+      - Dialogue: "{포인트} 때문에 이거 쓰는 이유예요."
+    camera: slow pan to product
+
+  - number: 3
+    title: "바르는 순간"
+    archetype: demo
+    adaptation: |
+      The application moment — the tactile hero shot.
+      - Extreme close-up of applicator meeting skin
+      - Single deliberate motion (lip sweep, cushion pat)
+      - Silent or ambient only
+    camera: macro tilt, tripod-locked
+
+  - number: 4
+    title: "완성 후 표정"
+    archetype: testimonial
+    adaptation: |
+      Finished look — first reaction to the mirror.
+      - Medium shot of finished look, subtle smile
+      - Personal reaction, not a sales pitch
+      - Dialogue: "이 {색/발색} 진짜 다르죠?"
+    camera: handheld medium, warm light
+
+  - number: 5
+    title: "완성 — 나가기 직전"
+    archetype: cta
+    adaptation: |
+      Model ready to leave, product held up one last time.
+      - Confident finale, product prominent
+      - Call to action
+      - Dialogue: "{제품명}. 링크 프로필에."
+    camera: slow pull-back to medium shot
+
+cross_episode_continuity:
+  - Wardrobe progression: casual robe (Ep1) → finished outfit (Ep5)
+  - Lighting: soft/flat (Ep1) → dimensional/flattering (Ep5)
+  - Before/after face visible: bare (Ep1) → done (Ep5)
+
+recommended_preset: k-beauty-mood-library/preset-4-oryza-bright-clean

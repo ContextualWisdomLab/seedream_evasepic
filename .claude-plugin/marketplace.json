@@ -1,0 +1,34 @@
+{
+  "name": "seedream-evasepic",
+  "owner": {
+    "name": "passeth",
+    "email": "ji.seulki81@gmail.com",
+    "url": "https://github.com/passeth"
+  },
+  "plugins": [
+    {
+      "name": "seedream-evasepic",
+      "source": "./plugins/seedream-evasepic",
+      "description": "Product brief -> 5-episode series prompt kit for Seedream (image) + Seedance 2.0 (video). Includes reference-video analyzer. Optimized for K-beauty / cosmetics brands like EVAS COSMETIC.",
+      "version": "0.1.0",
+      "author": {
+        "name": "passeth"
+      },
+      "homepage": "https://github.com/passeth/seedream_evasepic",
+      "license": "MIT",
+      "category": "content",
+      "keywords": [
+        "seedream",
+        "seedance",
+        "bytedance",
+        "video-generation",
+        "image-generation",
+        "k-beauty",
+        "cosmetics",
+        "product-marketing",
+        "prompt-engineering"
+      ],
+      "strict": false
+    }
+  ]
+}

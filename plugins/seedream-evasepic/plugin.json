@@ -1,0 +1,21 @@
+{
+  "name": "seedream-evasepic",
+  "version": "0.1.0",
+  "description": "Product brief -> 5-episode video series prompt kit (Seedream image + Seedance 2.0 video paired output) with reference-video analyzer. K-beauty / cosmetics focused.",
+  "author": {
+    "name": "passeth",
+    "url": "https://github.com/passeth"
+  },
+  "homepage": "https://github.com/passeth/seedream_evasepic",
+  "repository": "https://github.com/passeth/seedream_evasepic",
+  "license": "MIT",
+  "keywords": [
+    "seedream",
+    "seedance",
+    "video-generation",
+    "image-generation",
+    "k-beauty",
+    "cosmetics",
+    "prompt-kit"
+  ]
+}

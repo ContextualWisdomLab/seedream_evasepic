@@ -1,0 +1,70 @@
+# Skincare Routine 5-Episode Arc
+# Alternative to the default Hook-Benefit-Demo-Testimonial-CTA structure.
+# Use when the product is part of a multi-step routine (cleanser, toner, serum, cream, SPF).
+
+arc_name: skincare-routine
+use_when:
+  - Product is one step in a routine (not a standalone hero)
+  - Brand wants to show "a day in the skincare life"
+  - Morning or evening routine positioning
+
+episode_count: 5
+total_duration: 75
+
+episodes:
+  - number: 1
+    title: "아침 시작 — 클렌저"
+    archetype: hook
+    adaptation: |
+      Ep1 becomes the morning awaken + first cleanser step.
+      - Open with bedroom/window light, model just woke up
+      - Subtle face wash moment with cleanser
+      - Dialogue: "매일 아침, 이걸로 시작해요."
+    camera: handheld gentle, morning window light
+
+  - number: 2
+    title: "준비 — 토너 & 앰플"
+    archetype: benefit
+    adaptation: |
+      Toner pat + featured product (ampoule) introduction.
+      - Transition from cleanser to hero product
+      - Focus on the benefit of layering
+      - Dialogue: "토너 바로 뒤에, {제품} 두 방울."
+    camera: slow push-in on product
+
+  - number: 3
+    title: "흡수 — 텍스처의 순간"
+    archetype: demo
+    adaptation: |
+      The ASMR application moment of the hero product.
+      - Extreme close-up of dropper, droplet, absorption
+      - Silent or near-silent
+    camera: macro push-in, tripod-locked
+
+  - number: 4
+    title: "마무리 — 크림 & 선크림"
+    archetype: testimonial
+    adaptation: |
+      Lock-in step (cream) + SPF finish, speaking about the felt result.
+      - Model applies final layers naturally
+      - Speaks about how skin feels over this routine's weeks
+      - Dialogue: "이 루틴 3주 쓰고, 피부가 달라졌어요."
+    camera: handheld medium, warm natural light
+
+  - number: 5
+    title: "하루 시작 — CTA"
+    archetype: cta
+    adaptation: |
+      Model heads out into the day — routine complete.
+      - Wide shot of model leaving bathroom/stepping into sunlight
+      - Product visible on counter in foreground
+      - Dialogue: "이 루틴, 프로필 링크에 정리해뒀어요."
+    camera: slow pull-back, steadicam
+
+cross_episode_continuity:
+  - Same model, same bathroom setting throughout
+  - Morning light progression: soft pre-dawn (Ep1) → warm sunlit (Ep5)
+  - Wardrobe: robe/pajama (Ep1) → casual morning wear (Ep5)
+  - Featured product visible in every episode (even briefly)
+
+recommended_preset: k-beauty-mood-library/preset-1-clinical-minimalism OR preset-2-warm-documentary

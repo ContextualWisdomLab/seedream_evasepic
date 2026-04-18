@@ -1,0 +1,71 @@
+# Premium Launch 5-Episode Arc
+# Use for hero product launches, premium/luxury positioning, anti-aging.
+# Narrative: void → ingredient story → texture → ritual → worn
+
+arc_name: premium-launch
+use_when:
+  - Premium/luxury product (high price, editorial brand)
+  - Hero product launch or re-launch
+  - Brand wants dramatic unveil aesthetic
+
+episode_count: 5
+total_duration: 75
+
+episodes:
+  - number: 1
+    title: "베일 너머"
+    archetype: hook
+    adaptation: |
+      Dark void, product emerges from shadow or pool of light.
+      - No model yet — pure product hero
+      - Dramatic side-rim lighting, premium restraint
+      - Minimal dialogue or voice-over only: "이건 다른 이야기예요."
+    camera: slow dolly-in from dark, static
+
+  - number: 2
+    title: "원료의 기원"
+    archetype: benefit
+    adaptation: |
+      The key ingredient story told cinematically (use "editorial" not "cinematic").
+      - Ingredient macro — droplet, plant, powder, crystal
+      - Voice-over explains origin
+      - Dialogue: "{성분}, {원산지}에서 {단위}에 {공정}."
+    camera: macro push-in, amber backlight
+
+  - number: 3
+    title: "질감의 언어"
+    archetype: demo
+    adaptation: |
+      Texture hero — product pooling, dropper, tactile focus.
+      - Extreme macro of the formulation itself
+      - Ambient only (no dialogue)
+      - The "material moment" — this is the whole episode
+    camera: locked macro, dramatic single light
+
+  - number: 4
+    title: "하루의 의식"
+    archetype: testimonial
+    adaptation: |
+      Model now appears, in intimate evening/ritual setting.
+      - Candlelit bath or dim bedroom, editorial composed
+      - Sparse whispered voice: "매일 밤, 이 순간이 제 의식이에요."
+      - Model's hands + face, never full-body
+    camera: gentle orbit around hand + product
+
+  - number: 5
+    title: "남는 것"
+    archetype: cta
+    adaptation: |
+      Model next morning — the quiet confidence result.
+      - Medium shot in natural morning light (contrast to Ep1's void)
+      - Short, restrained CTA
+      - Dialogue: "{브랜드}. {론칭일} 만나보세요."
+    camera: static medium shot, soft natural light
+
+cross_episode_continuity:
+  - Lighting arc: void/dramatic (Ep1) → natural/warm (Ep5) — signals "ritual completed, new day"
+  - Dialogue: minimal throughout, voice-over style
+  - Product stays at center of every episode
+  - Model only enters from Ep4 onward — product is the hero
+
+recommended_preset: k-beauty-mood-library/preset-3-editorial-premium

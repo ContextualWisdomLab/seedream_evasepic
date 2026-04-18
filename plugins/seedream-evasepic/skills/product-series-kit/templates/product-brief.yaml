@@ -1,0 +1,53 @@
+# Product Brief — fill this out and paste into Claude Code
+# Any fields left blank will be inferred or asked about.
+
+product:
+  name: ""                          # e.g., "CERACLINIC 세라마이드 앰플"
+  image_path: ""                    # optional, e.g., "./references/my-product.jpg"
+  category: ""                      # skincare / makeup / fragrance / haircare / body
+  features:                         # 2-3 core features or claims
+    - ""
+    - ""
+    - ""
+  claim: ""                         # one-sentence hero claim, e.g., "7일만에 속당김 해결"
+  price_tier: ""                    # mass / premium / luxury
+  texture: ""                       # liquid / cream / serum / mist / gel / powder (helps Seedream)
+  packaging: ""                     # frosted glass / matte plastic / pump / dropper / tube
+
+model:
+  age_range: ""                     # e.g., "30대 초반" or "late 20s"
+  demographic: ""                   # e.g., "K-뷰티 민감성 피부 고민자"
+  vibe: ""                          # e.g., "전문가적 신뢰 + 따뜻함"
+  gender: ""                        # female / male / non-specified
+  ethnicity: ""                     # optional, e.g., "Korean" — defaults to unspecified if empty
+
+brand:
+  mood: ""                          # e.g., "클리니컬 미니멀, 따뜻한 화이트톤"
+  preset: ""                        # optional: match one of k-beauty-mood-library.md presets (1-5)
+  palette:                          # hex codes — 3-4 brand colors
+    - ""
+    - ""
+    - ""
+  voice: ""                         # e.g., "전문가적이지만 친근한"
+  banned_words: []                  # brand-specific words to avoid in dialogue
+
+reference_video:
+  url: ""                           # optional, e.g., YouTube/TikTok URL
+  local_path: ""                    # optional, e.g., "./references/inspiration.mp4"
+  focus: ""                         # optional bias: "focus on lighting" / "focus on pacing"
+  style_name: ""                    # optional — what to call the extracted style
+
+series:
+  count: 5                          # fixed at 5 for this skill
+  platform: ""                      # instagram_reels / tiktok / youtube_shorts / landscape_16_9
+  aspect_ratio: ""                  # auto-derived: 9:16 for reels/shorts/tiktok, 16:9 for landscape
+  arc: ""                           # default: "hook-benefit-demo-testimonial-cta"
+                                    # alts: skincare-routine, makeup-tutorial, premium-launch
+  total_duration: 75                # 5 × 15s default
+  language: ""                      # ko / en / mixed — for dialogue
+  dialogue: true                    # true = spoken, false = silent/music only
+
+output:
+  format: "markdown"                # markdown / json / separate-files
+  include_stitch_command: true      # include ffmpeg concat command
+  include_checklist: true           # include per-episode QA checklist
