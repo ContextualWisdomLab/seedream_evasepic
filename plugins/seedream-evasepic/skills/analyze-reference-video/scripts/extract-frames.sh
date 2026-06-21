@@ -35,13 +35,16 @@ fi
 
 mkdir -p "$OUT_DIR"
 
-# Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# Probe video metadata using a single ffprobe call for better performance
+PROBE_OUTPUT=$("$FFPROBE" -v error -show_entries format=duration:stream=codec_type,width,height,r_frame_rate -of csv=p=0 "$VIDEO" 2>/dev/null || echo "")
+DURATION=$(echo "$PROBE_OUTPUT" | awk -F, 'NF==1 {print $1}')
+RESOLUTION=$(echo "$PROBE_OUTPUT" | awk -F, '$1=="video" {print $2"x"$3; exit}')
+FPS=$(echo "$PROBE_OUTPUT" | awk -F, '$1=="video" {print $4; exit}')
+HAS_AUDIO=$(echo "$PROBE_OUTPUT" | awk -F, '$1=="audio" {print "yes"; exit}')
+
+DURATION=${DURATION:-0}
+RESOLUTION=${RESOLUTION:-unknown}
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
@@ -66,23 +69,26 @@ fi
 
 echo "Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)..."
 
-"$FFMPEG" -y -v warning -i "$VIDEO" \
-  -vf "fps=$FPS_FILTER" \
-  -q:v 2 \
-  "$OUT_DIR/frame_%03d.jpg"
+# Single ffmpeg pass for both video frames and audio (if present)
+if [ "$HAS_AUDIO" = "yes" ]; then
+    echo "Extracting frames and audio..."
+    "$FFMPEG" -y -v warning -i "$VIDEO" \
+        -vf "fps=$FPS_FILTER" -q:v 2 "$OUT_DIR/frame_%03d.jpg" \
+        -vn -acodec pcm_s16le -ar 16000 -ac 1 "$OUT_DIR/audio.wav" 2>/dev/null
+
+    if [ -f "$OUT_DIR/audio.wav" ]; then
+        echo "Audio saved: $OUT_DIR/audio.wav"
+    else
+        echo "Failed to extract audio."
+    fi
+else
+    echo "Extracting frames (no audio stream detected)..."
+    "$FFMPEG" -y -v warning -i "$VIDEO" \
+        -vf "fps=$FPS_FILTER" -q:v 2 "$OUT_DIR/frame_%03d.jpg" 2>/dev/null
+    echo "No audio stream (silent video) — audio.wav not created"
+    echo "audio=silent" >> "$OUT_DIR/metadata.txt"
+fi
 
 FRAME_COUNT=$(ls "$OUT_DIR"/frame_*.jpg 2>/dev/null | wc -l | tr -d ' ')
 echo "Extracted $FRAME_COUNT frames to $OUT_DIR"
-
-# Extract audio for transcription (16kHz mono WAV)
-echo "Extracting audio..."
-if "$FFMPEG" -y -v warning -i "$VIDEO" \
-     -vn -acodec pcm_s16le -ar 16000 -ac 1 \
-     "$OUT_DIR/audio.wav" 2>/dev/null; then
-  echo "Audio saved: $OUT_DIR/audio.wav"
-else
-  echo "No audio stream (silent video) — audio.wav not created"
-  echo "audio=silent" >> "$OUT_DIR/metadata.txt"
-fi
-
 echo "Done. Output in: $OUT_DIR"
