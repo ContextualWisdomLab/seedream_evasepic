@@ -1,0 +1,4 @@
+## 2024-06-21 - [CRITICAL] Code Injection in transcribe.sh
+**Vulnerability:** Python code injection in `transcribe.sh` due to unsafe variable interpolation into a heredoc passed to Python. A maliciously crafted `AUDIO` filename could execute arbitrary Python (and thus shell) commands.
+**Learning:** Shell scripts generating Python scripts dynamically via heredocs (`python3 <<PYEOF`) and directly interpolating shell variables into them (`audio = "$AUDIO"`) creates a significant injection vector if the inputs are not strictly sanitized.
+**Prevention:** Instead of string interpolation in dynamically generated code, pass parameters to the script securely, either as command-line arguments accessible via `sys.argv` (e.g. `python3 - "$AUDIO" "$MODEL" <<'PYEOF'`) or via environment variables (`os.environ`).

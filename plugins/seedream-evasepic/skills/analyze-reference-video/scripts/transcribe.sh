@@ -46,10 +46,10 @@ if command -v python3 >/dev/null 2>&1; then
     exit 1
   }
 
-  python3 <<PYEOF
+  python3 - "$AUDIO" "$MODEL" <<'PYEOF'
 import whisper, json, os, sys
-audio = "$AUDIO"
-model_name = "$MODEL"
+audio = sys.argv[1]
+model_name = sys.argv[2]
 out_base = os.path.splitext(audio)[0]
 
 print(f"Loading whisper model: {model_name}...")
