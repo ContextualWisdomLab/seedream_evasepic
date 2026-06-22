@@ -22,6 +22,11 @@ VIDEO="${1:-}"
 OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
+if ! [[ "$NUM_FRAMES" =~ ^[0-9]+$ ]] || [ "$NUM_FRAMES" -le 0 ]; then
+  echo "Error: NUM_FRAMES must be a positive integer" >&2
+  exit 2
+fi
+
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   echo "Usage: $0 <video_path> <output_dir> [num_frames]" >&2
   echo "  num_frames defaults to 12" >&2
@@ -71,7 +76,7 @@ echo "Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)..."
   -q:v 2 \
   "$OUT_DIR/frame_%03d.jpg"
 
-FRAME_COUNT=$(ls "$OUT_DIR"/frame_*.jpg 2>/dev/null | wc -l | tr -d ' ')
+FRAME_COUNT=$(find "$OUT_DIR" -maxdepth 1 -name "frame_*.jpg" 2>/dev/null | wc -l | tr -d ' ')
 echo "Extracted $FRAME_COUNT frames to $OUT_DIR"
 
 # Extract audio for transcription (16kHz mono WAV)

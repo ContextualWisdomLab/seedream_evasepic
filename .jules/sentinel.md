@@ -1,0 +1,4 @@
+## 2024-06-22 - Python Heredoc Command Injection
+**Vulnerability:** Bash scripts dynamically generating Python code via unquoted heredocs (`python3 <<PYEOF`) and directly interpolating bash variables (`audio = "$AUDIO"`). This allows arbitrary Python code execution if the bash variable contains double quotes (e.g. `"; import os; os.system('echo compromised'); a="`).
+**Learning:** In bash-driven systems, passing unvalidated string variables directly into the source code of another language parser (like Python or awk) creates a critical injection point, regardless of standard bash escaping.
+**Prevention:** Always use quoted heredocs (`python3 <<'PYEOF'`) to disable bash interpolation completely, and pass necessary bash variables into the child process using environment variables (e.g., `export AUDIO` in bash, then `os.environ.get("AUDIO")` in Python).
