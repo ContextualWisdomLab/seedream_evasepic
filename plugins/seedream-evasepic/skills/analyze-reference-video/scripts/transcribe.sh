@@ -38,16 +38,17 @@ fi
 # Fallback to Python inline
 if command -v python3 >/dev/null 2>&1; then
   echo "whisper CLI not found. Trying Python whisper module..."
-  python3 -c "import whisper" 2>/dev/null || {
-    echo "whisper Python module not installed." >&2
-    echo "Install with: pip3 install openai-whisper" >&2
-    echo "" >&2
-    echo "Alternatively, ask the user to paste the dialogue manually and skip this step." >&2
-    exit 1
-  }
 
   python3 <<PYEOF
-import whisper, json, os, sys
+import json, os, sys
+try:
+    import whisper
+except ImportError:
+    print("whisper Python module not installed.", file=sys.stderr)
+    print("Install with: pip3 install openai-whisper\n", file=sys.stderr)
+    print("Alternatively, ask the user to paste the dialogue manually and skip this step.", file=sys.stderr)
+    sys.exit(1)
+
 audio = "$AUDIO"
 model_name = "$MODEL"
 out_base = os.path.splitext(audio)[0]
