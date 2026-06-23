@@ -53,10 +53,12 @@ if command -v python3 >/dev/null 2>&1; then
     exit 1
   }
 
-  python3 <<PYEOF
+  export AUDIO_PATH="$AUDIO"
+  export WHISPER_MODEL="$MODEL"
+  python3 <<'PYEOF'
 import whisper, json, os, sys
-audio = "$AUDIO"
-model_name = "$MODEL"
+audio = os.environ.get("AUDIO_PATH")
+model_name = os.environ.get("WHISPER_MODEL")
 out_base = os.path.splitext(audio)[0]
 
 print(f"Loading whisper model: {model_name}...")
