@@ -43,12 +43,23 @@ fi
 mkdir -p "$OUT_DIR"
 
 # Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# ⚡ Bolt Optimization: Consolidate 3 ffprobe calls into 1 to reduce process startup overhead
+eval "$("$FFPROBE" -v error -select_streams v:0 -show_entries format=duration:stream=width,height,r_frame_rate -of default=noprint_wrappers=1 "$VIDEO" 2>/dev/null | awk -F= '{
+  if ($1 == "width") w=$2;
+  if ($1 == "height") h=$2;
+  if ($1 == "r_frame_rate") fps=$2;
+  if ($1 == "duration") d=$2;
+} END {
+  if (w == "" || h == "") { res="unknown" } else { res=w "x" h }
+  if (fps == "") fps="unknown"
+  if (d == "") d="0"
+  printf "RESOLUTION=\"%s\"\nFPS=\"%s\"\nDURATION=\"%s\"\n", res, fps, d;
+}')"
+
+# Provide fallbacks if eval parsing fails
+DURATION=${DURATION:-0}
+RESOLUTION=${RESOLUTION:-unknown}
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
