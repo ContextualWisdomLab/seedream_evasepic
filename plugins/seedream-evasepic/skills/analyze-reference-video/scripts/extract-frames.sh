@@ -43,12 +43,24 @@ fi
 mkdir -p "$OUT_DIR"
 
 # Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# ⚡ Bolt: Combines 3 ffprobe calls into 1 to reduce I/O and process overhead
+PROBE_OUTPUT=$("$FFPROBE" -v error -select_streams v:0 \
+  -show_entries format=duration:stream=width,height,r_frame_rate \
+  -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
+
+WIDTH=$(echo "$PROBE_OUTPUT" | grep "^width=" | cut -d= -f2 || true)
+HEIGHT=$(echo "$PROBE_OUTPUT" | grep "^height=" | cut -d= -f2 || true)
+FPS=$(echo "$PROBE_OUTPUT" | grep "^r_frame_rate=" | cut -d= -f2 || true)
+DURATION=$(echo "$PROBE_OUTPUT" | grep "^duration=" | cut -d= -f2 || true)
+
+if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
+    RESOLUTION="${WIDTH}x${HEIGHT}"
+else
+    RESOLUTION="unknown"
+fi
+
+DURATION=${DURATION:-0}
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
