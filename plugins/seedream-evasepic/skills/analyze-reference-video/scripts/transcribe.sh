@@ -17,20 +17,26 @@ NC='\033[0m' # No Color
 AUDIO="${1:-}"
 MODEL="${2:-base}"
 
+if [ "$AUDIO" = "-h" ] || [ "$AUDIO" = "--help" ]; then
+  echo -e "${YELLOW}ℹ️ Usage: $0 <audio_path> [model]${NC}" >&2
+  echo -e "  Models: tiny / base / small / medium / large (default: base)" >&2
+  exit 0
+fi
+
 if [ -z "$AUDIO" ]; then
-  echo -e "${YELLOW}Usage: $0 <audio_path> [model]${NC}" >&2
+  echo -e "${YELLOW}ℹ️ Usage: $0 <audio_path> [model]${NC}" >&2
   echo -e "  Models: tiny / base / small / medium / large (default: base)" >&2
   exit 2
 fi
 
 if [ ! -f "$AUDIO" ]; then
-  echo -e "${RED}Error: audio file not found: $AUDIO${NC}" >&2
+  echo -e "${RED}❌ Error: audio file not found: $AUDIO${NC}" >&2
   exit 1
 fi
 
 # Try whisper CLI first
 if command -v whisper >/dev/null 2>&1; then
-  echo -e "${CYAN}Transcribing with whisper CLI (model: $MODEL)...${NC}"
+  echo -e "${CYAN}📝 Transcribing with whisper CLI (model: $MODEL)...${NC}"
   OUT_DIR="$(dirname "$AUDIO")"
   whisper "$AUDIO" \
     --model "$MODEL" \
@@ -38,18 +44,18 @@ if command -v whisper >/dev/null 2>&1; then
     --output_format json \
     --output_dir "$OUT_DIR" \
     --verbose False
-  echo -e "${GREEN}Transcript saved to $OUT_DIR/$(basename "${AUDIO%.*}").txt${NC}"
+  echo -e "${GREEN}✅ Transcript saved to $OUT_DIR/$(basename "${AUDIO%.*}").txt${NC}"
   exit 0
 fi
 
 # Fallback to Python inline
 if command -v python3 >/dev/null 2>&1; then
-  echo -e "${YELLOW}whisper CLI not found. Trying Python whisper module...${NC}"
+  echo -e "${YELLOW}⚠️ whisper CLI not found. Trying Python whisper module...${NC}"
   python3 -c "import whisper" 2>/dev/null || {
-    echo -e "${RED}whisper Python module not installed.${NC}" >&2
+    echo -e "${RED}❌ whisper Python module not installed.${NC}" >&2
     echo -e "Install with: pip3 install openai-whisper" >&2
     echo "" >&2
-    echo -e "${CYAN}Alternatively, ask the user to paste the dialogue manually and skip this step.${NC}" >&2
+    echo -e "${CYAN}💡 Alternatively, ask the user to paste the dialogue manually and skip this step.${NC}" >&2
     exit 1
   }
 
@@ -86,10 +92,11 @@ print(f"Segments:   {out_base}.segments.json")
 print(f"Language detected: {result.get('language', 'unknown')}")
 PYEOF
 
+  echo -e "${GREEN}✅ Python transcription complete.${NC}"
   exit 0
 fi
 
-echo -e "${RED}Neither whisper CLI nor python3 available.${NC}" >&2
+echo -e "${RED}❌ Neither whisper CLI nor python3 available.${NC}" >&2
 echo -e "${CYAN}Install one of:${NC}" >&2
 echo -e "  brew install openai-whisper     (macOS, installs CLI)" >&2
 echo -e "  pip install openai-whisper      (any OS, requires python3)" >&2
