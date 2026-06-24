@@ -43,12 +43,17 @@ fi
 mkdir -p "$OUT_DIR"
 
 # Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+PROBE_OUTPUT=$("$FFPROBE" -v error -select_streams v:0 \
+  -show_entries format=duration:stream=width,height,r_frame_rate \
+  -of default=noprint_wrappers=1 "$VIDEO" 2>/dev/null || true)
+
+DURATION=$(echo "$PROBE_OUTPUT" | grep "^duration=" | cut -d= -f2 | head -n1 || echo 0)
+DURATION=${DURATION:-0}
+WIDTH=$(echo "$PROBE_OUTPUT" | grep "^width=" | cut -d= -f2 | head -n1 || true)
+HEIGHT=$(echo "$PROBE_OUTPUT" | grep "^height=" | cut -d= -f2 | head -n1 || true)
+RESOLUTION=$([ -n "$WIDTH" ] && [ -n "$HEIGHT" ] && echo "${WIDTH}x${HEIGHT}" || echo "unknown")
+FPS=$(echo "$PROBE_OUTPUT" | grep "^r_frame_rate=" | cut -d= -f2 | head -n1 || echo "unknown")
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
