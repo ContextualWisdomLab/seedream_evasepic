@@ -42,13 +42,26 @@ fi
 
 mkdir -p "$OUT_DIR"
 
-# Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# Probe video metadata efficiently with a single ffprobe call
+PROBE_OUT=$("$FFPROBE" -v error -select_streams v:0 \
+  -show_entries format=duration:stream=width,height,r_frame_rate \
+  -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || echo "")
+
+read -r DURATION W H FPS <<<"$(echo "$PROBE_OUT" | awk -F= '
+  $1=="duration"{d=$2}
+  $1=="width"{w=$2}
+  $1=="height"{h=$2}
+  $1=="r_frame_rate"{f=$2}
+  END{print d, w, h, f}
+')"
+
+if [ -n "$W" ] && [ -n "$H" ]; then
+  RESOLUTION="${W}x${H}"
+else
+  RESOLUTION="unknown"
+fi
+[ -z "$DURATION" ] && DURATION=0
+[ -z "$FPS" ] && FPS="unknown"
 
 {
   echo "video_path=$VIDEO"
