@@ -16,14 +16,16 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  echo -e "${CYAN}Extract evenly-spaced frames + audio from a reference video for style analysis.${NC}"
+  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
+  echo -e "  num_frames defaults to 12"
+  exit 0
+fi
+
 # Auto-detect ffmpeg / ffprobe path (Homebrew Apple Silicon vs Intel vs Linux)
 FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
 FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
-
-if [ ! -x "$FFMPEG" ]; then
-  echo -e "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
-  exit 1
-fi
 
 VIDEO="${1:-}"
 OUT_DIR="${2:-}"
@@ -33,6 +35,11 @@ if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
   echo -e "  num_frames defaults to 12" >&2
   exit 2
+fi
+
+if [ ! -x "$FFMPEG" ]; then
+  echo -e "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
+  exit 1
 fi
 
 if [ ! -f "$VIDEO" ]; then
