@@ -43,12 +43,24 @@ fi
 mkdir -p "$OUT_DIR"
 
 # Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+METADATA=$("$FFPROBE" -v error -select_streams v:0 \
+  -show_entries format=duration:stream=width,height,r_frame_rate \
+  -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
+
+DURATION=0
+RESOLUTION="unknown"
+FPS="unknown"
+
+if [ -n "$METADATA" ]; then
+  _width=$(echo "$METADATA" | grep "^width=" | cut -d= -f2 || true)
+  _height=$(echo "$METADATA" | grep "^height=" | cut -d= -f2 || true)
+  _duration=$(echo "$METADATA" | grep "^duration=" | cut -d= -f2 || true)
+  _fps=$(echo "$METADATA" | grep "^r_frame_rate=" | cut -d= -f2 || true)
+
+  [ -n "$_duration" ] && DURATION="$_duration"
+  [ -n "$_width" ] && [ -n "$_height" ] && RESOLUTION="${_width}x${_height}"
+  [ -n "$_fps" ] && FPS="$_fps"
+fi
 
 {
   echo "video_path=$VIDEO"
