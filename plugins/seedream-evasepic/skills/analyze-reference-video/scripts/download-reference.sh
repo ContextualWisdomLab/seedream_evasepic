@@ -13,6 +13,12 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  echo -e "${CYAN}Usage: $0 <url> <output_path>${NC}"
+  echo -e "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+  exit 0
+fi
+
 URL="${1:-}"
 OUTPUT="${2:-}"
 
