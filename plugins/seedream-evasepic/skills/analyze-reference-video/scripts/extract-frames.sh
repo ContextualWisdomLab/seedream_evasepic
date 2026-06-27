@@ -16,6 +16,12 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
+  echo -e "  num_frames defaults to 12"
+  exit 0
+fi
+
 # Auto-detect ffmpeg / ffprobe path (Homebrew Apple Silicon vs Intel vs Linux)
 FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
 FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
