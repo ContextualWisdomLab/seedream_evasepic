@@ -16,6 +16,12 @@ NC='\033[0m' # No Color
 URL="${1:-}"
 OUTPUT="${2:-}"
 
+if [ "$URL" = "-h" ] || [ "$URL" = "--help" ]; then
+  echo -e "${YELLOW}Usage: $0 <url> <output_path>${NC}" >&2
+  echo -e "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  exit 0
+fi
+
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   echo -e "${YELLOW}Usage: $0 <url> <output_path>${NC}" >&2
   echo -e "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
@@ -54,6 +60,7 @@ yt-dlp \
   -o "$OUTPUT" \
   --no-playlist \
   --quiet --progress \
+  -- \
   "$URL" || {
     echo "" >&2
     echo -e "${RED}yt-dlp failed. Possible reasons:${NC}" >&2
