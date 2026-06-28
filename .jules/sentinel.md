@@ -1,0 +1,4 @@
+## 2024-06-28 - [CRITICAL] Bash Script awk Command Injection
+**Vulnerability:** Found arbitrary command injection vulnerability in `extract-frames.sh` where `awk` executed unsanitized string interpolation (e.g., `awk "BEGIN { printf \"%.6f\", $NUM_FRAMES / $DURATION }"`).
+**Learning:** Bash double quotes around `awk` scripts allow variables to be evaluated before being passed to `awk`. If variables are user-controlled, malicious input can close the awk statement, inject arbitrary bash commands, and run them using `system()` or similar mechanisms in awk.
+**Prevention:** Avoid string interpolation with untrusted variables inside `awk` commands. Always use single quotes for the awk script body, and use the `-v` flag to safely pass Bash variables to awk (e.g., `awk -v n="$VAR" 'BEGIN { print n }'`).
