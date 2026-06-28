@@ -42,13 +42,20 @@ fi
 
 mkdir -p "$OUT_DIR"
 
-# Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# Probe video metadata efficiently with a single ffprobe call
+PROBE_OUTPUT=$("$FFPROBE" -v error -select_streams v:0 -show_entries format=duration:stream=width,height,r_frame_rate -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null)
+read -r DURATION RESOLUTION FPS <<< "$(echo "$PROBE_OUTPUT" | awk -F= '
+    /^duration=/ { d=$2 }
+    /^width=/ { w=$2 }
+    /^height=/ { h=$2 }
+    /^r_frame_rate=/ { f=$2 }
+    END {
+      res = (w != "" && h != "") ? w"x"h : "unknown";
+      if (d == "") d = 0;
+      if (f == "") f = "unknown";
+      print d, res, f
+    }
+  ')"
 
 {
   echo "video_path=$VIDEO"

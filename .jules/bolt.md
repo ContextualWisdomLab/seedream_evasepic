@@ -1,0 +1,3 @@
+## 2024-03-21 - Optimize Multiple CLI Calls in Bash Scripts
+**Learning:** Extracting multiple pieces of metadata sequentially using external CLI tools (like `ffprobe`) introduces significant process startup overhead. Calling `ffprobe` three times for duration, resolution, and fps is measurably slower than a single invocation.
+**Action:** When extracting multiple metadata points or using tools like `ffprobe`/`ffmpeg`, consolidate the queries into a single invocation and parse the combined output using tools like `awk`. This avoids redundant process creation and makes the bash script execute significantly faster.
