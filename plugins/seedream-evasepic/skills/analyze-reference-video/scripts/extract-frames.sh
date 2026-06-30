@@ -43,12 +43,23 @@ fi
 mkdir -p "$OUT_DIR"
 
 # Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# ⚡ Bolt Optimization: Batch ffprobe metadata extraction into a single invocation
+# This avoids starting the ffprobe process three separate times, reducing startup overhead.
+PROBE_INFO=$("$FFPROBE" -v error -select_streams v:0 \
+  -show_entries format=duration:stream=width,height,r_frame_rate \
+  -of default=noprint_wrappers=1 "$VIDEO" 2>/dev/null || echo "")
+
+DURATION=$(awk -F= '/^duration=/ {print $2; exit}' <<< "$PROBE_INFO")
+DURATION=${DURATION:-0}
+WIDTH=$(awk -F= '/^width=/ {print $2; exit}' <<< "$PROBE_INFO")
+HEIGHT=$(awk -F= '/^height=/ {print $2; exit}' <<< "$PROBE_INFO")
+if [[ -n "$WIDTH" && -n "$HEIGHT" ]]; then
+  RESOLUTION="${WIDTH}x${HEIGHT}"
+else
+  RESOLUTION="unknown"
+fi
+FPS=$(awk -F= '/^r_frame_rate=/ {print $2; exit}' <<< "$PROBE_INFO")
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
