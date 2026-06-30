@@ -42,13 +42,22 @@ fi
 
 mkdir -p "$OUT_DIR"
 
-# Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# Probe video metadata using a single batch call for performance
+METADATA=$("$FFPROBE" -v error -select_streams v:0 -show_entries format=duration:stream=width,height,r_frame_rate -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
+
+DURATION=$(echo "$METADATA" | grep -m1 '^duration=' | cut -d= -f2)
+DURATION=${DURATION:-0}
+
+WIDTH=$(echo "$METADATA" | grep -m1 '^width=' | cut -d= -f2)
+HEIGHT=$(echo "$METADATA" | grep -m1 '^height=' | cut -d= -f2)
+if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
+  RESOLUTION="${WIDTH}x${HEIGHT}"
+else
+  RESOLUTION="unknown"
+fi
+
+FPS=$(echo "$METADATA" | grep -m1 '^r_frame_rate=' | cut -d= -f2)
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
