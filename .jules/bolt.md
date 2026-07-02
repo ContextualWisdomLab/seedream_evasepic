@@ -1,0 +1,3 @@
+## 2024-07-02 - Multiple FFprobe Invocations Overhead
+**Learning:** In bash scripts, invoking `ffprobe` multiple times to extract different metadata fields causes significant process startup overhead, which becomes a noticeable bottleneck for seemingly simple metadata operations.
+**Action:** Consolidate multiple `ffprobe` queries into a single invocation using `-show_entries` with multiple keys (e.g., `format=duration:stream=width,height`), and format the output with `-of default=noprint_wrappers=1:nokey=0` to generate `key=value` pairs that can be efficiently parsed in a single pass using `awk -F=`.
