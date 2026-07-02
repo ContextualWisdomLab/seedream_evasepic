@@ -29,6 +29,11 @@ VIDEO="${1:-}"
 OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
+if ! [[ "$NUM_FRAMES" =~ ^[1-9][0-9]*$ ]]; then
+  echo -e "${RED}Error: num_frames must be a positive integer.${NC}" >&2
+  exit 1
+fi
+
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
   echo -e "  num_frames defaults to 12" >&2
@@ -67,8 +72,8 @@ if command -v bc >/dev/null 2>&1; then
   INTERVAL=$(echo "scale=1; $DURATION / $NUM_FRAMES" | bc)
 else
   # Fallback if bc is unavailable
-  FPS_FILTER=$(awk "BEGIN { printf \"%.6f\", $NUM_FRAMES / $DURATION }")
-  INTERVAL=$(awk "BEGIN { printf \"%.1f\", $DURATION / $NUM_FRAMES }")
+  FPS_FILTER=$(awk -v nf="$NUM_FRAMES" -v d="$DURATION" 'BEGIN { printf "%.6f", nf / d }')
+  INTERVAL=$(awk -v nf="$NUM_FRAMES" -v d="$DURATION" 'BEGIN { printf "%.1f", d / nf }')
 fi
 
 echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
@@ -78,7 +83,7 @@ echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
   -q:v 2 \
   "$OUT_DIR/frame_%03d.jpg"
 
-FRAME_COUNT=$(ls "$OUT_DIR"/frame_*.jpg 2>/dev/null | wc -l | tr -d ' ')
+FRAME_COUNT=$(find "$OUT_DIR" -maxdepth 1 -name "frame_*.jpg" 2>/dev/null | wc -l | tr -d ' ')
 echo -e "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
 # Extract audio for transcription (16kHz mono WAV)
