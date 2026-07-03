@@ -13,19 +13,21 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+for arg in "$@"; do
+  if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+    printf "%b" "${CYAN}Download a reference video from YouTube/TikTok/Instagram/Vimeo/X.${NC}\n"
+    printf "%b" "${YELLOW}Usage: $0 <url> <output_path>${NC}\n"
+    printf "%b" "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4\n"
+    exit 0
+  fi
+done
+
 URL="${1:-}"
 OUTPUT="${2:-}"
 
-if [ "$URL" = "-h" ] || [ "$URL" = "--help" ]; then
-  echo -e "${CYAN}Download a reference video from YouTube/TikTok/Instagram/Vimeo/X.${NC}"
-  echo -e "${YELLOW}Usage: $0 <url> <output_path>${NC}"
-  echo -e "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
-  exit 0
-fi
-
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
-  echo -e "${YELLOW}Usage: $0 <url> <output_path>${NC}" >&2
-  echo -e "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  printf "%b" "${YELLOW}Usage: $0 <url> <output_path>${NC}\n" >&2
+  printf "%b" "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4\n" >&2
   exit 2
 fi
 

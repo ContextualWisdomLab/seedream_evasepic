@@ -14,19 +14,21 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+for arg in "$@"; do
+  if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+    printf "%b" "${CYAN}Transcribe audio from a reference video using OpenAI Whisper.${NC}\n"
+    printf "%b" "${YELLOW}Usage: $0 <audio_path> [model]${NC}\n"
+    printf "%b" "  Models: tiny / base / small / medium / large (default: base)\n"
+    exit 0
+  fi
+done
+
 AUDIO="${1:-}"
 MODEL="${2:-base}"
 
-if [ "$AUDIO" = "-h" ] || [ "$AUDIO" = "--help" ]; then
-  echo -e "${CYAN}Transcribe audio from a reference video using OpenAI Whisper.${NC}"
-  echo -e "${YELLOW}Usage: $0 <audio_path> [model]${NC}"
-  echo -e "  Models: tiny / base / small / medium / large (default: base)"
-  exit 0
-fi
-
 if [ -z "$AUDIO" ]; then
-  echo -e "${YELLOW}Usage: $0 <audio_path> [model]${NC}" >&2
-  echo -e "  Models: tiny / base / small / medium / large (default: base)" >&2
+  printf "%b" "${YELLOW}Usage: $0 <audio_path> [model]${NC}\n" >&2
+  printf "%b" "  Models: tiny / base / small / medium / large (default: base)\n" >&2
   exit 2
 fi
 
