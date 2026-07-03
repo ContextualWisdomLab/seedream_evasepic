@@ -40,12 +40,12 @@ fi
 FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
 FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
 
-if [ ! -x "$FFMPEG" ]; then
+if ! command -v "$FFMPEG" >/dev/null 2>&1 || [ ! -x "$FFMPEG" ]; then
   echo -e "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
   exit 1
 fi
 
-if [ ! -x "$FFPROBE" ]; then
+if ! command -v "$FFPROBE" >/dev/null 2>&1 || [ ! -x "$FFPROBE" ]; then
   echo -e "${RED}Error: ffprobe not found. Install with: brew install ffmpeg${NC}" >&2
   exit 1
 fi
