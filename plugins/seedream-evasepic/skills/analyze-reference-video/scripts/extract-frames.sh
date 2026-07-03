@@ -16,11 +16,21 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+for arg in "$@"; do
+  case $arg in
+    -h|--help)
+      echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
+      echo -e "  num_frames defaults to 12" >&2
+      exit 0
+      ;;
+  esac
+done
+
 VIDEO="${1:-}"
 OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
-if [ "$VIDEO" = "-h" ] || [ "$VIDEO" = "--help" ] || [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
+if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
   echo -e "  num_frames defaults to 12" >&2
   exit 2
@@ -35,6 +45,11 @@ if [ ! -x "$FFMPEG" ]; then
   exit 1
 fi
 
+if [ ! -x "$FFPROBE" ]; then
+  echo -e "${RED}Error: ffprobe not found. Install with: brew install ffmpeg${NC}" >&2
+  exit 1
+fi
+
 if [ ! -f "$VIDEO" ]; then
   echo -e "${RED}Error: video not found: $VIDEO${NC}" >&2
   exit 1
@@ -43,9 +58,14 @@ fi
 mkdir -p "$OUT_DIR"
 
 # Probe video metadata efficiently in a single ffprobe call
-PROBE_OUT=$("$FFPROBE" -v error -show_entries format=duration:stream=width,height,r_frame_rate -select_streams v:0 -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null)
+PROBE_OUT=$("$FFPROBE" -v error -show_entries format=duration:stream=width,height,r_frame_rate -select_streams v:0 -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || echo "")
 
-eval "$(echo "$PROBE_OUT" | awk -F= '
+{
+  read -r DURATION
+  read -r RESOLUTION
+  read -r FPS
+} <<EOF
+$(echo "$PROBE_OUT" | awk -F= '
   BEGIN { d="0"; w=""; h=""; f="unknown" }
   $1=="duration" { d=$2 }
   $1=="width" { w=$2 }
@@ -53,9 +73,12 @@ eval "$(echo "$PROBE_OUT" | awk -F= '
   $1=="r_frame_rate" { f=$2 }
   END {
     res = (w!="" && h!="") ? w"x"h : "unknown"
-    printf "DURATION=\"%s\"; RESOLUTION=\"%s\"; FPS=\"%s\"\n", d, res, f
+    print d
+    print res
+    print f
   }
-')"
+')
+EOF
 
 {
   echo "video_path=$VIDEO"
