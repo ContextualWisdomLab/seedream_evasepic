@@ -16,6 +16,22 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+VIDEO="${1:-}"
+OUT_DIR="${2:-}"
+NUM_FRAMES="${3:-12}"
+
+if [ "$VIDEO" = "-h" ] || [ "$VIDEO" = "--help" ]; then
+  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
+  echo -e "  num_frames defaults to 12"
+  exit 0
+fi
+
+if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
+  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
+  echo -e "  num_frames defaults to 12" >&2
+  exit 2
+fi
+
 # Auto-detect ffmpeg / ffprobe path (Homebrew Apple Silicon vs Intel vs Linux)
 FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
 FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
@@ -23,16 +39,6 @@ FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
 if [ ! -x "$FFMPEG" ]; then
   echo -e "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
   exit 1
-fi
-
-VIDEO="${1:-}"
-OUT_DIR="${2:-}"
-NUM_FRAMES="${3:-12}"
-
-if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
-  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
-  echo -e "  num_frames defaults to 12" >&2
-  exit 2
 fi
 
 if [ ! -f "$VIDEO" ]; then
@@ -78,7 +84,7 @@ echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
   -q:v 2 \
   "$OUT_DIR/frame_%03d.jpg"
 
-FRAME_COUNT=$(ls "$OUT_DIR"/frame_*.jpg 2>/dev/null | wc -l | tr -d ' ')
+FRAME_COUNT=$(find "$OUT_DIR" -maxdepth 1 -name "frame_*.jpg" -type f 2>/dev/null | wc -l | tr -d ' ')
 echo -e "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
 # Extract audio for transcription (16kHz mono WAV)
