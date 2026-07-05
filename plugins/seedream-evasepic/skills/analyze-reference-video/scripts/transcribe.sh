@@ -32,12 +32,14 @@ fi
 if command -v whisper >/dev/null 2>&1; then
   echo -e "${CYAN}Transcribing with whisper CLI (model: $MODEL)...${NC}"
   OUT_DIR="$(dirname "$AUDIO")"
-  whisper "$AUDIO" \
+  whisper \
     --model "$MODEL" \
     --output_format txt \
     --output_format json \
     --output_dir "$OUT_DIR" \
-    --verbose False
+    --verbose False \
+    -- \
+    "$AUDIO"
   echo -e "${GREEN}Transcript saved to $OUT_DIR/$(basename "${AUDIO%.*}").txt${NC}"
   exit 0
 fi
