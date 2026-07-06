@@ -16,6 +16,27 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+VIDEO="${1:-}"
+OUT_DIR="${2:-}"
+NUM_FRAMES="${3:-12}"
+
+if [ "$VIDEO" = "-h" ] || [ "$VIDEO" = "--help" ]; then
+  echo -e "${CYAN}Extract evenly-spaced frames + audio from a reference video for style analysis.${NC}"
+  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
+  echo -e "  num_frames defaults to 12"
+  echo -e "\nOutputs:"
+  echo -e "  <output_dir>/frame_001.jpg ... frame_NNN.jpg"
+  echo -e "  <output_dir>/audio.wav          (16 kHz mono, whisper-ready)"
+  echo -e "  <output_dir>/metadata.txt       (duration, resolution, fps)"
+  exit 0
+fi
+
+if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
+  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
+  echo -e "  num_frames defaults to 12" >&2
+  exit 2
+fi
+
 # Auto-detect ffmpeg / ffprobe path (Homebrew Apple Silicon vs Intel vs Linux)
 FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
 FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
@@ -23,16 +44,6 @@ FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
 if [ ! -x "$FFMPEG" ]; then
   echo -e "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
   exit 1
-fi
-
-VIDEO="${1:-}"
-OUT_DIR="${2:-}"
-NUM_FRAMES="${3:-12}"
-
-if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
-  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
-  echo -e "  num_frames defaults to 12" >&2
-  exit 2
 fi
 
 if [ ! -f "$VIDEO" ]; then
