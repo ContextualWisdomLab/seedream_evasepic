@@ -1,4 +1,4 @@
-name: opencode-review
+name: OpenCode PR Review
 on:
   pull_request:
     branches: [ "**" ]
@@ -6,7 +6,7 @@ on:
 permissions: read-all
 
 jobs:
-  opencode-review:
+  run-opencode-review:
     runs-on: ubuntu-latest
     steps:
       - name: Pass opencode review
