@@ -14,12 +14,20 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+for arg in "$@"; do
+  if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+    printf "%b\n" "${CYAN}Usage: $0 <audio_path> [model]${NC}"
+    printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)"
+    exit 0
+  fi
+done
+
 AUDIO="${1:-}"
 MODEL="${2:-base}"
 
 if [ -z "$AUDIO" ]; then
-  echo -e "${YELLOW}Usage: $0 <audio_path> [model]${NC}" >&2
-  echo -e "  Models: tiny / base / small / medium / large (default: base)" >&2
+  printf "%b\n" "${YELLOW}Usage: $0 <audio_path> [model]${NC}" >&2
+  printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
   exit 2
 fi
 

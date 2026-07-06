@@ -13,12 +13,20 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+for arg in "$@"; do
+  if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+    printf "%b\n" "${CYAN}Usage: $0 <url> <output_path>${NC}"
+    printf "%b\n" "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+    exit 0
+  fi
+done
+
 URL="${1:-}"
 OUTPUT="${2:-}"
 
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
-  echo -e "${YELLOW}Usage: $0 <url> <output_path>${NC}" >&2
-  echo -e "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  printf "%b\n" "${YELLOW}Usage: $0 <url> <output_path>${NC}" >&2
+  printf "%b\n" "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
   exit 2
 fi
 
