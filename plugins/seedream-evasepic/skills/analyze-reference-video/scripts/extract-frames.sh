@@ -29,6 +29,11 @@ VIDEO="${1:-}"
 OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
+if ! echo "$NUM_FRAMES" | grep -Eq '^[1-9][0-9]*$'; then
+  echo -e "${RED}Error: num_frames must be a positive integer.${NC}" >&2
+  exit 2
+fi
+
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
   echo -e "  num_frames defaults to 12" >&2
@@ -67,8 +72,8 @@ if command -v bc >/dev/null 2>&1; then
   INTERVAL=$(echo "scale=1; $DURATION / $NUM_FRAMES" | bc)
 else
   # Fallback if bc is unavailable
-  FPS_FILTER=$(awk "BEGIN { printf \"%.6f\", $NUM_FRAMES / $DURATION }")
-  INTERVAL=$(awk "BEGIN { printf \"%.1f\", $DURATION / $NUM_FRAMES }")
+  FPS_FILTER=$(awk -v n="$NUM_FRAMES" -v d="$DURATION" 'BEGIN { printf "%.6f", n / d }')
+  INTERVAL=$(awk -v d="$DURATION" -v n="$NUM_FRAMES" 'BEGIN { printf "%.1f", d / n }')
 fi
 
 echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"

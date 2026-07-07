@@ -1,0 +1,4 @@
+## 2026-07-07 - Prevent Command Injection in awk via direct string interpolation
+**Vulnerability:** Shell variables directly interpolated into an `awk` command string (e.g., `awk "BEGIN { print $VAR }"`) can lead to arbitrary command execution if the variable contains unescaped characters or quotes (e.g., `VAR='1; system("id");'`). This was found in `extract-frames.sh` where user-provided `NUM_FRAMES` was passed directly into `awk`.
+**Learning:** This vulnerability existed because the script failed to validate the input structure before usage and improperly formed the `awk` command string using double quotes for interpolation.
+**Prevention:** Always use the `-v` option (e.g., `awk -v var="$VAR"`) to pass variables safely into `awk` scripts. Furthermore, validate numeric inputs strictly using POSIX-compatible regex (e.g., `echo "$VAR" | grep -Eq '^[1-9][0-9]*$'`) before passing them to external commands or arithmetic evaluations.
