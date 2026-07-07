@@ -66,9 +66,9 @@ if command -v bc >/dev/null 2>&1; then
   FPS_FILTER=$(echo "scale=6; $NUM_FRAMES / $DURATION" | bc)
   INTERVAL=$(echo "scale=1; $DURATION / $NUM_FRAMES" | bc)
 else
-  # Fallback if bc is unavailable
-  FPS_FILTER=$(awk "BEGIN { printf \"%.6f\", $NUM_FRAMES / $DURATION }")
-  INTERVAL=$(awk "BEGIN { printf \"%.1f\", $DURATION / $NUM_FRAMES }")
+  # Fallback if bc is unavailable - safely pass variables using -v
+  FPS_FILTER=$(awk -v n="$NUM_FRAMES" -v d="$DURATION" 'BEGIN { printf "%.6f", n / d }')
+  INTERVAL=$(awk -v n="$NUM_FRAMES" -v d="$DURATION" 'BEGIN { printf "%.1f", d / n }')
 fi
 
 echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
