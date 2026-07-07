@@ -1,0 +1,47 @@
+name: Script Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+      - "codex/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-analysis-scripts:
+    name: Validate analysis scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Check shell syntax
+        run: |
+          bash -n \
+            plugins/seedream-evasepic/skills/analyze-reference-video/scripts/download-reference.sh \
+            plugins/seedream-evasepic/skills/analyze-reference-video/scripts/extract-frames.sh \
+            plugins/seedream-evasepic/skills/analyze-reference-video/scripts/transcribe.sh \
+            test_cli_ux.sh
+
+      - name: Run shellcheck
+        run: |
+          shellcheck \
+            plugins/seedream-evasepic/skills/analyze-reference-video/scripts/download-reference.sh \
+            plugins/seedream-evasepic/skills/analyze-reference-video/scripts/extract-frames.sh \
+            plugins/seedream-evasepic/skills/analyze-reference-video/scripts/transcribe.sh \
+            test_cli_ux.sh
+
+      - name: Run CLI UX tests
+        run: ./test_cli_ux.sh
