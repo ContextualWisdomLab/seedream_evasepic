@@ -14,6 +14,13 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  echo -e "${GREEN}Transcribe Audio Script${NC}"
+  echo -e "${YELLOW}Usage: $0 <audio_path> [model]${NC}"
+  echo -e "  Models: tiny / base / small / medium / large (default: base)"
+  exit 0
+fi
+
 AUDIO="${1:-}"
 MODEL="${2:-base}"
 
