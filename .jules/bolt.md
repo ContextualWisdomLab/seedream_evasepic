@@ -1,0 +1,3 @@
+## 2024-05-24 - Consolidate ffprobe metadata queries
+**Learning:** Calling `ffprobe` multiple times to extract different pieces of metadata from a video adds significant process startup overhead, which can be a bottleneck.
+**Action:** Use a single `ffprobe` invocation to query all necessary format and stream entries simultaneously using `-show_entries format=...:stream=... -of default=noprint_wrappers=1:nokey=0`, and parse the output in bash (e.g., using `awk`).
