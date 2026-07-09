@@ -54,6 +54,7 @@ yt-dlp \
   -o "$OUTPUT" \
   --no-playlist \
   --quiet --progress \
+  -- \
   "$URL" || {
     echo "" >&2
     echo -e "${RED}yt-dlp failed. Possible reasons:${NC}" >&2
