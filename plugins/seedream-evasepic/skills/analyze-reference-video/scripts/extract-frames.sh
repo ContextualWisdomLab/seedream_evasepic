@@ -42,13 +42,24 @@ fi
 
 mkdir -p "$OUT_DIR"
 
-# Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# Probe video metadata in a single call to reduce process overhead
+PROBE_OUTPUT=$("$FFPROBE" -v error -select_streams v:0 \
+  -show_entries format=duration:stream=width,height,r_frame_rate \
+  -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
+
+DURATION=$(echo "$PROBE_OUTPUT" | awk -F= '/^duration=/ {print $2}')
+DURATION=${DURATION:-0}
+
+WIDTH=$(echo "$PROBE_OUTPUT" | awk -F= '/^width=/ {print $2}')
+HEIGHT=$(echo "$PROBE_OUTPUT" | awk -F= '/^height=/ {print $2}')
+if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
+  RESOLUTION="${WIDTH}x${HEIGHT}"
+else
+  RESOLUTION="unknown"
+fi
+
+FPS=$(echo "$PROBE_OUTPUT" | awk -F= '/^r_frame_rate=/ {print $2}')
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
@@ -78,7 +89,7 @@ echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
   -q:v 2 \
   "$OUT_DIR/frame_%03d.jpg"
 
-FRAME_COUNT=$(ls "$OUT_DIR"/frame_*.jpg 2>/dev/null | wc -l | tr -d ' ')
+FRAME_COUNT=$(find "$OUT_DIR" -maxdepth 1 -name 'frame_*.jpg' -type f 2>/dev/null | wc -l | tr -d ' ')
 echo -e "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
 # Extract audio for transcription (16kHz mono WAV)
