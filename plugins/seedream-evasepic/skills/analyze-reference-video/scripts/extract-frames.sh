@@ -43,12 +43,30 @@ fi
 mkdir -p "$OUT_DIR"
 
 # Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# Batch ffprobe call for performance optimization
+PROBE_DATA=$("$FFPROBE" -v error -select_streams v:0 \
+  -show_entries format=duration:stream=width,height,r_frame_rate \
+  -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
+
+# Parse natively in bash
+DURATION=$(echo "$PROBE_DATA" | grep "^duration=" || true)
+DURATION=${DURATION#duration=}
+DURATION=${DURATION:-0}
+
+WIDTH=$(echo "$PROBE_DATA" | grep "^width=" || true)
+WIDTH=${WIDTH#width=}
+HEIGHT=$(echo "$PROBE_DATA" | grep "^height=" || true)
+HEIGHT=${HEIGHT#height=}
+
+if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
+  RESOLUTION="${WIDTH}x${HEIGHT}"
+else
+  RESOLUTION="unknown"
+fi
+
+FPS=$(echo "$PROBE_DATA" | grep "^r_frame_rate=" || true)
+FPS=${FPS#r_frame_rate=}
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
