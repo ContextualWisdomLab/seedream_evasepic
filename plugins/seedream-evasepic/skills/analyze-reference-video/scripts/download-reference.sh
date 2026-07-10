@@ -15,8 +15,8 @@ NC='\033[0m' # No Color
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   echo -e "${GREEN}Download Reference Video Script${NC}"
-  echo -e "${YELLOW}Usage: $0 <url> <output_path>${NC}"
-  echo -e "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+  echo -e "${YELLOW}Usage: $(basename "$0") <url> <output_path>${NC}"
+  echo -e "  Example: $(basename "$0") 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
   exit 0
 fi
 
@@ -24,8 +24,8 @@ URL="${1:-}"
 OUTPUT="${2:-}"
 
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
-  echo -e "${YELLOW}Usage: $0 <url> <output_path>${NC}" >&2
-  echo -e "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  echo -e "${YELLOW}Usage: $(basename "$0") <url> <output_path>${NC}" >&2
+  echo -e "  Example: $(basename "$0") 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
   exit 2
 fi
 
