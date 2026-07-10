@@ -54,18 +54,26 @@ PROBE_OUTPUT=$("$FFPROBE" -v error -select_streams v:0 \
   -show_entries format=duration:stream=width,height,r_frame_rate \
   -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
 
-DURATION=$(echo "$PROBE_OUTPUT" | awk -F= '/^duration=/ {print $2}')
+DURATION=0
+WIDTH=""
+HEIGHT=""
+FPS="unknown"
+while IFS='=' read -r key val; do
+  case "$key" in
+    duration) DURATION="$val" ;;
+    width) WIDTH="$val" ;;
+    height) HEIGHT="$val" ;;
+    r_frame_rate) FPS="$val" ;;
+  esac
+done <<< "$PROBE_OUTPUT"
 DURATION=${DURATION:-0}
 
-WIDTH=$(echo "$PROBE_OUTPUT" | awk -F= '/^width=/ {print $2}')
-HEIGHT=$(echo "$PROBE_OUTPUT" | awk -F= '/^height=/ {print $2}')
 if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
   RESOLUTION="${WIDTH}x${HEIGHT}"
 else
   RESOLUTION="unknown"
 fi
 
-FPS=$(echo "$PROBE_OUTPUT" | awk -F= '/^r_frame_rate=/ {print $2}')
 FPS=${FPS:-unknown}
 
 {
