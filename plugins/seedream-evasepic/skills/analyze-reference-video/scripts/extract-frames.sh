@@ -54,19 +54,25 @@ PROBE_OUTPUT=$("$FFPROBE" -v error -select_streams v:0 \
   -show_entries format=duration:stream=width,height,r_frame_rate \
   -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
 
-DURATION=$(echo "$PROBE_OUTPUT" | awk -F= '/^duration=/ {print $2}')
-DURATION=${DURATION:-0}
+DURATION=0
+WIDTH=""
+HEIGHT=""
+FPS="unknown"
 
-WIDTH=$(echo "$PROBE_OUTPUT" | awk -F= '/^width=/ {print $2}')
-HEIGHT=$(echo "$PROBE_OUTPUT" | awk -F= '/^height=/ {print $2}')
+while IFS='=' read -r key value; do
+  case "$key" in
+    duration) DURATION="$value" ;;
+    width) WIDTH="$value" ;;
+    height) HEIGHT="$value" ;;
+    r_frame_rate) FPS="$value" ;;
+  esac
+done <<< "$PROBE_OUTPUT"
+
 if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
   RESOLUTION="${WIDTH}x${HEIGHT}"
 else
   RESOLUTION="unknown"
 fi
-
-FPS=$(echo "$PROBE_OUTPUT" | awk -F= '/^r_frame_rate=/ {print $2}')
-FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
@@ -96,7 +102,10 @@ echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
   -q:v 2 \
   "$OUT_DIR/frame_%03d.jpg"
 
-FRAME_COUNT=$(find "$OUT_DIR" -maxdepth 1 -name 'frame_*.jpg' -type f 2>/dev/null | wc -l | tr -d ' ')
+shopt -s nullglob
+frames=("$OUT_DIR"/frame_*.jpg)
+FRAME_COUNT=${#frames[@]}
+shopt -u nullglob
 echo -e "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
 # Extract audio for transcription (16kHz mono WAV)
