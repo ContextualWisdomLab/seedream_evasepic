@@ -16,20 +16,22 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-  echo -e "${GREEN}Extract Frames Script${NC}"
-  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
-  echo -e "  num_frames defaults to 12"
-  exit 0
-fi
+for arg in "$@"; do
+  if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+    printf "%b\n" "${GREEN}Extract Frames Script${NC}"
+    printf "%b\n" "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
+    printf "%b\n" "  num_frames defaults to 12"
+    exit 0
+  fi
+done
 
 VIDEO="${1:-}"
 OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
-  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
-  echo -e "  num_frames defaults to 12" >&2
+  printf "%b\n" "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
+  printf "%b\n" "  num_frames defaults to 12" >&2
   exit 2
 fi
 
@@ -38,12 +40,12 @@ FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
 FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
 
 if [ ! -x "$FFMPEG" ]; then
-  echo -e "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
+  printf "%b\n" "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
   exit 1
 fi
 
 if [ ! -f "$VIDEO" ]; then
-  echo -e "${RED}Error: video not found: $VIDEO${NC}" >&2
+  printf "%b\n" "${RED}Error: video not found: $VIDEO${NC}" >&2
   exit 1
 fi
 
@@ -76,8 +78,8 @@ FPS=${FPS:-unknown}
   echo "num_frames_requested=$NUM_FRAMES"
 } > "$OUT_DIR/metadata.txt"
 
-echo -e "${CYAN}Video: ${NC}$(basename "$VIDEO")"
-echo -e "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
+printf "%b\n" "${CYAN}Video: ${NC}$(basename "$VIDEO")"
+printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
 
 # Extract evenly-spaced frames across the full duration
 if command -v bc >/dev/null 2>&1; then
@@ -89,7 +91,7 @@ else
   INTERVAL=$(awk "BEGIN { printf \"%.1f\", $DURATION / $NUM_FRAMES }")
 fi
 
-echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
+printf "%b\n" "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
 
 "$FFMPEG" -y -v warning -i "$VIDEO" \
   -vf "fps=$FPS_FILTER" \
@@ -97,17 +99,17 @@ echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
   "$OUT_DIR/frame_%03d.jpg"
 
 FRAME_COUNT=$(find "$OUT_DIR" -maxdepth 1 -name 'frame_*.jpg' -type f 2>/dev/null | wc -l | tr -d ' ')
-echo -e "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
+printf "%b\n" "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
 # Extract audio for transcription (16kHz mono WAV)
-echo -e "${CYAN}Extracting audio...${NC}"
+printf "%b\n" "${CYAN}Extracting audio...${NC}"
 if "$FFMPEG" -y -v warning -i "$VIDEO" \
      -vn -acodec pcm_s16le -ar 16000 -ac 1 \
      "$OUT_DIR/audio.wav" 2>/dev/null; then
-  echo -e "${GREEN}Audio saved: $OUT_DIR/audio.wav${NC}"
+  printf "%b\n" "${GREEN}Audio saved: $OUT_DIR/audio.wav${NC}"
 else
-  echo -e "${YELLOW}No audio stream (silent video) — audio.wav not created${NC}"
+  printf "%b\n" "${YELLOW}No audio stream (silent video) — audio.wav not created${NC}"
   echo "audio=silent" >> "$OUT_DIR/metadata.txt"
 fi
 
-echo -e "${GREEN}Done. Output in: $OUT_DIR${NC}"
+printf "%b\n" "${GREEN}Done. Output in: $OUT_DIR${NC}"
