@@ -33,6 +33,11 @@ if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   exit 2
 fi
 
+if ! echo "$NUM_FRAMES" | grep -Eq '^[1-9][0-9]*$'; then
+  echo -e "${RED}Error: num_frames must be a positive integer.${NC}" >&2
+  exit 2
+fi
+
 # Auto-detect ffmpeg / ffprobe path (Homebrew Apple Silicon vs Intel vs Linux)
 FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
 FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"

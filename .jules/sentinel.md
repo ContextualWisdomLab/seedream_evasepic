@@ -7,3 +7,7 @@
 **Vulnerability:** `extract-frames.sh`의 `bc` 미설치 fallback 경로에서 `awk "BEGIN ... $NUM_FRAMES / $DURATION"` 형태로 셸 변수를 awk 프로그램 문자열에 직접 보간하여, 조작된 입력이 awk 코드로 해석될 수 있음.
 **Learning:** awk 프로그램 본문은 고정된 작은따옴표 문자열로 유지하고, 동적 값은 `awk -v name="$value"`로 전달해야 코드와 데이터가 분리됨.
 **Prevention:** `NUM_FRAMES`와 `DURATION`은 `-v nf="$NUM_FRAMES" -v dur="$DURATION"`로 전달하고, 회귀 테스트에서 직접 보간 패턴이 재등장하면 실패하도록 검사함.
+## 2026-07-12 - [CRITICAL] Arithmetic injection via missing numeric validation
+**Vulnerability:** The `extract-frames.sh` script does not validate the `NUM_FRAMES` argument, exposing arithmetic operations and `bc` to potential arithmetic or command injection via malformed input.
+**Learning:** Numeric inputs passed from command line should be strictly validated before being passed to arithmetic evaluation or external tools.
+**Prevention:** Validate numeric inputs strictly using POSIX-compatible regex like `echo "$VAR" | grep -Eq '^[1-9][0-9]*$'` prior to usage.
