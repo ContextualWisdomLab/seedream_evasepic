@@ -24,6 +24,7 @@ URL="${1:-}"
 OUTPUT="${2:-}"
 
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
+  echo -e "${RED}Error: Missing required argument(s).${NC}" >&2
   echo -e "${YELLOW}Usage: $(basename "$0") <url> <output_path>${NC}" >&2
   echo -e "  Example: $(basename "$0") 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
   exit 2
