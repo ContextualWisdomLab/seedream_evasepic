@@ -26,6 +26,15 @@ done
 AUDIO="${1:-}"
 MODEL="${2:-base}"
 
+case "$MODEL" in
+  tiny|base|small|medium|large) ;;
+  *)
+    echo -e "${RED}Error: Invalid model specified: $MODEL${NC}" >&2
+    echo -e "  Allowed models: tiny / base / small / medium / large" >&2
+    exit 2
+    ;;
+esac
+
 if [ -z "$AUDIO" ]; then
   echo -e "${RED}Error: Missing required argument(s).${NC}" >&2
   echo -e "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}" >&2
@@ -42,12 +51,13 @@ fi
 if command -v whisper >/dev/null 2>&1; then
   echo -e "${CYAN}Transcribing with whisper CLI (model: $MODEL)...${NC}"
   OUT_DIR="$(dirname "$AUDIO")"
-  whisper "$AUDIO" \
+  whisper \
     --model "$MODEL" \
     --output_format txt \
     --output_format json \
     --output_dir "$OUT_DIR" \
-    --verbose False
+    --verbose False \
+    -- "$AUDIO"
   echo -e "${GREEN}Transcript saved to $OUT_DIR/$(basename "${AUDIO%.*}").txt${NC}"
   exit 0
 fi

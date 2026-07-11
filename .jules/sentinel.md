@@ -11,3 +11,8 @@
 **Vulnerability:** The `extract-frames.sh` script does not validate the `NUM_FRAMES` argument, exposing arithmetic operations and `bc` to potential arithmetic or command injection via malformed input.
 **Learning:** Numeric inputs passed from command line should be strictly validated before being passed to arithmetic evaluation or external tools.
 **Prevention:** Validate numeric inputs strictly using POSIX-compatible regex like `echo "$VAR" | grep -Eq '^[1-9][0-9]*$'` prior to usage.
+
+## 2026-07-11 - [CRITICAL] Whisper 모델 로딩 취약점 및 인자 주입 방지
+**Vulnerability:** transcribe.sh에서 모델명(MODEL)을 검증 없이 사용해 임의의 로컬 PyTorch 모델(.pt)을 통한 Insecure Deserialization (Pickle RCE) 위험 및 CLI 인자 주입 취약점이 존재했습니다.
+**Learning:** 외부 입력값을 모델명이나 파일 경로로 사용할 때는 화이트리스트 검증이 필수이며, 쉘 명령어에 변수를 넘길 때는 `--`를 사용해 옵션 파싱을 막아야 합니다.
+**Prevention:** 허용된 모델명(tiny, base, small, medium, large)인지 확인하는 검증 로직을 추가하고, whisper 명령어의 인자 끝에 `--`를 적용했습니다.
