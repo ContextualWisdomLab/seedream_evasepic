@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   echo -e "${GREEN}Extract Frames Script${NC}"
-  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
+  echo -e "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}"
   echo -e "  num_frames defaults to 12"
   exit 0
 fi
@@ -28,7 +28,7 @@ OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
-  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
+  echo -e "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}" >&2
   echo -e "  num_frames defaults to 12" >&2
   exit 2
 fi
