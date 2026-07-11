@@ -88,14 +88,8 @@ echo -e "${CYAN}Video: ${NC}$(basename "$VIDEO")"
 echo -e "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
 
 # Extract evenly-spaced frames across the full duration
-if command -v bc >/dev/null 2>&1; then
-  FPS_FILTER=$(echo "scale=6; $NUM_FRAMES / $DURATION" | bc)
-  INTERVAL=$(echo "scale=1; $DURATION / $NUM_FRAMES" | bc)
-else
-  # Fallback if bc is unavailable
-  FPS_FILTER=$(awk -v nf="$NUM_FRAMES" -v dur="$DURATION" 'BEGIN { printf "%.6f", nf / dur }')
-  INTERVAL=$(awk -v nf="$NUM_FRAMES" -v dur="$DURATION" 'BEGIN { printf "%.1f", dur / nf }')
-fi
+# Optimization: Consolidate math operations into a single awk process to reduce startup overhead
+read -r FPS_FILTER INTERVAL <<< "$(awk -v nf="$NUM_FRAMES" -v dur="$DURATION" 'BEGIN { printf "%.6f %.1f\n", nf / dur, dur / nf }')"
 
 echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
 
