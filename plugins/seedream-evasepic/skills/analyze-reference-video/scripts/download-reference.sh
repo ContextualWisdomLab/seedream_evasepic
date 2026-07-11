@@ -13,12 +13,14 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-  echo -e "${GREEN}Download Reference Video Script${NC}"
-  echo -e "${YELLOW}Usage: $(basename "$0") <url> <output_path>${NC}"
-  echo -e "  Example: $(basename "$0") 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
-  exit 0
-fi
+for arg in "$@"; do
+  if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+    echo -e "${GREEN}Download Reference Video Script${NC}"
+    echo -e "${YELLOW}Usage: $(basename "$0") <url> <output_path>${NC}"
+    echo -e "  Example: $(basename "$0") 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+    exit 0
+  fi
+done
 
 URL="${1:-}"
 OUTPUT="${2:-}"

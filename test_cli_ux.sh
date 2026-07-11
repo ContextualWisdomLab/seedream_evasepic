@@ -84,3 +84,11 @@ if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing req
 fi
 echo "PASS: download-reference.sh prints explicit error message"
 echo "====================================="
+
+echo "=== Testing help flag position flexibility ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "--help" | grep -q "Download Reference Video Script"; then
+  echo "FAIL: download-reference.sh did not recognize --help as second argument" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh recognizes --help at any position"
+echo "====================================="
