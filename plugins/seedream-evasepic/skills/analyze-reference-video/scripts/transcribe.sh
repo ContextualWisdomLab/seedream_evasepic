@@ -25,6 +25,7 @@ AUDIO="${1:-}"
 MODEL="${2:-base}"
 
 if [ -z "$AUDIO" ]; then
+  echo -e "${RED}Error: Missing required argument(s).${NC}" >&2
   echo -e "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}" >&2
   echo -e "  Models: tiny / base / small / medium / large (default: base)" >&2
   exit 2

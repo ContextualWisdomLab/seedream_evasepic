@@ -28,6 +28,7 @@ OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
+  echo -e "${RED}Error: Missing required argument(s).${NC}" >&2
   echo -e "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}" >&2
   echo -e "  num_frames defaults to 12" >&2
   exit 2
