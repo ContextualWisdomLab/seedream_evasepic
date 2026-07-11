@@ -1,9 +1,9 @@
-## 2026-07-08 - [CRITICAL] awk 명령어 문자열 보간법(Command Injection) 취약점 수정
-**Vulnerability:** `awk` 명령어 사용 시 쉘 변수(`$NUM_FRAMES`, `$DURATION`)를 문자열에 직접 삽입(interpolation)하여 커맨드 인젝션(Command Injection) 공격에 노출될 위험이 존재함.
-**Learning:** `awk` 쿼리 문자열 안에 신뢰할 수 없는 환경 변수나 쉘 변수를 직접 삽입하면, 악의적인 입력값이 전달될 경우 임의의 코드 실행으로 이어질 수 있음.
-**Prevention:** `awk` 명령어 실행 시 변수는 `-v` 플래그(예: `awk -v nf="$NUM_FRAMES"`)를 통해 안전하게 전달하고, 쿼리 문자열은 작은따옴표로 감싸서(`'...'`) 쉘이 먼저 확장하지 않도록 보호해야 함.
+## 2026-07-10 - yt-dlp 인자 주입(Argument Injection) 취약점 수정
+**Vulnerability:** yt-dlp 실행 시 외부 입력 URL이 검증 없이 인자로 사용되어 악의적인 옵션 주입 가능
+**Learning:** bash 스크립트에서 외부 입력을 명령어 인자로 넘길 때 하이픈(-)으로 시작하는 문자열이 옵션으로 오인될 수 있음
+**Prevention:** 명령어와 인자 사이에 '--'를 명시하여 옵션의 끝을 알리고, 변수가 순수한 인자로만 처리되도록 방어해야 함
 
-## 2026-07-09 - [CRITICAL] yt-dlp 명령어 인수 삽입(Argument Injection) 취약점 수정
-**Vulnerability:** `yt-dlp` 와 같은 외부 커맨드라인 도구를 쉘 스크립트에서 실행할 때, 사용자가 입력한 `$URL` 문자열을 검증 없이 인수로 넘기면 옵션 주입(Argument Injection) 위험이 존재함. (예: `-o` 같은 옵션 플래그가 값으로 전달되는 경우)
-**Learning:** 커맨드라인 도구 실행 시 신뢰할 수 없는 문자열 변수를 마지막에 추가할 경우, 도구의 인수로 해석되어 예기치 않은 옵션 플래그로 작동할 수 있으므로 주의해야 함.
-**Prevention:** 옵션 파싱의 끝을 명시하는 `--` 구분자를 변수 앞에 추가(`-- "$URL"`)하여 쉘이나 도구가 입력값을 옵션으로 처리하지 않고 순수 문자열 매개변수로 안전하게 취급하도록 해야 함.
+## 2026-07-11 - [CRITICAL] awk 명령어 문자열 보간(Command Injection) 취약점 수정
+**Vulnerability:** `extract-frames.sh`의 `bc` 미설치 fallback 경로에서 `awk "BEGIN ... $NUM_FRAMES / $DURATION"` 형태로 셸 변수를 awk 프로그램 문자열에 직접 보간하여, 조작된 입력이 awk 코드로 해석될 수 있음.
+**Learning:** awk 프로그램 본문은 고정된 작은따옴표 문자열로 유지하고, 동적 값은 `awk -v name="$value"`로 전달해야 코드와 데이터가 분리됨.
+**Prevention:** `NUM_FRAMES`와 `DURATION`은 `-v nf="$NUM_FRAMES" -v dur="$DURATION"`로 전달하고, 회귀 테스트에서 직접 보간 패턴이 재등장하면 실패하도록 검사함.
