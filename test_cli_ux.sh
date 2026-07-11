@@ -62,3 +62,17 @@ fi
 
 echo "PASS: yt-dlp URL is protected by -- argument separator"
 echo "====================================="
+
+echo "=== Testing awk fallback variable binding ==="
+if grep -n -F 'awk "BEGIN' "$SCRIPT_DIR/extract-frames.sh"; then
+  echo "FAIL: extract-frames.sh must not interpolate shell variables into an awk program string" >&2
+  exit 1
+fi
+
+if ! grep -n -F 'awk -v nf="$NUM_FRAMES" -v dur="$DURATION"' "$SCRIPT_DIR/extract-frames.sh"; then
+  echo "FAIL: extract-frames.sh must pass NUM_FRAMES and DURATION to awk with -v bindings" >&2
+  exit 1
+fi
+
+echo "PASS: awk fallback keeps dynamic values out of the awk program string"
+echo "====================================="
