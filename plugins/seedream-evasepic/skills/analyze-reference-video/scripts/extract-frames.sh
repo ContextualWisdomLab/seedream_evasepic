@@ -16,12 +16,14 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-  echo -e "${GREEN}Extract Frames Script${NC}"
-  echo -e "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}"
-  echo -e "  num_frames defaults to 12"
-  exit 0
-fi
+for arg in "$@"; do
+  if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+    echo -e "${GREEN}Extract Frames Script${NC}"
+    echo -e "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}"
+    echo -e "  num_frames defaults to 12"
+    exit 0
+  fi
+done
 
 VIDEO="${1:-}"
 OUT_DIR="${2:-}"
