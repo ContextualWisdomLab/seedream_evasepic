@@ -16,13 +16,11 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Auto-detect ffmpeg / ffprobe path (Homebrew Apple Silicon vs Intel vs Linux)
-FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
-FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
-
-if [ ! -x "$FFMPEG" ]; then
-  echo -e "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
-  exit 1
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  echo -e "${GREEN}Extract Frames Script${NC}"
+  echo -e "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
+  echo -e "  num_frames defaults to 12"
+  exit 0
 fi
 
 VIDEO="${1:-}"
@@ -35,6 +33,15 @@ if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   exit 2
 fi
 
+# Auto-detect ffmpeg / ffprobe path (Homebrew Apple Silicon vs Intel vs Linux)
+FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
+FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
+
+if [ ! -x "$FFMPEG" ]; then
+  echo -e "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
+  exit 1
+fi
+
 if [ ! -f "$VIDEO" ]; then
   echo -e "${RED}Error: video not found: $VIDEO${NC}" >&2
   exit 1
@@ -42,13 +49,24 @@ fi
 
 mkdir -p "$OUT_DIR"
 
-# Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# Probe video metadata in a single call to reduce process overhead
+PROBE_OUTPUT=$("$FFPROBE" -v error -select_streams v:0 \
+  -show_entries format=duration:stream=width,height,r_frame_rate \
+  -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
+
+DURATION=$(echo "$PROBE_OUTPUT" | awk -F= '/^duration=/ {print $2}')
+DURATION=${DURATION:-0}
+
+WIDTH=$(echo "$PROBE_OUTPUT" | awk -F= '/^width=/ {print $2}')
+HEIGHT=$(echo "$PROBE_OUTPUT" | awk -F= '/^height=/ {print $2}')
+if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
+  RESOLUTION="${WIDTH}x${HEIGHT}"
+else
+  RESOLUTION="unknown"
+fi
+
+FPS=$(echo "$PROBE_OUTPUT" | awk -F= '/^r_frame_rate=/ {print $2}')
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
@@ -67,8 +85,8 @@ if command -v bc >/dev/null 2>&1; then
   INTERVAL=$(echo "scale=1; $DURATION / $NUM_FRAMES" | bc)
 else
   # Fallback if bc is unavailable
-  FPS_FILTER=$(awk "BEGIN { printf \"%.6f\", $NUM_FRAMES / $DURATION }")
-  INTERVAL=$(awk "BEGIN { printf \"%.1f\", $DURATION / $NUM_FRAMES }")
+  FPS_FILTER=$(awk -v nf="$NUM_FRAMES" -v dur="$DURATION" 'BEGIN { printf "%.6f", nf / dur }')
+  INTERVAL=$(awk -v nf="$NUM_FRAMES" -v dur="$DURATION" 'BEGIN { printf "%.1f", dur / nf }')
 fi
 
 echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
@@ -78,7 +96,7 @@ echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
   -q:v 2 \
   "$OUT_DIR/frame_%03d.jpg"
 
-FRAME_COUNT=$(ls "$OUT_DIR"/frame_*.jpg 2>/dev/null | wc -l | tr -d ' ')
+FRAME_COUNT=$(find "$OUT_DIR" -maxdepth 1 -name 'frame_*.jpg' -type f 2>/dev/null | wc -l | tr -d ' ')
 echo -e "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
 # Extract audio for transcription (16kHz mono WAV)
