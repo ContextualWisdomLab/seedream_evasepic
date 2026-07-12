@@ -106,7 +106,12 @@ echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
   -q:v 2 \
   "$OUT_DIR/frame_%03d.jpg"
 
-FRAME_COUNT=$(find "$OUT_DIR" -maxdepth 1 -name 'frame_*.jpg' -type f 2>/dev/null | wc -l | tr -d ' ')
+# Optimization: Use native bash array globbing instead of spawning find, wc, and tr processes
+shopt -s nullglob
+frames=("$OUT_DIR"/frame_*.jpg)
+shopt -u nullglob
+FRAME_COUNT="${#frames[@]}"
+
 echo -e "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
 # Extract audio for transcription (16kHz mono WAV)
