@@ -92,3 +92,19 @@ if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "--help" | grep -q "Do
 fi
 echo "PASS: download-reference.sh recognizes --help at any position"
 echo "====================================="
+
+echo "=== Testing error message and usage block on invalid num_frames ==="
+if ! bash "$SCRIPT_DIR/extract-frames.sh" "video.mp4" "out" "invalid" 2>&1 | grep -q "Usage:"; then
+  echo "FAIL: extract-frames.sh did not print usage block on invalid num_frames" >&2
+  exit 1
+fi
+echo "PASS: extract-frames.sh prints usage block on invalid num_frames"
+echo "====================================="
+
+echo "=== Testing error message and usage block on invalid model ==="
+if ! bash "$SCRIPT_DIR/transcribe.sh" "audio.wav" "invalid_model" 2>&1 | grep -q "Usage:"; then
+  echo "FAIL: transcribe.sh did not print usage block on invalid model" >&2
+  exit 1
+fi
+echo "PASS: transcribe.sh prints usage block on invalid model"
+echo "====================================="

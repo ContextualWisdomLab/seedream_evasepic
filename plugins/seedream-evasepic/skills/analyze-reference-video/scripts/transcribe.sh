@@ -30,7 +30,8 @@ case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
     printf "%b\n" "${RED}Error: Invalid model specified: $MODEL${NC}" >&2
-    printf "%b\n" "  Allowed models: tiny / base / small / medium / large" >&2
+    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}" >&2
+    printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
     exit 2
     ;;
 esac
