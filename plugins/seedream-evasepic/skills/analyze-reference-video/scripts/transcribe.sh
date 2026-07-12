@@ -30,7 +30,8 @@ case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
     printf "%b\n" "${RED}Error: Invalid model specified: $MODEL${NC}" >&2
-    printf "%b\n" "  Allowed models: tiny / base / small / medium / large" >&2
+    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}" >&2
+    printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
     exit 2
     ;;
 esac
@@ -81,9 +82,9 @@ audio = os.environ.get("AUDIO_PATH")
 model_name = os.environ.get("WHISPER_MODEL")
 out_base = os.path.splitext(audio)[0]
 
-print(f"Loading whisper model: {model_name}...")
+print(f"\033[0;36mLoading whisper model: {model_name}...\033[0m")
 model = whisper.load_model(model_name)
-print(f"Transcribing {audio}...")
+print(f"\033[0;36mTranscribing {audio}...\033[0m")
 result = model.transcribe(audio)
 
 # Write plain text
@@ -101,9 +102,9 @@ with open(out_base + ".segments.json", "w") as f:
         ]
     }, f, ensure_ascii=False, indent=2)
 
-print(f"Transcript: {out_base}.txt")
-print(f"Segments:   {out_base}.segments.json")
-print(f"Language detected: {result.get('language', 'unknown')}")
+print(f"\033[0;32mTranscript: {out_base}.txt\033[0m")
+print(f"\033[0;32mSegments:   {out_base}.segments.json\033[0m")
+print(f"\033[0;32mLanguage detected: {result.get('language', 'unknown')}\033[0m")
 PYEOF
 
   exit 0
