@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Extract Frames Script${NC}"
-    printf "%b\n" "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
+    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}"
     printf "%b\n" "  num_frames defaults to 12"
     exit 0
   fi
@@ -30,8 +30,14 @@ OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
-  printf "%b\n" "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
+  printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
+  exit 2
+fi
+
+if ! echo "$NUM_FRAMES" | grep -Eq '^[1-9][0-9]*$'; then
+  printf "%b\n" "${RED}Error: num_frames must be a positive integer.${NC}" >&2
   exit 2
 fi
 
@@ -56,18 +62,26 @@ PROBE_OUTPUT=$("$FFPROBE" -v error -select_streams v:0 \
   -show_entries format=duration:stream=width,height,r_frame_rate \
   -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
 
-DURATION=$(echo "$PROBE_OUTPUT" | awk -F= '/^duration=/ {print $2}')
+DURATION=0
+WIDTH=""
+HEIGHT=""
+FPS="unknown"
+while IFS='=' read -r key val; do
+  case "$key" in
+    duration) DURATION="$val" ;;
+    width) WIDTH="$val" ;;
+    height) HEIGHT="$val" ;;
+    r_frame_rate) FPS="$val" ;;
+  esac
+done <<< "$PROBE_OUTPUT"
 DURATION=${DURATION:-0}
 
-WIDTH=$(echo "$PROBE_OUTPUT" | awk -F= '/^width=/ {print $2}')
-HEIGHT=$(echo "$PROBE_OUTPUT" | awk -F= '/^height=/ {print $2}')
 if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
   RESOLUTION="${WIDTH}x${HEIGHT}"
 else
   RESOLUTION="unknown"
 fi
 
-FPS=$(echo "$PROBE_OUTPUT" | awk -F= '/^r_frame_rate=/ {print $2}')
 FPS=${FPS:-unknown}
 
 {
@@ -82,14 +96,8 @@ printf "%b\n" "${CYAN}Video: ${NC}$(basename "$VIDEO")"
 printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
 
 # Extract evenly-spaced frames across the full duration
-if command -v bc >/dev/null 2>&1; then
-  FPS_FILTER=$(echo "scale=6; $NUM_FRAMES / $DURATION" | bc)
-  INTERVAL=$(echo "scale=1; $DURATION / $NUM_FRAMES" | bc)
-else
-  # Fallback if bc is unavailable
-  FPS_FILTER=$(awk "BEGIN { printf \"%.6f\", $NUM_FRAMES / $DURATION }")
-  INTERVAL=$(awk "BEGIN { printf \"%.1f\", $DURATION / $NUM_FRAMES }")
-fi
+# Optimization: Consolidate math operations into a single awk process to reduce startup overhead
+read -r FPS_FILTER INTERVAL <<< "$(awk -v nf="$NUM_FRAMES" -v dur="$DURATION" 'BEGIN { printf "%.6f %.1f\n", nf / dur, dur / nf }')"
 
 printf "%b\n" "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
 
@@ -98,7 +106,12 @@ printf "%b\n" "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${N
   -q:v 2 \
   "$OUT_DIR/frame_%03d.jpg"
 
-FRAME_COUNT=$(find "$OUT_DIR" -maxdepth 1 -name 'frame_*.jpg' -type f 2>/dev/null | wc -l | tr -d ' ')
+# Optimization: Use native bash array globbing instead of spawning find, wc, and tr processes
+shopt -s nullglob
+frames=("$OUT_DIR"/frame_*.jpg)
+shopt -u nullglob
+FRAME_COUNT="${#frames[@]}"
+
 printf "%b\n" "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
 # Extract audio for transcription (16kHz mono WAV)
