@@ -1,3 +1,7 @@
+## 2024-05-18 - CLI 도움말 파싱 개선
+**Learning:** 사용자는 도움말 플래그(-h, --help)를 항상 첫 번째 인자로 전달하지 않으며, 이로 인해 도움말 대신 오류가 발생할 수 있습니다.
+**Action:** 모든 스크립트에서 인자를 순회하며(for arg in "$@") 플래그를 확인하고, 호환성을 위해 echo -e 대신 printf "%b\n"을 사용하도록 수정합니다.
+
 ## 2026-07-10 - Clean CLI Usage Output
 **Learning:** When scripts are executed via paths (e.g. plugins/...), using $0 directly in usage instructions clutter the terminal output and harms readability.
 **Action:** Use $(basename "$0") instead of $0 in CLI help and usage messages to display only the script name, making the output cleaner and easier to read.
