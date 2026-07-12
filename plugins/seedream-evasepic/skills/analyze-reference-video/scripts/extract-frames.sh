@@ -38,6 +38,8 @@ fi
 
 if ! echo "$NUM_FRAMES" | grep -Eq '^[1-9][0-9]*$'; then
   printf "%b\n" "${RED}Error: num_frames must be a positive integer.${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}" >&2
+  printf "%b\n" "  num_frames defaults to 12" >&2
   exit 2
 fi
 
