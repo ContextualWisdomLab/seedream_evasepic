@@ -22,7 +22,7 @@
 **Learning:** 외부 입력값을 모델명이나 파일 경로로 사용할 때는 화이트리스트 검증이 필수이며, 쉘 명령어에 변수를 넘길 때는 `--`를 사용해 옵션 파싱을 막아야 합니다.
 **Prevention:** 허용된 모델명(tiny, base, small, medium, large)인지 확인하는 검증 로직을 추가하고, whisper 명령어의 인자 끝에 `--`를 적용했습니다.
 
-## 2024-05-24 - [Command and Option Injection in Bash Scripts]
+## 2026-07-07 to 2026-07-13 - [Command and Option Injection in Bash Scripts]
 **Vulnerability:** [Unvalidated arithmetic expressions in `bc`, direct `awk` program interpolation, and option injection in `yt-dlp` argument parsing]
 **Learning:** [Keep arithmetic inputs strictly validated, keep the `awk` program fixed while passing values with `-v`, and use `--` before dynamic `yt-dlp` arguments; direct arbitrary command execution applies to the interpolated `awk` program case]
-**Prevention:** [Always validate numeric inputs using regex (`grep -Eq '^[1-9][0-9]*$'`), use `-v` flag in `awk` for variables, and use `--` to signify end of options before dynamic arguments]
+**Prevention:** [Validate positive-integer CLI inputs such as `NUM_FRAMES` with the shell-native `case` pattern used by `extract-frames.sh` (or an equivalent integer check), preserve valid positive-decimal `DURATION` values from `ffprobe`, use `-v` flag in `awk` for variables, and use `--` to signify end of options before dynamic arguments]
