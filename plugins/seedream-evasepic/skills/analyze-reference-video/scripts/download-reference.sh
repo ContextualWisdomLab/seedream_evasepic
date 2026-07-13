@@ -16,8 +16,8 @@ NC='\033[0m' # No Color
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
-    printf "%b\n" "${YELLOW}Usage: $(basename -- "$0") <url> <output_path>${NC}"
-    printf "%b\n" "  Example: $(basename -- "$0") 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+    printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}"
+    printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
     exit 0
   fi
 done
@@ -27,8 +27,8 @@ OUTPUT="${2:-}"
 
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: $(basename -- "$0") <url> <output_path>${NC}" >&2
-  printf "%b\n" "  Example: $(basename -- "$0") 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
+  printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
   exit 2
 fi
 
@@ -50,7 +50,9 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
 fi
 
 # Ensure output directory exists
-OUT_DIR="$(dirname -- "$OUTPUT")"
+OUT_DIR="${OUTPUT%/*}"
+[ "$OUT_DIR" = "$OUTPUT" ] && OUT_DIR="."
+[ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
 printf "%b\n" "${CYAN}Downloading from: ${NC}$URL"
