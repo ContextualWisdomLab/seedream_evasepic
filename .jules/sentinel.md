@@ -1,3 +1,8 @@
+## 2026-07-07 - Prevent Command Injection in awk via direct string interpolation
+**Vulnerability:** Shell variables directly interpolated into an `awk` command string (e.g., `awk "BEGIN { print $VAR }"`) can lead to arbitrary command execution if the variable contains unescaped characters or quotes (e.g., `VAR='1; system("id");'`). This was found in `extract-frames.sh` where user-provided `NUM_FRAMES` was passed directly into `awk`.
+**Learning:** This vulnerability existed because the script failed to validate the input structure before usage and improperly formed the `awk` command string using double quotes for interpolation.
+**Prevention:** Always use the `-v` option (e.g., `awk -v var="$VAR"`) to pass variables safely into `awk` scripts. Furthermore, validate numeric inputs strictly using POSIX-compatible regex (e.g., `echo "$VAR" | grep -Eq '^[1-9][0-9]*$'`) before passing them to external commands or arithmetic evaluations.
+
 ## 2026-07-10 - yt-dlp 인자 주입(Argument Injection) 취약점 수정
 **Vulnerability:** yt-dlp 실행 시 외부 입력 URL이 검증 없이 인자로 사용되어 악의적인 옵션 주입 가능
 **Learning:** bash 스크립트에서 외부 입력을 명령어 인자로 넘길 때 하이픈(-)으로 시작하는 문자열이 옵션으로 오인될 수 있음
