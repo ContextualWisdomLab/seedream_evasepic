@@ -19,9 +19,9 @@ NC='\033[0m' # No Color
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Extract Frames Script${NC}"
-    printf "%b\n" "${YELLOW}Usage: $(basename -- "$0") <video_path> <output_dir> [num_frames]${NC}"
+    printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}"
     printf "%b\n" "  num_frames defaults to 12"
-    printf "%b\n" "  Example: $(basename "$0") /tmp/video.mp4 /tmp/frames 24"
+    printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24"
     exit 0
   fi
 done
@@ -32,18 +32,18 @@ NUM_FRAMES="${3:-12}"
 
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: $(basename -- "$0") <video_path> <output_dir> [num_frames]${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
-  printf "%b\n" "  Example: $(basename "$0") /tmp/video.mp4 /tmp/frames 24" >&2
+  printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
   exit 2
 fi
 
 case "$NUM_FRAMES" in
   ''|*[!0-9]*|0*)
     printf "%b\n" "${RED}Error: num_frames must be a positive integer.${NC}" >&2
-    printf "%b\n" "${YELLOW}Usage: $(basename -- "$0") <video_path> <output_dir> [num_frames]${NC}" >&2
+    printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
     printf "%b\n" "  num_frames defaults to 12" >&2
-    printf "%b\n" "  Example: $(basename "$0") /tmp/video.mp4 /tmp/frames 24" >&2
+    printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
     exit 2
     ;;
 esac
@@ -59,9 +59,9 @@ fi
 
 if [ ! -f "$VIDEO" ]; then
   printf "%b\n" "${RED}Error: video not found: $VIDEO${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
-  printf "%b\n" "  Example: $(basename "$0") /tmp/video.mp4 /tmp/frames 24" >&2
+  printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
   exit 1
 fi
 
@@ -112,7 +112,7 @@ FPS=${FPS:-unknown}
   echo "num_frames_requested=$NUM_FRAMES"
 } > "$OUT_DIR/metadata.txt"
 
-printf "%b\n" "${CYAN}Video: ${NC}$(basename -- "$VIDEO")"
+printf "%b\n" "${CYAN}Video: ${NC}${VIDEO##*/}"
 printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
 
 # Extract evenly-spaced frames across the full duration.
