@@ -63,12 +63,12 @@ echo -e "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTIO
 
 # Extract evenly-spaced frames across the full duration
 if command -v bc >/dev/null 2>&1; then
-  FPS_FILTER=$(echo "scale=6; if($DURATION==0) print 0 else $NUM_FRAMES / $DURATION" | bc)
-  INTERVAL=$(echo "scale=1; if($NUM_FRAMES==0) print 0 else $DURATION / $NUM_FRAMES" | bc)
+  FPS_FILTER=$(echo "scale=6; $NUM_FRAMES / $DURATION" | bc)
+  INTERVAL=$(echo "scale=1; $DURATION / $NUM_FRAMES" | bc)
 else
-  # Fallback if bc is unavailable - safely pass variables using -v
-  FPS_FILTER=$(awk -v n="$NUM_FRAMES" -v d="$DURATION" 'BEGIN { if (d + 0 == 0) printf "0.000000"; else printf "%.6f", n / d }')
-  INTERVAL=$(awk -v n="$NUM_FRAMES" -v d="$DURATION" 'BEGIN { if (n + 0 == 0) printf "0.0"; else printf "%.1f", d / n }')
+  # Fallback if bc is unavailable
+  FPS_FILTER=$(awk "BEGIN { printf \"%.6f\", $NUM_FRAMES / $DURATION }")
+  INTERVAL=$(awk "BEGIN { printf \"%.1f\", $DURATION / $NUM_FRAMES }")
 fi
 
 echo -e "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
