@@ -43,8 +43,8 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
     pip install --user yt-dlp
   else
     printf "%b\n" "${RED}Error: cannot auto-install yt-dlp. Install manually:${NC}" >&2
-    printf "%b\n" "  brew install yt-dlp   (macOS)" >&2
-    printf "%b\n" "  pip install yt-dlp    (any OS with Python)" >&2
+    printf "%b\n" "${CYAN}  brew install yt-dlp   (macOS)${NC}" >&2
+    printf "%b\n" "${CYAN}  pip install yt-dlp    (any OS with Python)${NC}" >&2
     exit 1
   fi
 fi

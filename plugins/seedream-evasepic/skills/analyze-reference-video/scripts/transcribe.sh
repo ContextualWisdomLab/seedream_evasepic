@@ -77,8 +77,8 @@ if command -v python3 >/dev/null 2>&1; then
   printf "%b\n" "${YELLOW}whisper CLI not found. Trying Python whisper module...${NC}"
   # Optimization: Use find_spec instead of full import to check module availability (~3s faster)
   python3 -c "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('whisper') else 1)" 2>/dev/null || {
-    printf "%b\n" "${RED}whisper Python module not installed.${NC}" >&2
-    printf "%b\n" "Install with: pip3 install openai-whisper" >&2
+    printf "%b\n" "${RED}Error: whisper Python module not installed.${NC}" >&2
+    printf "%b\n" "${CYAN}Install with: pip3 install openai-whisper${NC}" >&2
     printf "\n" >&2
     printf "%b\n" "${CYAN}Alternatively, ask the user to paste the dialogue manually and skip this step.${NC}" >&2
     exit 1
@@ -120,8 +120,8 @@ PYEOF
   exit 0
 fi
 
-printf "%b\n" "${RED}Neither whisper CLI nor python3 available.${NC}" >&2
+printf "%b\n" "${RED}Error: Neither whisper CLI nor python3 available.${NC}" >&2
 printf "%b\n" "${CYAN}Install one of:${NC}" >&2
-printf "%b\n" "  brew install openai-whisper     (macOS, installs CLI)" >&2
-printf "%b\n" "  pip install openai-whisper      (any OS, requires python3)" >&2
+printf "%b\n" "${CYAN}  brew install openai-whisper     (macOS, installs CLI)${NC}" >&2
+printf "%b\n" "${CYAN}  pip install openai-whisper      (any OS, requires python3)${NC}" >&2
 exit 1
