@@ -23,6 +23,6 @@
 **Prevention:** 허용된 모델명(tiny, base, small, medium, large)인지 확인하는 검증 로직을 추가하고, whisper 명령어의 인자 끝에 `--`를 적용했습니다.
 
 ## 2024-05-24 - [Command and Option Injection in Bash Scripts]
-**Vulnerability:** [Command injection via unvalidated input in `bc`/`awk` and option injection in `yt-dlp` argument parsing]
-**Learning:** [Shell script inputs such as variables passed to arithmetic operations or CLI tools without validation or `--` can lead to arbitrary command execution]
+**Vulnerability:** [Unvalidated arithmetic expressions in `bc`, direct `awk` program interpolation, and option injection in `yt-dlp` argument parsing]
+**Learning:** [Keep arithmetic inputs strictly validated, keep the `awk` program fixed while passing values with `-v`, and use `--` before dynamic `yt-dlp` arguments; direct arbitrary command execution applies to the interpolated `awk` program case]
 **Prevention:** [Always validate numeric inputs using regex (`grep -Eq '^[1-9][0-9]*$'`), use `-v` flag in `awk` for variables, and use `--` to signify end of options before dynamic arguments]
