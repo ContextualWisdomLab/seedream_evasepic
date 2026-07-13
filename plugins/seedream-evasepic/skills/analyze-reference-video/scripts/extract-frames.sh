@@ -53,7 +53,8 @@ FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
 FFPROBE="${FFPROBE:-$(command -v ffprobe || echo /opt/homebrew/bin/ffprobe)}"
 
 if [ ! -x "$FFMPEG" ]; then
-  printf "%b\n" "${RED}Error: ffmpeg not found. Install with: brew install ffmpeg${NC}" >&2
+  printf "%b\n" "${RED}Error: ffmpeg not found.${NC}" >&2
+  printf "%b\n" "${CYAN}Install with: brew install ffmpeg${NC}" >&2
   exit 1
 fi
 
