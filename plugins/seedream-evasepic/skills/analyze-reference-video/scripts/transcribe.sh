@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Transcribe Audio Script${NC}"
-    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}"
+    printf "%b\n" "${YELLOW}Usage: $(basename -- "$0") <audio_path> [model]${NC}"
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)"
     printf "%b\n" "  Example: $(basename "$0") /tmp/audio.wav base"
     exit 0
@@ -31,7 +31,7 @@ case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
     printf "%b\n" "${RED}Error: Invalid model specified: $MODEL${NC}" >&2
-    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}" >&2
+    printf "%b\n" "${YELLOW}Usage: $(basename -- "$0") <audio_path> [model]${NC}" >&2
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
     printf "%b\n" "  Example: $(basename "$0") /tmp/audio.wav base" >&2
     exit 2
@@ -40,7 +40,7 @@ esac
 
 if [ -z "$AUDIO" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: $(basename -- "$0") <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
   printf "%b\n" "  Example: $(basename "$0") /tmp/audio.wav base" >&2
   exit 2
@@ -57,7 +57,7 @@ fi
 # Try whisper CLI first
 if command -v whisper >/dev/null 2>&1; then
   printf "%b\n" "${CYAN}Transcribing with whisper CLI (model: $MODEL)...${NC}"
-  OUT_DIR="$(dirname "$AUDIO")"
+  OUT_DIR="$(dirname -- "$AUDIO")"
   whisper \
     --model "$MODEL" \
     --output_format txt \
@@ -65,7 +65,7 @@ if command -v whisper >/dev/null 2>&1; then
     --output_dir "$OUT_DIR" \
     --verbose False \
     -- "$AUDIO"
-  printf "%b\n" "${GREEN}Transcript saved to $OUT_DIR/$(basename "${AUDIO%.*}").txt${NC}"
+  printf "%b\n" "${GREEN}Transcript saved to $OUT_DIR/$(basename -- "${AUDIO%.*}").txt${NC}"
   exit 0
 fi
 
