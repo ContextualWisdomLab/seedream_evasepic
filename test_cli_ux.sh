@@ -118,3 +118,11 @@ if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "--help" | grep -q "Do
 fi
 echo "PASS: download-reference.sh recognizes --help at any position"
 echo "====================================="
+
+echo "=== Testing usage block on file not found error ==="
+if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
+  echo "FAIL: transcribe.sh did not print usage block for file not found error" >&2
+  exit 1
+fi
+echo "PASS: transcribe.sh prints usage block for file not found error"
+echo "====================================="
