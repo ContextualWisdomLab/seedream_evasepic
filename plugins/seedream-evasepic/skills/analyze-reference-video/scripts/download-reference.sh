@@ -15,8 +15,9 @@ NC='\033[0m' # No Color
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
-    printf "%b\n" "${YELLOW}Usage: $0 <url> <output_path>${NC}"
-    printf "%b\n" "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+    printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
+    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <url> <output_path>${NC}"
+    printf "%b\n" "  Example: $(basename "$0") 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
     exit 0
   fi
 done
@@ -25,8 +26,9 @@ URL="${1:-}"
 OUTPUT="${2:-}"
 
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
-  printf "%b\n" "${YELLOW}Usage: $0 <url> <output_path>${NC}" >&2
-  printf "%b\n" "  Example: $0 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: $(basename "$0") <url> <output_path>${NC}" >&2
+  printf "%b\n" "  Example: $(basename "$0") 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
   exit 2
 fi
 
@@ -62,13 +64,13 @@ yt-dlp \
   -o "$OUTPUT" \
   --no-playlist \
   --quiet --progress \
-  "$URL" || {
-    echo "" >&2
+  -- "$URL" || {
+    printf "\n" >&2
     printf "%b\n" "${RED}yt-dlp failed. Possible reasons:${NC}" >&2
     printf "%b\n" "  - Private / login-required content (Instagram, X)" >&2
     printf "%b\n" "  - Geo-restricted (TikTok)" >&2
     printf "%b\n" "  - URL format unsupported" >&2
-    echo "" >&2
+    printf "\n" >&2
     printf "%b\n" "${YELLOW}Fallback options:${NC}" >&2
     printf "%b\n" "  1. If insane-search plugin is installed, ask it to fetch: 'fetch this video URL'" >&2
     printf "%b\n" "  2. Download manually via browser and pass local file path" >&2

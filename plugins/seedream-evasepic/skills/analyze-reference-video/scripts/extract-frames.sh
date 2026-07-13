@@ -18,7 +18,8 @@ NC='\033[0m' # No Color
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
-    printf "%b\n" "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}"
+    printf "%b\n" "${GREEN}Extract Frames Script${NC}"
+    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}"
     printf "%b\n" "  num_frames defaults to 12"
     exit 0
   fi
@@ -29,15 +30,20 @@ OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
-  printf "%b\n" "${YELLOW}Usage: $0 <video_path> <output_dir> [num_frames]${NC}" >&2
+  printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
   exit 2
 fi
 
-if [ ! -f "$VIDEO" ]; then
-  printf "%b\n" "${RED}Error: video not found: $VIDEO${NC}" >&2
-  exit 1
-fi
+case "$NUM_FRAMES" in
+  ''|*[!0-9]*|0*)
+    printf "%b\n" "${RED}Error: num_frames must be a positive integer.${NC}" >&2
+    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <video_path> <output_dir> [num_frames]${NC}" >&2
+    printf "%b\n" "  num_frames defaults to 12" >&2
+    exit 2
+    ;;
+esac
 
 # Auto-detect ffmpeg / ffprobe path (Homebrew Apple Silicon vs Intel vs Linux)
 FFMPEG="${FFMPEG:-$(command -v ffmpeg || echo /opt/homebrew/bin/ffmpeg)}"
@@ -48,15 +54,49 @@ if [ ! -x "$FFMPEG" ]; then
   exit 1
 fi
 
+if [ ! -f "$VIDEO" ]; then
+  printf "%b\n" "${RED}Error: video not found: $VIDEO${NC}" >&2
+  exit 1
+fi
+
 mkdir -p "$OUT_DIR"
 
-# Probe video metadata
-DURATION=$("$FFPROBE" -v error -show_entries format=duration \
-  -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo 0)
-RESOLUTION=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=s=x:p=0 "$VIDEO" 2>/dev/null || echo "unknown")
-FPS=$("$FFPROBE" -v error -select_streams v:0 \
-  -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "$VIDEO" 2>/dev/null || echo "unknown")
+# Probe video metadata in a single call to reduce process overhead
+PROBE_OUTPUT=$("$FFPROBE" -v error \
+  -show_entries format=duration:stream=width,height,r_frame_rate,codec_type \
+  -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
+
+DURATION=0
+WIDTH=""
+HEIGHT=""
+FPS="unknown"
+HAS_AUDIO=0
+while IFS='=' read -r key val; do
+  case "$key" in
+    duration) DURATION="$val" ;;
+    width) WIDTH="$val" ;;
+    height) HEIGHT="$val" ;;
+    r_frame_rate)
+      if [ "$val" != "0/0" ]; then
+        FPS="$val"
+      fi
+      ;;
+    codec_type)
+      if [ "$val" = "audio" ]; then
+        HAS_AUDIO=1
+      fi
+      ;;
+  esac
+done <<< "$PROBE_OUTPUT"
+DURATION=${DURATION:-0}
+
+if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
+  RESOLUTION="${WIDTH}x${HEIGHT}"
+else
+  RESOLUTION="unknown"
+fi
+
+FPS=${FPS:-unknown}
 
 {
   echo "video_path=$VIDEO"
@@ -69,31 +109,34 @@ FPS=$("$FFPROBE" -v error -select_streams v:0 \
 printf "%b\n" "${CYAN}Video: ${NC}$(basename "$VIDEO")"
 printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
 
-# Extract evenly-spaced frames across the full duration
-if command -v bc >/dev/null 2>&1; then
-  FPS_FILTER=$(echo "scale=6; $NUM_FRAMES / $DURATION" | bc)
-  INTERVAL=$(echo "scale=1; $DURATION / $NUM_FRAMES" | bc)
+# Extract evenly-spaced frames across the full duration.
+# Keep the awk program literal fixed; pass dynamic values via -v so data cannot become awk code.
+if ! FRAME_TIMING=$(awk -v nf="$NUM_FRAMES" -v dur="$DURATION" 'BEGIN { if (dur <= 0) exit 1; printf "%.6f %.1f\n", nf / dur, dur / nf }'); then
+  printf "%b\n" "${RED}Error: video duration must be a positive number.${NC}" >&2
+  exit 1
+fi
+read -r FPS_FILTER INTERVAL <<< "$FRAME_TIMING"
+
+printf "%b\n" "${CYAN}Extracting frames (and audio if available)...${NC}"
+
+if [ "$HAS_AUDIO" -eq 1 ]; then
+  "$FFMPEG" -y -v warning -i "$VIDEO" \
+    -map 0:v:0 -vf "fps=$FPS_FILTER" -q:v 2 "$OUT_DIR/frame_%03d.jpg" \
+    -map 0:a:0 -acodec pcm_s16le -ar 16000 -ac 1 "$OUT_DIR/audio.wav"
 else
-  # Fallback if bc is unavailable
-  FPS_FILTER=$(awk "BEGIN { printf \"%.6f\", $NUM_FRAMES / $DURATION }")
-  INTERVAL=$(awk "BEGIN { printf \"%.1f\", $DURATION / $NUM_FRAMES }")
+  "$FFMPEG" -y -v warning -i "$VIDEO" \
+    -map 0:v:0 -vf "fps=$FPS_FILTER" -q:v 2 "$OUT_DIR/frame_%03d.jpg"
 fi
 
-printf "%b\n" "${CYAN}Extracting $NUM_FRAMES frames (1 every ${INTERVAL}s)...${NC}"
+# Optimization: Use native bash array globbing instead of spawning find, wc, and tr processes
+shopt -s nullglob
+frames=("$OUT_DIR"/frame_*.jpg)
+shopt -u nullglob
+FRAME_COUNT="${#frames[@]}"
 
-"$FFMPEG" -y -v warning -i "$VIDEO" \
-  -vf "fps=$FPS_FILTER" \
-  -q:v 2 \
-  "$OUT_DIR/frame_%03d.jpg"
-
-FRAME_COUNT=$(ls "$OUT_DIR"/frame_*.jpg 2>/dev/null | wc -l | tr -d ' ')
 printf "%b\n" "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
-# Extract audio for transcription (16kHz mono WAV)
-printf "%b\n" "${CYAN}Extracting audio...${NC}"
-if "$FFMPEG" -y -v warning -i "$VIDEO" \
-     -vn -acodec pcm_s16le -ar 16000 -ac 1 \
-     "$OUT_DIR/audio.wav" 2>/dev/null; then
+if [ -f "$OUT_DIR/audio.wav" ]; then
   printf "%b\n" "${GREEN}Audio saved: $OUT_DIR/audio.wav${NC}"
 else
   printf "%b\n" "${YELLOW}No audio stream (silent video) — audio.wav not created${NC}"

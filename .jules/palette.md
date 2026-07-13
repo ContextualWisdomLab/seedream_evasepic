@@ -4,6 +4,3 @@
 ## 2024-10-18 - Help Output Before Dependencies
 **Learning:** CLI tools should provide help flags (`-h`, `--help`) without requiring system dependencies to be installed first. Users may need documentation to understand what dependencies are even needed, so help output should be the very first step in script execution.
 **Action:** Always parse argument flags like `-h` and `--help` immediately after variable initialization and before checking for required system tools like `ffmpeg` or `yt-dlp`.
-## 2024-05-18 - [CLI 도움말 접근성 개선 및 UX 표준화]
-**Learning:** CLI 스크립트에서 도움말 플래그(`-h`, `--help`) 처리는 인자 파싱의 가장 우선순위가 되어야 합니다. 의존성 확인(예: ffmpeg 존재 유무)이 도움말 표시 전에 실행되면, 의존성이 설치되지 않은 사용자는 도움말조차 볼 수 없게 되어 UX와 접근성이 크게 저하됩니다. 또한 스크립트 전반에 걸쳐 `echo -e` 대신 `printf "%b\n"`을 사용하는 것이 환경 간 일관된 ANSI 색상 코드 출력을 보장함을 확인했습니다.
-**Action:** 앞으로 작성되는 모든 Bash 스크립트에는 도움말 플래그를 가장 먼저 검사하는 루프(`for arg in "$@"`)를 포함하고 정상 종료 코드(0)를 반환하도록 설계해야 합니다. 또한, 색상 및 제어 문자를 출력할 때는 이식성을 위해 `printf`를 사용해야 합니다.
