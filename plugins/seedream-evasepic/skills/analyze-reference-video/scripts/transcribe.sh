@@ -14,48 +14,63 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  echo -e "${YELLOW}Usage: $0 <audio_path> [model]${NC}" >&2
-  echo -e "  Models: tiny / base / small / medium / large (default: base)" >&2
-  exit 0
-fi
+for arg in "$@"; do
+  if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+    printf "%b\n" "${GREEN}Transcribe Audio Script${NC}"
+    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}"
+    printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)"
+    exit 0
+  fi
+done
 
 AUDIO="${1:-}"
 MODEL="${2:-base}"
 
+case "$MODEL" in
+  tiny|base|small|medium|large) ;;
+  *)
+    printf "%b\n" "${RED}Error: Invalid model specified: $MODEL${NC}" >&2
+    printf "%b\n" "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}" >&2
+    printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
+    exit 2
+    ;;
+esac
+
 if [ -z "$AUDIO" ]; then
-  echo -e "${YELLOW}Usage: $0 <audio_path> [model]${NC}" >&2
-  echo -e "  Models: tiny / base / small / medium / large (default: base)" >&2
+  printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: $(basename "$0") <audio_path> [model]${NC}" >&2
+  printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
   exit 2
 fi
 
 if [ ! -f "$AUDIO" ]; then
-  echo -e "${RED}Error: audio file not found: $AUDIO${NC}" >&2
+  printf "%b\n" "${RED}Error: audio file not found: $AUDIO${NC}" >&2
   exit 1
 fi
 
 # Try whisper CLI first
 if command -v whisper >/dev/null 2>&1; then
-  echo -e "${CYAN}Transcribing with whisper CLI (model: $MODEL)...${NC}"
+  printf "%b\n" "${CYAN}Transcribing with whisper CLI (model: $MODEL)...${NC}"
   OUT_DIR="$(dirname "$AUDIO")"
-  whisper "$AUDIO" \
+  whisper \
     --model "$MODEL" \
     --output_format txt \
     --output_format json \
     --output_dir "$OUT_DIR" \
-    --verbose False
-  echo -e "${GREEN}Transcript saved to $OUT_DIR/$(basename "${AUDIO%.*}").txt${NC}"
+    --verbose False \
+    -- "$AUDIO"
+  printf "%b\n" "${GREEN}Transcript saved to $OUT_DIR/$(basename "${AUDIO%.*}").txt${NC}"
   exit 0
 fi
 
 # Fallback to Python inline
 if command -v python3 >/dev/null 2>&1; then
-  echo -e "${YELLOW}whisper CLI not found. Trying Python whisper module...${NC}"
+  printf "%b\n" "${YELLOW}whisper CLI not found. Trying Python whisper module...${NC}"
   python3 -c "import whisper" 2>/dev/null || {
-    echo -e "${RED}whisper Python module not installed.${NC}" >&2
-    echo -e "Install with: pip3 install openai-whisper" >&2
-    echo "" >&2
-    echo -e "${CYAN}Alternatively, ask the user to paste the dialogue manually and skip this step.${NC}" >&2
+    printf "%b\n" "${RED}whisper Python module not installed.${NC}" >&2
+    printf "%b\n" "Install with: pip3 install openai-whisper" >&2
+    printf "\n" >&2
+    printf "%b\n" "${CYAN}Alternatively, ask the user to paste the dialogue manually and skip this step.${NC}" >&2
     exit 1
   }
 
@@ -67,9 +82,9 @@ audio = os.environ.get("AUDIO_PATH")
 model_name = os.environ.get("WHISPER_MODEL")
 out_base = os.path.splitext(audio)[0]
 
-print(f"Loading whisper model: {model_name}...")
+print(f"\033[0;36mLoading whisper model: {model_name}...\033[0m")
 model = whisper.load_model(model_name)
-print(f"Transcribing {audio}...")
+print(f"\033[0;36mTranscribing {audio}...\033[0m")
 result = model.transcribe(audio)
 
 # Write plain text
@@ -87,16 +102,16 @@ with open(out_base + ".segments.json", "w") as f:
         ]
     }, f, ensure_ascii=False, indent=2)
 
-print(f"Transcript: {out_base}.txt")
-print(f"Segments:   {out_base}.segments.json")
-print(f"Language detected: {result.get('language', 'unknown')}")
+print(f"\033[0;32mTranscript: {out_base}.txt\033[0m")
+print(f"\033[0;32mSegments:   {out_base}.segments.json\033[0m")
+print(f"\033[0;32mLanguage detected: {result.get('language', 'unknown')}\033[0m")
 PYEOF
 
   exit 0
 fi
 
-echo -e "${RED}Neither whisper CLI nor python3 available.${NC}" >&2
-echo -e "${CYAN}Install one of:${NC}" >&2
-echo -e "  brew install openai-whisper     (macOS, installs CLI)" >&2
-echo -e "  pip install openai-whisper      (any OS, requires python3)" >&2
+printf "%b\n" "${RED}Neither whisper CLI nor python3 available.${NC}" >&2
+printf "%b\n" "${CYAN}Install one of:${NC}" >&2
+printf "%b\n" "  brew install openai-whisper     (macOS, installs CLI)" >&2
+printf "%b\n" "  pip install openai-whisper      (any OS, requires python3)" >&2
 exit 1
