@@ -18,3 +18,6 @@
 ## 2025-02-19 - [Bash 성능 개선] 정규식 숫자 검증 오버헤드 최적화
 **Learning:** 숫자 입력값 검증 시 `echo | grep -Eq` 방식을 사용하면 서브셸과 외부 프로세스(grep)가 생성되어 오버헤드가 발생합니다. Bash의 내장 기능인 `case` 패턴 매칭을 활용하면 프로세스 생성 없이 입력값을 엄격하게 검증할 수 있어 성능이 더 좋습니다.
 **Action:** 앞으로 셸 스크립트에서 단순한 숫자 입력값을 검증할 때는 외부 도구(grep) 대신 POSIX 호환이 가능한 bash native `case` 패턴 매칭(`case "$VAR" in ''|*[!0-9]*|0*) ...`)을 우선적으로 사용합니다.
+## 2025-06-25 - Optimize Python module availability check in Bash
+**Learning:** Using `python3 -c "import module_name"` in a Bash script to check for a module's existence incurs significant overhead (e.g. ~3s for `whisper` which loads `torch`), even if we only need to know if it's installed.
+**Action:** Use `python3 -c "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('module_name') else 1)"` instead to check module availability without actually importing the code.
