@@ -126,3 +126,26 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing ffprobe missing error ==="
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+export FFMPEG="/bin/bash"
+export FFPROBE="/tmp/does_not_exist"
+if ! bash "$SCRIPT_DIR/extract-frames.sh" "dummy_nonexistent.mp4" "dummy_dir" 10 2>&1 | grep -q "Error: ffprobe not found."; then
+  echo "FAIL: extract-frames.sh did not print ffprobe missing error" >&2
+  exit 1
+fi
+echo "PASS: extract-frames.sh prints ffprobe missing error"
+echo "====================================="
+
+echo "=== Testing usage block on invalid duration error ==="
+touch "$TMP_DIR/dummy_test.mp4"
+export FFMPEG="/bin/bash"
+export FFPROBE="/bin/bash"
+if ! bash "$SCRIPT_DIR/extract-frames.sh" "$TMP_DIR/dummy_test.mp4" "$TMP_DIR/dummy_dir" 10 2>&1 | grep -q "Usage: extract-frames.sh <video_path> <output_dir> \[num_frames\]"; then
+  echo "FAIL: extract-frames.sh did not print usage block for invalid duration error" >&2
+  exit 1
+fi
+echo "PASS: extract-frames.sh prints usage block for invalid duration error"
+echo "====================================="

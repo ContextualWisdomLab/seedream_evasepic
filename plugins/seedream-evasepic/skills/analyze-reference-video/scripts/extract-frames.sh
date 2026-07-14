@@ -58,6 +58,12 @@ if [ ! -x "$FFMPEG" ]; then
   exit 1
 fi
 
+if [ ! -x "$FFPROBE" ]; then
+  printf "%b\n" "${RED}Error: ffprobe not found.${NC}" >&2
+  printf "%b\n" "${CYAN}Install with: brew install ffmpeg${NC}" >&2
+  exit 1
+fi
+
 if [ ! -f "$VIDEO" ]; then
   printf "%b\n" "${RED}Error: video not found: $VIDEO${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
@@ -120,6 +126,9 @@ printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RES
 # Keep the awk program literal fixed; pass dynamic values via -v so data cannot become awk code.
 if ! FRAME_TIMING=$(awk -v nf="$NUM_FRAMES" -v dur="$DURATION" 'BEGIN { if (dur <= 0) exit 1; printf "%.6f %.1f\n", nf / dur, dur / nf }'); then
   printf "%b\n" "${RED}Error: video duration must be a positive number.${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
+  printf "%b\n" "  num_frames defaults to 12" >&2
+  printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
   exit 1
 fi
 read -r FPS_FILTER _ <<< "$FRAME_TIMING"
