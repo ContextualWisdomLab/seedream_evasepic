@@ -55,8 +55,8 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
-printf "%b\n" "${CYAN}Downloading from: ${NC}$URL"
-printf "%b\n" "${CYAN}Target: ${NC}$OUTPUT"
+printf "%b%s\n" "${CYAN}Downloading from: ${NC}" "$URL"
+printf "%b%s\n" "${CYAN}Target: ${NC}" "$OUTPUT"
 
 # Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
 # -f format spec: prefer mp4, cap at 1080p
@@ -73,12 +73,12 @@ yt-dlp \
     printf "%b\n" "  - Geo-restricted (TikTok)" >&2
     printf "%b\n" "  - URL format unsupported" >&2
     printf "\n" >&2
-    printf "%b\n" "${YELLOW}Fallback options:${NC}" >&2
-    printf "%b\n" "  1. If insane-search plugin is installed, ask it to fetch: 'fetch this video URL'" >&2
-    printf "%b\n" "  2. Download manually via browser and pass local file path" >&2
-    printf "%b\n" "  3. Use a screen recording if all else fails" >&2
+    printf "%b\n" "${CYAN}Fallback options:${NC}" >&2
+    printf "%b\n" "${CYAN}  1. If insane-search plugin is installed, ask it to fetch: 'fetch this video URL'${NC}" >&2
+    printf "%b\n" "${CYAN}  2. Download manually via browser and pass local file path${NC}" >&2
+    printf "%b\n" "${CYAN}  3. Use a screen recording if all else fails${NC}" >&2
     exit 1
   }
 
-printf "%b\n" "${GREEN}Downloaded: ${NC}$OUTPUT"
+printf "%b%s\n" "${GREEN}Downloaded: ${NC}" "$OUTPUT"
 ls -lh -- "$OUTPUT"
