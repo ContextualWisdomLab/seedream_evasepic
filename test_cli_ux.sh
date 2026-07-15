@@ -69,6 +69,7 @@ if grep -n -F 'awk "BEGIN' "$SCRIPT_DIR/extract-frames.sh"; then
   exit 1
 fi
 
+# shellcheck disable=SC2016
 if ! grep -n -F 'awk -v nf="$NUM_FRAMES" -v dur="$DURATION"' "$SCRIPT_DIR/extract-frames.sh"; then
   echo "FAIL: extract-frames.sh must pass NUM_FRAMES and DURATION to awk with -v bindings" >&2
   exit 1
