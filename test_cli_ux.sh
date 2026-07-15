@@ -39,7 +39,10 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -n "$output" ]; then
-  mkdir -p "$(dirname "$output")"
+  out_dir="${output%/*}"
+  [ -z "$out_dir" ] && out_dir="/"
+  [ "$out_dir" = "$output" ] && out_dir="."
+  mkdir -p "$out_dir"
   : > "$output"
 fi
 EOF
