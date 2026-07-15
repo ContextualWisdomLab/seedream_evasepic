@@ -77,6 +77,14 @@ fi
 echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
+echo "=== Testing ffprobe validation ==="
+if ! FFMPEG="$(command -v bash)" FFPROBE="/usr/bin/nonexistent_ffprobe" bash "$SCRIPT_DIR/extract-frames.sh" "dummy.mp4" "dummy_dir" 2>&1 | grep -q "Error: ffprobe not found."; then
+  echo "FAIL: extract-frames.sh did not explicitly validate ffprobe existence" >&2
+  exit 1
+fi
+echo "PASS: extract-frames.sh prints explicit error message for missing ffprobe"
+echo "====================================="
+
 echo "=== Testing error message clarity for missing arguments ==="
 if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument(s)."; then
   echo "FAIL: download-reference.sh did not print explicit error message" >&2
