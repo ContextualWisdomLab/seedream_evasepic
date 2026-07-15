@@ -126,3 +126,11 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing fallback options color separation ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" "invalid_url_for_test_123" "/tmp/ref.mp4" 2>&1 | grep -q $'\033\[0;36m  1. If insane-search plugin'; then
+  echo "FAIL: download-reference.sh did not print fallback options in cyan" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh prints fallback options in cyan"
+echo "====================================="

@@ -74,9 +74,9 @@ yt-dlp \
     printf "%b\n" "  - URL format unsupported" >&2
     printf "\n" >&2
     printf "%b\n" "${YELLOW}Fallback options:${NC}" >&2
-    printf "%b\n" "  1. If insane-search plugin is installed, ask it to fetch: 'fetch this video URL'" >&2
-    printf "%b\n" "  2. Download manually via browser and pass local file path" >&2
-    printf "%b\n" "  3. Use a screen recording if all else fails" >&2
+    printf "%b\n" "${CYAN}  1. If insane-search plugin is installed, ask it to fetch: 'fetch this video URL'${NC}" >&2
+    printf "%b\n" "${CYAN}  2. Download manually via browser and pass local file path${NC}" >&2
+    printf "%b\n" "${CYAN}  3. Use a screen recording if all else fails${NC}" >&2
     exit 1
   }
 
