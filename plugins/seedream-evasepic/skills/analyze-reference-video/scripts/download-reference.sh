@@ -55,7 +55,7 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
-if [ -s "$OUTPUT" ]; then
+if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
   printf "%b\n" "${GREEN}File already exists: $OUTPUT. Skipping download.${NC}"
   exit 0
 fi
