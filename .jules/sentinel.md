@@ -34,3 +34,7 @@
 **Vulnerability:** User variables ($URL, $OUTPUT, etc.) directly interpolated into `printf "%b\n"` could cause Terminal Output Injection if strings contain escape sequences like \033.
 **Learning:** Using `%b` evaluates backslash escapes. It should only be used for trusted color codes, not untrusted variables.
 **Prevention:** Use `%s` to format user-controlled variables safely: e.g., `printf "%b%s\n" "${COLOR}" "$USER_INPUT"`.
+## 2026-07-16 - [Residual Terminal Output Injection]
+**Vulnerability:** Dynamically derived variables (such as file paths parsed via shell substitution like `${OUTPUT%/*}` or metadata extracted from tools like `ffprobe`) were still being directly interpolated into `printf "%b\n"`. While less obvious than direct CLI arguments, these can still harbor escape sequences if an attacker crafts malicious file names or embedded metadata.
+**Learning:** Any variable whose origin traces back to external input, regardless of intermediate processing or derivation, must be treated as untrusted and excluded from `%b` evaluation.
+**Prevention:** Ensure all variables containing paths, metadata, or calculated strings are safely isolated into `%s` tokens within `printf` calls.
