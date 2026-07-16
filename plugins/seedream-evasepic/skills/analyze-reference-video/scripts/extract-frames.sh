@@ -59,7 +59,7 @@ if [ ! -x "$FFMPEG" ]; then
 fi
 
 if [ ! -f "$VIDEO" ]; then
-  printf "%b\n" "${RED}Error: video not found: $VIDEO${NC}" >&2
+  printf "%b%s%b\n" "${RED}Error: video not found: " "$VIDEO" "${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
   printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
@@ -113,7 +113,7 @@ FPS=${FPS:-unknown}
   echo "num_frames_requested=$NUM_FRAMES"
 } > "$OUT_DIR/metadata.txt"
 
-printf "%b\n" "${CYAN}Video: ${NC}${VIDEO##*/}"
+printf "%b%s\n" "${CYAN}Video: ${NC}" "${VIDEO##*/}"
 printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
 
 # Extract evenly-spaced frames across the full duration.
