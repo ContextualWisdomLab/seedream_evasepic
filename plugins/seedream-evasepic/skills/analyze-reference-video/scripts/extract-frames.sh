@@ -105,13 +105,8 @@ fi
 
 FPS=${FPS:-unknown}
 
-{
-  echo "video_path=$VIDEO"
-  echo "duration_seconds=$DURATION"
-  echo "resolution=$RESOLUTION"
-  echo "fps=$FPS"
-  echo "num_frames_requested=$NUM_FRAMES"
-} > "$OUT_DIR/metadata.txt"
+printf "video_path=%s\nduration_seconds=%s\nresolution=%s\nfps=%s\nnum_frames_requested=%s\n" \
+  "$VIDEO" "$DURATION" "$RESOLUTION" "$FPS" "$NUM_FRAMES" > "$OUT_DIR/metadata.txt"
 
 printf "%b\n" "${CYAN}Video: ${NC}${VIDEO##*/}"
 printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
