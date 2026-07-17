@@ -30,3 +30,7 @@
 **Vulnerability:** User-controlled file paths were passed directly to bash utilities (dirname, mkdir, ls, basename) without the end-of-options separator (--), allowing for option injection if a path begins with a hyphen.
 **Learning:** By default, utilities parse arguments starting with `-` as options. Using these without `--` before dynamic variables is a common command injection vector.
 **Prevention:** Always use the `--` flag separator before passing user-controlled variables to standard CLI tools like `dirname`, `mkdir`, `basename`, and `ls`.
+## 2026-07-17 - ANSI Escape Sequence Injection 방지
+**Vulnerability:** bash 스크립트에서 printf "%b"에 신뢰할 수 없는 사용자 입력이 보간되어 ANSI Escape Sequence Injection 취약점이 존재함.
+**Learning:** printf의 %b 포맷은 백슬래시 이스케이프를 평가하므로, 제어할 수 없는 사용자 변수가 포함되면 의도치 않은 동작이 발생할 수 있음.
+**Prevention:** 포맷 문자열에서 ANSI 색상 코드용으로 %b를 사용하고, 사용자 입력 출력용으로 %s를 명확히 분리하여 사용(예: printf "%b%s\n" "${COLOR}Label: " "$VAR").
