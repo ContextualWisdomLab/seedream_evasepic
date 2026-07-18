@@ -25,3 +25,6 @@
 ## 2025-02-19 - [Bash 성능 개선] 외부 명령어(basename, dirname) 호출 오버헤드 방지
 **Learning:** 스크립트 내에서 `basename`이나 `dirname`과 같은 외부 명령어를 서브셸로 호출하면 서브셸 생성 및 프로세스 포크 오버헤드가 발생하여 성능이 저하됩니다.
 **Action:** 외부 도구(basename, dirname) 대신 Bash 내장 파라미터 확장(Parameter Expansion, 예: `"${VAR##*/}"`, `"${VAR%/*}"`)을 사용하여 순수 Bash 내장 기능만으로 문자열 조작함으로써 프로세스 생성 비용을 없애고 성능을 향상시킵니다.
+## 2024-07-18 - Avoid directory false positives with -s
+**Learning:** When using early returns to check if a file exists and is not empty before downloading, using only `-s` can cause false positive skips because `-s` evaluates to true for directories.
+**Action:** Always combine `-f` (is a regular file) and `-s` (is not empty) like `[ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]` before skipping expensive network tools like `yt-dlp`.
