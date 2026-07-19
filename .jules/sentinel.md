@@ -30,3 +30,7 @@
 **Vulnerability:** User-controlled file paths were passed directly to bash utilities (dirname, mkdir, ls, basename) without the end-of-options separator (--), allowing for option injection if a path begins with a hyphen.
 **Learning:** By default, utilities parse arguments starting with `-` as options. Using these without `--` before dynamic variables is a common command injection vector.
 **Prevention:** Always use the `--` flag separator before passing user-controlled variables to standard CLI tools like `dirname`, `mkdir`, `basename`, and `ls`.
+## 2024-07-20 - printf를 통한 터미널 출력 주입(Terminal Output Injection) 방지
+**Vulnerability:** Bash 스크립트에서 사용자 제어 변수(URL, 파일 경로 등)를 `printf "%b"`를 사용하여 직접 출력할 경우, 해당 변수에 이스케이프 시퀀스(예: `\033[0;31m`)가 포함되어 있으면 터미널 설정이 악의적으로 변경되는 터미널 출력 주입 취약점이 발생할 수 있습니다.
+**Learning:** 동적 변수와 컬러 코드가 결합된 문자열을 출력할 때는 이스케이프 시퀀스가 평가되지 않도록 방어적인 포매팅을 사용해야 합니다.
+**Prevention:** 제어되지 않은 변수를 출력할 때는 항상 `%s` 포맷 지정자를 사용하여 이스케이프 시퀀스가 문자열 리터럴로 처리되도록 해야 합니다. 예: `printf "%b%s\n" "${COLOR}" "$USER_INPUT"`
