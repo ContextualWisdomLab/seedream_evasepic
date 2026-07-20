@@ -111,6 +111,14 @@ fi
 echo "PASS: transcribe.sh Python inline script contains ANSI color codes"
 echo "====================================="
 
+echo "=== Testing error resolution steps color UX ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "/tmp/dummy" 2>&1 | grep -q '\[0;36mActionable resolution steps:'; then
+  echo "FAIL: download-reference.sh did not print actionable resolution steps in cyan" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh prints actionable resolution steps in cyan"
+echo "====================================="
+
 echo "=== Testing help flag position flexibility ==="
 if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "--help" | grep -q "Download Reference Video Script"; then
   echo "FAIL: download-reference.sh did not recognize --help as second argument" >&2
