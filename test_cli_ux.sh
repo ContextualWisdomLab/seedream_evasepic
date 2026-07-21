@@ -119,6 +119,18 @@ fi
 echo "PASS: download-reference.sh recognizes --help at any position"
 echo "====================================="
 
+echo "=== Testing fallback options use CYAN color ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" "invalid_url" "dummy_out" 2>&1 | grep -q $'\033\[0;36mFallback options:'; then
+  echo "FAIL: download-reference.sh did not print fallback options in CYAN" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/download-reference.sh" "invalid_url" "dummy_out" 2>&1 | grep -q $'\033\[0;36m  1. If insane-search plugin is installed'; then
+  echo "FAIL: download-reference.sh did not print fallback list items in CYAN" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh prints actionable fallback options in CYAN"
+echo "====================================="
+
 echo "=== Testing usage block on file not found error ==="
 if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
   echo "FAIL: transcribe.sh did not print usage block for file not found error" >&2
