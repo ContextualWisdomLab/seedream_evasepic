@@ -55,6 +55,13 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
+# Optimization: Early return check to avoid expensive redundant network execution
+if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
+  printf "%b%s\n" "${GREEN}File already exists and is not empty. Skipping download: ${NC}" "$OUTPUT"
+  ls -lh -- "$OUTPUT"
+  exit 0
+fi
+
 printf "%b\n" "${CYAN}Downloading from: ${NC}$URL"
 printf "%b\n" "${CYAN}Target: ${NC}$OUTPUT"
 
