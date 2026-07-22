@@ -126,3 +126,12 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing ANSI escape sequence injection prevention ==="
+MALICIOUS_PATH='hello\033[0;31mworld'
+if bash "$SCRIPT_DIR/extract-frames.sh" "/tmp/video.mp4" "$MALICIOUS_PATH" 2>&1 | grep -q $'\033\[0;31mworld'; then
+  echo "FAIL: extract-frames.sh evaluated untrusted ANSI escapes in output path" >&2
+  exit 1
+fi
+echo "PASS: untrusted inputs are not evaluated for ANSI escapes"
+echo "====================================="
