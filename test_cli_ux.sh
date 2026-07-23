@@ -126,3 +126,16 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing visual separation of error and actionable steps ==="
+output="$(bash "$SCRIPT_DIR/download-reference.sh" "invalid_url" "dummy_output" 2>&1 || true)"
+if ! echo "$output" | grep -q $'\033\[0;36mFallback options:'; then
+  echo "FAIL: download-reference.sh did not print Fallback options in CYAN" >&2
+  exit 1
+fi
+if ! echo "$output" | grep -q $'\033\[0;31m  - URL format unsupported'; then
+  echo "FAIL: download-reference.sh did not print possible reasons in RED" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh visually separates errors (RED) and actionable steps (CYAN)"
+echo "====================================="
