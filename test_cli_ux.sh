@@ -126,3 +126,13 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing ffprobe dependency validation ==="
+# Use a dummy video path and output dir to pass initial argument validation
+# but override FFPROBE to a nonexistent path to trigger the validation error
+if ! FFPROBE="/nonexistent/ffprobe" bash "$SCRIPT_DIR/extract-frames.sh" "dummy.mp4" "dummy_dir" 2>&1 | grep -q "Error: ffprobe not found."; then
+  echo "FAIL: extract-frames.sh did not validate ffprobe existence" >&2
+  exit 1
+fi
+echo "PASS: extract-frames.sh validates ffprobe existence"
+echo "====================================="
