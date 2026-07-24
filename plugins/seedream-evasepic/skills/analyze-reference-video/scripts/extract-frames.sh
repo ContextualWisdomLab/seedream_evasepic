@@ -59,7 +59,7 @@ if [ ! -x "$FFMPEG" ]; then
 fi
 
 if [ ! -f "$VIDEO" ]; then
-  printf "%b\n" "${RED}Error: video not found: $VIDEO${NC}" >&2
+  printf "%b%s%b\n" "${RED}Error: video not found: " "$VIDEO" "${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
   printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
@@ -113,8 +113,8 @@ FPS=${FPS:-unknown}
   echo "num_frames_requested=$NUM_FRAMES"
 } > "$OUT_DIR/metadata.txt"
 
-printf "%b\n" "${CYAN}Video: ${NC}${VIDEO##*/}"
-printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
+printf "%b%s\n" "${CYAN}Video: ${NC}" "${VIDEO##*/}"
+printf "%b%s%b%s%b%s\n" "${CYAN}Duration: ${NC}" "${DURATION}s" " | ${CYAN}Resolution: ${NC}" "$RESOLUTION" " | ${CYAN}FPS: ${NC}" "$FPS"
 
 # Extract evenly-spaced frames across the full duration.
 # Keep the awk program literal fixed; pass dynamic values via -v so data cannot become awk code.
@@ -141,13 +141,13 @@ frames=("$OUT_DIR"/frame_*.jpg)
 shopt -u nullglob
 FRAME_COUNT="${#frames[@]}"
 
-printf "%b\n" "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
+printf "%b%s%b\n" "${GREEN}Extracted $FRAME_COUNT frames to " "$OUT_DIR" "${NC}"
 
 if [ -f "$OUT_DIR/audio.wav" ]; then
-  printf "%b\n" "${GREEN}Audio saved: $OUT_DIR/audio.wav${NC}"
+  printf "%b%s%b\n" "${GREEN}Audio saved: " "$OUT_DIR/audio.wav" "${NC}"
 else
   printf "%b\n" "${YELLOW}No audio stream (silent video) — audio.wav not created${NC}"
   echo "audio=silent" >> "$OUT_DIR/metadata.txt"
 fi
 
-printf "%b\n" "${GREEN}Done. Output in: $OUT_DIR${NC}"
+printf "%b%s%b\n" "${GREEN}Done. Output in: " "$OUT_DIR" "${NC}"
