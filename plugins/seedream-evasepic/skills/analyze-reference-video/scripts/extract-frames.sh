@@ -58,6 +58,12 @@ if [ ! -x "$FFMPEG" ]; then
   exit 1
 fi
 
+if [ ! -x "$FFPROBE" ]; then
+  printf "%b\n" "${RED}Error: ffprobe not found.${NC}" >&2
+  printf "%b\n" "${CYAN}Install with: brew install ffmpeg${NC}" >&2
+  exit 1
+fi
+
 if [ ! -f "$VIDEO" ]; then
   printf "%b\n" "${RED}Error: video not found: $VIDEO${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
