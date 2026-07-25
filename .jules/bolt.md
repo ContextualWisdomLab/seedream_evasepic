@@ -25,3 +25,6 @@
 ## 2025-02-19 - [Bash 성능 개선] 외부 명령어(basename, dirname) 호출 오버헤드 방지
 **Learning:** 스크립트 내에서 `basename`이나 `dirname`과 같은 외부 명령어를 서브셸로 호출하면 서브셸 생성 및 프로세스 포크 오버헤드가 발생하여 성능이 저하됩니다.
 **Action:** 외부 도구(basename, dirname) 대신 Bash 내장 파라미터 확장(Parameter Expansion, 예: `"${VAR##*/}"`, `"${VAR%/*}"`)을 사용하여 순수 Bash 내장 기능만으로 문자열 조작함으로써 프로세스 생성 비용을 없애고 성능을 향상시킵니다.
+## 2025-06-25 - Skip heavy network CLI executions with Early Return
+**Learning:** Invoking network downloading tools like `yt-dlp` repeatedly for the same artifact incurs heavy network latency and processing overhead. Checking if the desired output artifact already exists can avoid redundant network operations entirely.
+**Action:** In bash scripts, implement early return checks (`[ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]`) before invoking heavy external network or processing CLI tools to avoid expensive redundant execution. Always use `-f` to avoid false positives on directories that `-s` alone might trigger.

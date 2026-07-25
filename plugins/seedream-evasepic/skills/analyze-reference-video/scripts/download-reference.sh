@@ -32,6 +32,12 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+# Optimization: Early return if the output file already exists and is non-empty
+if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
+  printf "%b\n" "${GREEN}File already exists, skipping download: ${NC}$OUTPUT"
+  exit 0
+fi
+
 # Check for yt-dlp
 if ! command -v yt-dlp >/dev/null 2>&1; then
   printf "%b\n" "${CYAN}yt-dlp not found. Trying to install...${NC}" >&2
