@@ -30,3 +30,8 @@
 **Vulnerability:** User-controlled file paths were passed directly to bash utilities (dirname, mkdir, ls, basename) without the end-of-options separator (--), allowing for option injection if a path begins with a hyphen.
 **Learning:** By default, utilities parse arguments starting with `-` as options. Using these without `--` before dynamic variables is a common command injection vector.
 **Prevention:** Always use the `--` flag separator before passing user-controlled variables to standard CLI tools like `dirname`, `mkdir`, `basename`, and `ls`.
+
+## 2026-07-13 - [HIGH] Terminal Output Injection in Bash Scripts
+**Vulnerability:** User-controlled inputs (like file paths or URLs) were being directly interpolated into `printf "%b"` format strings, exposing the scripts to Terminal Output Injection vulnerabilities.
+**Learning:** Using `%b` with user inputs causes bash to evaluate embedded escape sequences, leading to uncontrolled terminal formatting changes or injection attacks.
+**Prevention:** Always use `%s` (e.g., `printf "%b%s\n" "${COLOR}" "$USER_INPUT"`) when rendering untrusted data in `printf` statements.

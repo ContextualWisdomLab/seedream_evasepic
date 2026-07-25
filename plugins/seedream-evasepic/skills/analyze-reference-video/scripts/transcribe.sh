@@ -68,7 +68,7 @@ if command -v whisper >/dev/null 2>&1; then
     --verbose False \
     -- "$AUDIO"
   AUDIO_BASE="${AUDIO%.*}"
-  printf "%b\n" "${GREEN}Transcript saved to $OUT_DIR/${AUDIO_BASE##*/}.txt${NC}"
+  printf "%b%s/%s.txt%b\n" "${GREEN}Transcript saved to " "$OUT_DIR" "${AUDIO_BASE##*/}" "${NC}"
   exit 0
 fi
 
