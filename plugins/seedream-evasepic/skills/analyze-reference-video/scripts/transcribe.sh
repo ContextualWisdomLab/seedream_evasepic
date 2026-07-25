@@ -56,7 +56,7 @@ fi
 
 # Try whisper CLI first
 if command -v whisper >/dev/null 2>&1; then
-  printf "%b\n" "${CYAN}Transcribing with whisper CLI (model: $MODEL)...${NC}"
+  printf "%b%s%b\n" "${CYAN}Transcribing with whisper CLI (model: " "$MODEL" ")...${NC}"
   OUT_DIR="${AUDIO%/*}"
   [ "$OUT_DIR" = "$AUDIO" ] && OUT_DIR="."
   [ -z "$OUT_DIR" ] && OUT_DIR="/"
@@ -68,7 +68,7 @@ if command -v whisper >/dev/null 2>&1; then
     --verbose False \
     -- "$AUDIO"
   AUDIO_BASE="${AUDIO%.*}"
-  printf "%b\n" "${GREEN}Transcript saved to $OUT_DIR/${AUDIO_BASE##*/}.txt${NC}"
+  printf "%b%s/%s.txt%b\n" "${GREEN}Transcript saved to " "$OUT_DIR" "${AUDIO_BASE##*/}" "${NC}"
   exit 0
 fi
 
