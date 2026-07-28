@@ -126,3 +126,14 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing ANSI Escape Sequence Injection ==="
+MALICIOUS_INPUT='dummy_dir/\033[0;31mhacked\033[0m'
+OUTPUT=$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$MALICIOUS_INPUT" 2>&1 || true)
+if echo -E "$OUTPUT" | grep -F -q "$MALICIOUS_INPUT"; then
+  echo "PASS: No ANSI escape sequence injection"
+else
+  echo "FAIL: ANSI escape sequence injection detected in download-reference.sh" >&2
+  exit 1
+fi
+echo "====================================="
