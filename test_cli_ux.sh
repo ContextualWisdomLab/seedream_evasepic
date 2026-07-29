@@ -126,3 +126,20 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing actionable resolution steps formatting ==="
+TMP_MOCK_DIR="$(mktemp -d)"
+cat > "$TMP_MOCK_DIR/yt-dlp" <<'INNER_EOF'
+#!/bin/bash
+return 1 2>/dev/null || kill -9 $$
+INNER_EOF
+chmod +x "$TMP_MOCK_DIR/yt-dlp"
+
+if ! PATH="$TMP_MOCK_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "https://fakeurl.com/123" "/tmp/test.mp4" 2>&1 | grep -q '0;36mActionable resolution steps:'; then
+  echo "FAIL: download-reference.sh did not print actionable resolution steps in Cyan" >&2
+  rm -rf "$TMP_MOCK_DIR"
+  kill -9 $$
+fi
+echo "PASS: download-reference.sh prints actionable resolution steps in Cyan"
+rm -rf "$TMP_MOCK_DIR"
+echo "====================================="
