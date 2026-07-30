@@ -136,7 +136,7 @@ DOWNLOAD_OUTPUT_LOG="$TMP_DIR/download-terminal-output.log"
 PATH="$TMP_DIR:$PATH" \
 YT_DLP_ARGS_FILE="$ARGS_FILE" \
   bash "$SCRIPT_DIR/download-reference.sh" \
-    "$MALICIOUS_DOWNLOAD_URL" "$MALICIOUS_DOWNLOAD_OUTPUT" > "$DOWNLOAD_OUTPUT_LOG"
+    "$MALICIOUS_DOWNLOAD_URL" "$MALICIOUS_DOWNLOAD_OUTPUT" > "$DOWNLOAD_OUTPUT_LOG" 2>&1
 
 if grep -F -q "$INJECTED_CLEAR_SCREEN" "$DOWNLOAD_OUTPUT_LOG"; then
   echo "FAIL: download-reference.sh emitted an untrusted ANSI escape" >&2
@@ -174,7 +174,7 @@ FFMPEG="$TMP_DIR/ffmpeg" \
 FFPROBE="$TMP_DIR/ffprobe" \
 FAKE_FRAME_OUTPUT_DIR="$MALICIOUS_OUT_DIR" \
   bash "$SCRIPT_DIR/extract-frames.sh" \
-    "$VIDEO_FILE" "$MALICIOUS_OUT_DIR" 1 > "$OUTPUT_LOG"
+    "$VIDEO_FILE" "$MALICIOUS_OUT_DIR" 1 > "$OUTPUT_LOG" 2>&1
 
 if grep -F -q "$INJECTED_CLEAR_SCREEN" "$OUTPUT_LOG"; then
   echo "FAIL: extract-frames.sh evaluated an untrusted ANSI escape" >&2
@@ -190,7 +190,7 @@ for SCRIPT in download-reference.sh extract-frames.sh transcribe.sh; do
   MALICIOUS_SCRIPT="$TMP_DIR/${SCRIPT}"$'\033[2J'
   SCRIPT_OUTPUT_LOG="$TMP_DIR/${SCRIPT}.terminal-output.log"
   ln -s "$(pwd)/$SCRIPT_DIR/$SCRIPT" "$MALICIOUS_SCRIPT"
-  bash "$MALICIOUS_SCRIPT" --help > "$SCRIPT_OUTPUT_LOG"
+  bash "$MALICIOUS_SCRIPT" --help > "$SCRIPT_OUTPUT_LOG" 2>&1
 
   if grep -F -q "$INJECTED_CLEAR_SCREEN" "$SCRIPT_OUTPUT_LOG"; then
     echo "FAIL: $SCRIPT evaluated an ANSI escape from its invocation path" >&2
@@ -221,7 +221,7 @@ PYTHON_OUTPUT_LOG="$TMP_DIR/python-terminal-output.log"
 PATH="$TMP_DIR" \
 PYTHONPATH="$TMP_DIR" \
   "$BASH" "$SCRIPT_DIR/transcribe.sh" \
-    "$MALICIOUS_AUDIO" base > "$PYTHON_OUTPUT_LOG"
+    "$MALICIOUS_AUDIO" base > "$PYTHON_OUTPUT_LOG" 2>&1
 
 if grep -F -q "$INJECTED_CLEAR_SCREEN" "$PYTHON_OUTPUT_LOG"; then
   echo "FAIL: transcribe.sh Python fallback emitted an untrusted ANSI escape" >&2
