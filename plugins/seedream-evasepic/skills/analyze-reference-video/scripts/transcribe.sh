@@ -13,13 +13,14 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
+SCRIPT_NAME="${0##*/}"
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Transcribe Audio Script${NC}"
-    printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}"
+    printf "%b%s%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <audio_path> [model]" "${NC}"
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)"
-    printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base"
+    printf "  Example: %s /tmp/audio.wav base\n" "$SCRIPT_NAME"
     exit 0
   fi
 done
@@ -31,26 +32,26 @@ case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
     printf "%b%s%b\n" "${RED}Error: Invalid model specified: " "$MODEL" "${NC}" >&2
-    printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
+    printf "%b%s%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <audio_path> [model]" "${NC}" >&2
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-    printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
+    printf "  Example: %s /tmp/audio.wav base\n" "$SCRIPT_NAME" >&2
     exit 2
     ;;
 esac
 
 if [ -z "$AUDIO" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
+  printf "%b%s%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <audio_path> [model]" "${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-  printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
+  printf "  Example: %s /tmp/audio.wav base\n" "$SCRIPT_NAME" >&2
   exit 2
 fi
 
 if [ ! -f "$AUDIO" ]; then
   printf "%b%s%b\n" "${RED}Error: audio file not found: " "$AUDIO" "${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
+  printf "%b%s%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <audio_path> [model]" "${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-  printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
+  printf "  Example: %s /tmp/audio.wav base\n" "$SCRIPT_NAME" >&2
   exit 1
 fi
 

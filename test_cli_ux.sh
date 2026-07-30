@@ -168,5 +168,22 @@ if ! grep -F -q '\033[2Jspoof' "$OUTPUT_LOG"; then
   exit 1
 fi
 
-echo "PASS: untrusted output paths are printed literally"
+for SCRIPT in download-reference.sh extract-frames.sh transcribe.sh; do
+  MALICIOUS_SCRIPT="$TMP_DIR/${SCRIPT}\\033[2J"
+  SCRIPT_OUTPUT_LOG="$TMP_DIR/${SCRIPT}.terminal-output.log"
+  ln -s "$(pwd)/$SCRIPT_DIR/$SCRIPT" "$MALICIOUS_SCRIPT"
+  bash "$MALICIOUS_SCRIPT" --help > "$SCRIPT_OUTPUT_LOG"
+
+  if grep -F -q "$INJECTED_CLEAR_SCREEN" "$SCRIPT_OUTPUT_LOG"; then
+    echo "FAIL: $SCRIPT evaluated an ANSI escape from its invocation path" >&2
+    exit 1
+  fi
+
+  if ! grep -F -q '\033[2J' "$SCRIPT_OUTPUT_LOG"; then
+    echo "FAIL: $SCRIPT did not preserve its invocation path literally" >&2
+    exit 1
+  fi
+done
+
+echo "PASS: untrusted output paths and script names are printed literally"
 echo "====================================="

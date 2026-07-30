@@ -12,12 +12,13 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
+SCRIPT_NAME="${0##*/}"
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
-    printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}"
-    printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+    printf "%b%s%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <url> <output_path>" "${NC}"
+    printf "  Example: %s 'https://youtube.com/shorts/abc123' /tmp/ref.mp4\n" "$SCRIPT_NAME"
     exit 0
   fi
 done
@@ -27,8 +28,8 @@ OUTPUT="${2:-}"
 
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
-  printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  printf "%b%s%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <url> <output_path>" "${NC}" >&2
+  printf "  Example: %s 'https://youtube.com/shorts/abc123' /tmp/ref.mp4\n" "$SCRIPT_NAME" >&2
   exit 2
 fi
 
