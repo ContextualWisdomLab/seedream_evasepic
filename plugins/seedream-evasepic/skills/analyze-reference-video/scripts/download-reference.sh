@@ -16,8 +16,8 @@ NC='\033[0m' # No Color
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
-    printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}"
-    printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+    printf "%b%s%b\n" "${YELLOW}Usage: " "${0##*/}" " <url> <output_path>${NC}"
+    printf "%b%s%b\n" "  Example: " "${0##*/}" " 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
     exit 0
   fi
 done
@@ -27,8 +27,8 @@ OUTPUT="${2:-}"
 
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
-  printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  printf "%b%s%b\n" "${YELLOW}Usage: " "${0##*/}" " <url> <output_path>${NC}" >&2
+  printf "%b%s%b\n" "  Example: " "${0##*/}" " 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
   exit 2
 fi
 
@@ -55,8 +55,8 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
-printf "%b\n" "${CYAN}Downloading from: ${NC}$URL"
-printf "%b\n" "${CYAN}Target: ${NC}$OUTPUT"
+printf "%b%s\n" "${CYAN}Downloading from: ${NC}" "$URL"
+printf "%b%s\n" "${CYAN}Target: ${NC}" "$OUTPUT"
 
 # Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
 # -f format spec: prefer mp4, cap at 1080p
@@ -80,5 +80,5 @@ yt-dlp \
     exit 1
   }
 
-printf "%b\n" "${GREEN}Downloaded: ${NC}$OUTPUT"
+printf "%b%s\n" "${GREEN}Downloaded: ${NC}" "$OUTPUT"
 ls -lh -- "$OUTPUT"
