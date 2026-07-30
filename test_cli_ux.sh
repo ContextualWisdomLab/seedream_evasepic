@@ -129,6 +129,25 @@ echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
 
 echo "=== Testing ANSI escape sequence injection prevention ==="
+INJECTED_CLEAR_SCREEN="$(printf '\033[2J')"
+MALICIOUS_DOWNLOAD_URL="https://example.invalid/"$'\033[2J'
+MALICIOUS_DOWNLOAD_OUTPUT="$TMP_DIR/download"$'\033[2J'".mp4"
+DOWNLOAD_OUTPUT_LOG="$TMP_DIR/download-terminal-output.log"
+PATH="$TMP_DIR:$PATH" \
+YT_DLP_ARGS_FILE="$ARGS_FILE" \
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "$MALICIOUS_DOWNLOAD_URL" "$MALICIOUS_DOWNLOAD_OUTPUT" > "$DOWNLOAD_OUTPUT_LOG"
+
+if grep -F -q "$INJECTED_CLEAR_SCREEN" "$DOWNLOAD_OUTPUT_LOG"; then
+  echo "FAIL: download-reference.sh emitted an untrusted ANSI escape" >&2
+  exit 1
+fi
+
+if ! grep -F -q '\E[2J' "$DOWNLOAD_OUTPUT_LOG"; then
+  echo "FAIL: download-reference.sh did not render the control byte safely" >&2
+  exit 1
+fi
+
 cat > "$TMP_DIR/ffprobe" <<'EOF'
 #!/bin/bash
 printf '%s\n' \
@@ -148,7 +167,7 @@ EOF
 chmod +x "$TMP_DIR/ffprobe" "$TMP_DIR/ffmpeg"
 VIDEO_FILE="$TMP_DIR/video.mp4"
 : > "$VIDEO_FILE"
-MALICIOUS_OUT_DIR="$TMP_DIR/output\\033[2Jspoof"
+MALICIOUS_OUT_DIR="$TMP_DIR/output"$'\033[2J'"spoof"
 OUTPUT_LOG="$TMP_DIR/terminal-output.log"
 
 FFMPEG="$TMP_DIR/ffmpeg" \
@@ -157,19 +176,18 @@ FAKE_FRAME_OUTPUT_DIR="$MALICIOUS_OUT_DIR" \
   bash "$SCRIPT_DIR/extract-frames.sh" \
     "$VIDEO_FILE" "$MALICIOUS_OUT_DIR" 1 > "$OUTPUT_LOG"
 
-INJECTED_CLEAR_SCREEN="$(printf '\033[2J')"
 if grep -F -q "$INJECTED_CLEAR_SCREEN" "$OUTPUT_LOG"; then
   echo "FAIL: extract-frames.sh evaluated an untrusted ANSI escape" >&2
   exit 1
 fi
 
-if ! grep -F -q '\033[2Jspoof' "$OUTPUT_LOG"; then
-  echo "FAIL: extract-frames.sh did not preserve the untrusted path literally" >&2
+if ! grep -F -q '\E[2Jspoof' "$OUTPUT_LOG"; then
+  echo "FAIL: extract-frames.sh did not render the control byte safely" >&2
   exit 1
 fi
 
 for SCRIPT in download-reference.sh extract-frames.sh transcribe.sh; do
-  MALICIOUS_SCRIPT="$TMP_DIR/${SCRIPT}\\033[2J"
+  MALICIOUS_SCRIPT="$TMP_DIR/${SCRIPT}"$'\033[2J'
   SCRIPT_OUTPUT_LOG="$TMP_DIR/${SCRIPT}.terminal-output.log"
   ln -s "$(pwd)/$SCRIPT_DIR/$SCRIPT" "$MALICIOUS_SCRIPT"
   bash "$MALICIOUS_SCRIPT" --help > "$SCRIPT_OUTPUT_LOG"
@@ -179,11 +197,41 @@ for SCRIPT in download-reference.sh extract-frames.sh transcribe.sh; do
     exit 1
   fi
 
-  if ! grep -F -q '\033[2J' "$SCRIPT_OUTPUT_LOG"; then
-    echo "FAIL: $SCRIPT did not preserve its invocation path literally" >&2
+  if ! grep -F -q '\E[2J' "$SCRIPT_OUTPUT_LOG"; then
+    echo "FAIL: $SCRIPT did not render its invocation path safely" >&2
     exit 1
   fi
 done
 
-echo "PASS: untrusted output paths and script names are printed literally"
+PYTHON3_BIN="$(python3 -c 'import sys; print(sys.executable)')"
+ln -s "$PYTHON3_BIN" "$TMP_DIR/python3"
+cat > "$TMP_DIR/whisper.py" <<'PYEOF'
+class FakeModel:
+    def transcribe(self, _audio):
+        return {"text": "ok", "language": "en", "segments": []}
+
+
+def load_model(_name):
+    return FakeModel()
+PYEOF
+
+MALICIOUS_AUDIO="$TMP_DIR/audio"$'\033[2J'".wav"
+PYTHON_OUTPUT_LOG="$TMP_DIR/python-terminal-output.log"
+: > "$MALICIOUS_AUDIO"
+PATH="$TMP_DIR" \
+PYTHONPATH="$TMP_DIR" \
+  "$BASH" "$SCRIPT_DIR/transcribe.sh" \
+    "$MALICIOUS_AUDIO" base > "$PYTHON_OUTPUT_LOG"
+
+if grep -F -q "$INJECTED_CLEAR_SCREEN" "$PYTHON_OUTPUT_LOG"; then
+  echo "FAIL: transcribe.sh Python fallback emitted an untrusted ANSI escape" >&2
+  exit 1
+fi
+
+if ! grep -F -q '\x1b[2J' "$PYTHON_OUTPUT_LOG"; then
+  echo "FAIL: transcribe.sh Python fallback did not render the control byte safely" >&2
+  exit 1
+fi
+
+echo "PASS: shell and Python outputs escape untrusted control bytes"
 echo "====================================="

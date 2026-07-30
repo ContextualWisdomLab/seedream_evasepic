@@ -6,13 +6,17 @@
 
 set -euo pipefail
 
+safe_terminal_text() {
+  printf '%q' "${1-}"
+}
+
 # ANSI Color Codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
-SCRIPT_NAME="${0##*/}"
+SCRIPT_NAME="$(safe_terminal_text "${0##*/}")"
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
@@ -56,8 +60,8 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
-printf "%b%s\n" "${CYAN}Downloading from: ${NC}" "$URL"
-printf "%b%s\n" "${CYAN}Target: ${NC}" "$OUTPUT"
+printf "%b%s\n" "${CYAN}Downloading from: ${NC}" "$(safe_terminal_text "$URL")"
+printf "%b%s\n" "${CYAN}Target: ${NC}" "$(safe_terminal_text "$OUTPUT")"
 
 # Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
 # -f format spec: prefer mp4, cap at 1080p
@@ -81,5 +85,5 @@ yt-dlp \
     exit 1
   }
 
-printf "%b%s\n" "${GREEN}Downloaded: ${NC}" "$OUTPUT"
-ls -lh -- "$OUTPUT"
+printf "%b%s\n" "${GREEN}Downloaded: ${NC}" "$(safe_terminal_text "$OUTPUT")"
+ls -lhq -- "$OUTPUT"
