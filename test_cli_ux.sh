@@ -69,6 +69,7 @@ if grep -n -F 'awk "BEGIN' "$SCRIPT_DIR/extract-frames.sh"; then
   exit 1
 fi
 
+# shellcheck disable=SC2016 # Match the literal source expression, not shell-expanded values.
 if ! grep -n -F 'awk -v nf="$NUM_FRAMES" -v dur="$DURATION"' "$SCRIPT_DIR/extract-frames.sh"; then
   echo "FAIL: extract-frames.sh must pass NUM_FRAMES and DURATION to awk with -v bindings" >&2
   exit 1
@@ -125,4 +126,47 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
   exit 1
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
+echo "====================================="
+
+echo "=== Testing ANSI escape sequence injection prevention ==="
+cat > "$TMP_DIR/ffprobe" <<'EOF'
+#!/bin/bash
+printf '%s\n' \
+  'duration=1' \
+  'width=1' \
+  'height=1' \
+  'r_frame_rate=1/1' \
+  'codec_type=video'
+EOF
+
+cat > "$TMP_DIR/ffmpeg" <<'EOF'
+#!/bin/bash
+set -eu
+: > "${FAKE_FRAME_OUTPUT_DIR:?}/frame_001.jpg"
+EOF
+
+chmod +x "$TMP_DIR/ffprobe" "$TMP_DIR/ffmpeg"
+VIDEO_FILE="$TMP_DIR/video.mp4"
+: > "$VIDEO_FILE"
+MALICIOUS_OUT_DIR="$TMP_DIR/output\\033[2Jspoof"
+OUTPUT_LOG="$TMP_DIR/terminal-output.log"
+
+FFMPEG="$TMP_DIR/ffmpeg" \
+FFPROBE="$TMP_DIR/ffprobe" \
+FAKE_FRAME_OUTPUT_DIR="$MALICIOUS_OUT_DIR" \
+  bash "$SCRIPT_DIR/extract-frames.sh" \
+    "$VIDEO_FILE" "$MALICIOUS_OUT_DIR" 1 > "$OUTPUT_LOG"
+
+INJECTED_CLEAR_SCREEN="$(printf '\033[2J')"
+if grep -F -q "$INJECTED_CLEAR_SCREEN" "$OUTPUT_LOG"; then
+  echo "FAIL: extract-frames.sh evaluated an untrusted ANSI escape" >&2
+  exit 1
+fi
+
+if ! grep -F -q '\033[2Jspoof' "$OUTPUT_LOG"; then
+  echo "FAIL: extract-frames.sh did not preserve the untrusted path literally" >&2
+  exit 1
+fi
+
+echo "PASS: untrusted output paths are printed literally"
 echo "====================================="
