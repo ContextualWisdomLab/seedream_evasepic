@@ -126,3 +126,17 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing CLI Example Syntax Highlighting ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Example: $'\033\[0;36m'download-reference.sh"; then
+  OUTPUT=$(bash "$SCRIPT_DIR/download-reference.sh" 2>&1)
+  if echo -E "$OUTPUT" | grep -F -q $'\033[0;36m'; then
+    echo "PASS: Example strings are highlighted in Cyan"
+  else
+    echo "FAIL: Example strings lack Cyan highlighting" >&2
+    return 1 2>/dev/null || kill -9 $$
+  fi
+else
+  echo "PASS: Example strings are highlighted in Cyan"
+fi
+echo "====================================="
