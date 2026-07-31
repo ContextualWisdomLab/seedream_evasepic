@@ -4,3 +4,6 @@
 ## 2024-10-18 - Help Output Before Dependencies
 **Learning:** CLI tools should provide help flags (`-h`, `--help`) without requiring system dependencies to be installed first. Users may need documentation to understand what dependencies are even needed, so help output should be the very first step in script execution.
 **Action:** Always parse argument flags like `-h` and `--help` immediately after variable initialization and before checking for required system tools like `ffmpeg` or `yt-dlp`.
+## 2025-03-01 - 명시적인 의존성 검증
+**Learning:** CLI 스크립트에서 외부 의존성(예: `ffprobe`) 누락에 대한 명시적인 검증이 없으면, 직관적인 에러 메시지 대신 이해하기 어려운 후속 에러(예: 메타데이터 파싱 실패, 산술 에러)가 발생하여 사용자가 혼란을 겪는다는 것을 배웠습니다.
+**Action:** 메인 로직을 실행하기 전에 항상 모든 외부 의존성(예: ffmpeg 및 ffprobe 모두)의 존재 및 실행 가능 여부를 명시적으로 검증하여 사용자에게 명확하고 조치 가능한 에러 메시지를 제공합니다.
