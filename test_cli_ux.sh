@@ -126,3 +126,14 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing Example command highlighting ==="
+CYAN=$'\033[0;36m'
+OUTPUT=$(bash "$SCRIPT_DIR/download-reference.sh" -h)
+if echo -E "$OUTPUT" | grep -F -q "${CYAN}download-reference.sh"; then
+  echo "PASS: Example command is highlighted in Cyan"
+else
+  echo "FAIL: Example command highlighting missing" >&2
+  return 1 2>/dev/null || kill -9 $$
+fi
+echo "====================================="
