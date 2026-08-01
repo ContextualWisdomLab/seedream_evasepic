@@ -32,6 +32,13 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+case "$OUTPUT" in
+  *..*)
+    printf "%b\n" "${RED}Error: Path traversal sequences ('..') are not allowed.${NC}" >&2
+    exit 2
+    ;;
+esac
+
 # Performance Optimization: Early return if target file already exists and is non-empty
 if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
   printf "%b\n" "${GREEN}File already exists, skipping download:${NC}"

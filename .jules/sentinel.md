@@ -30,3 +30,7 @@
 **Vulnerability:** User-controlled file paths were passed directly to bash utilities (dirname, mkdir, ls, basename) without the end-of-options separator (--), allowing for option injection if a path begins with a hyphen.
 **Learning:** By default, utilities parse arguments starting with `-` as options. Using these without `--` before dynamic variables is a common command injection vector.
 **Prevention:** Always use the `--` flag separator before passing user-controlled variables to standard CLI tools like `dirname`, `mkdir`, `basename`, and `ls`.
+## 2026-08-01 - [HIGH] Path Traversal in yt-dlp Output Parameter
+**Vulnerability:** The script extracted the output directory from user input `OUTPUT` without validating for directory traversal sequences (`..`), allowing an attacker to write files to unintended, writable locations.
+**Learning:** Even if command injection is prevented with quoting, passing unfiltered user paths to `mkdir` or tool output parameters (like yt-dlp `-o`) enables path traversal attacks.
+**Prevention:** Always validate file path parameters by rejecting inputs containing directory traversal sequences (e.g., `case "$OUTPUT" in *..*) exit 2 ;; esac`).
