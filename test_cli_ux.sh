@@ -126,3 +126,19 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing ANSI color codes in usage Example ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" -h 2>&1 | grep -q $'\033\[0;36m'; then
+  echo "FAIL: download-reference.sh does not contain ANSI color for Example usage" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/extract-frames.sh" -h 2>&1 | grep -q $'\033\[0;36m'; then
+  echo "FAIL: extract-frames.sh does not contain ANSI color for Example usage" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/transcribe.sh" -h 2>&1 | grep -q $'\033\[0;36m'; then
+  echo "FAIL: transcribe.sh does not contain ANSI color for Example usage" >&2
+  exit 1
+fi
+echo "PASS: usage Example contains ANSI color codes"
+echo "====================================="
