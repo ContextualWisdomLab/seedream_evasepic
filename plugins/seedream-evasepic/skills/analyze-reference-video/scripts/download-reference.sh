@@ -35,7 +35,7 @@ fi
 # Optimization: Early return if output file already exists and is non-empty
 # This avoids expensive redundant network calls and yt-dlp execution
 if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
-  printf "%b\n" "${GREEN}File already exists, skipping download: ${NC}$OUTPUT"
+  printf "%b%s\n" "${GREEN}File already exists, skipping download: ${NC}" "$OUTPUT"
   exit 0
 fi
 
