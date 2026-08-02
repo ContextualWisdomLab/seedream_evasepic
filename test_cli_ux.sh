@@ -126,3 +126,49 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing yt-dlp concurrent fragments flag ==="
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+cat > "$TMP_DIR/yt-dlp" <<'INNEREOF'
+#!/bin/bash
+set -eu
+
+printf '%s\n' "$@" > "${YT_DLP_ARGS_FILE:?}"
+
+output=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    output="${1:-}"
+    break
+  fi
+  shift
+done
+
+if [ -n "$output" ]; then
+  mkdir -p "$(dirname "$output")"
+  : > "$output"
+fi
+INNEREOF
+chmod +x "$TMP_DIR/yt-dlp"
+
+ARGS_FILE="$TMP_DIR/yt-dlp.args"
+PATH="$TMP_DIR:$PATH" \
+YT_DLP_ARGS_FILE="$ARGS_FILE" \
+  bash "plugins/seedream-evasepic/skills/analyze-reference-video/scripts/download-reference.sh" "dummy_url" "$TMP_DIR/reference.mp4" >/dev/null
+
+if ! grep -q -F -- "--concurrent-fragments" "$ARGS_FILE"; then
+  echo "FAIL: yt-dlp was not called with --concurrent-fragments flag" >&2
+  cat "$ARGS_FILE" >&2
+  exit 1
+fi
+if ! grep -q -F -- "4" "$ARGS_FILE"; then
+  echo "FAIL: yt-dlp was not called with concurrent fragments value 4" >&2
+  cat "$ARGS_FILE" >&2
+  exit 1
+fi
+
+echo "PASS: yt-dlp uses --concurrent-fragments 4"
+echo "====================================="
