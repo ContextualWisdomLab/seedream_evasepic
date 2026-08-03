@@ -32,6 +32,10 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+# Validate output path is safe
+source "${0%/*}/path-utils.sh"
+validate_safe_path "$OUTPUT" || exit 1
+
 # Check for yt-dlp
 if ! command -v yt-dlp >/dev/null 2>&1; then
   printf "%b\n" "${CYAN}yt-dlp not found. Trying to install...${NC}" >&2

@@ -46,6 +46,12 @@ if [ -z "$AUDIO" ]; then
   exit 2
 fi
 
+
+
+# Validate input audio path (output is derived from input, so validating input protects output)
+source "${0%/*}/path-utils.sh"
+validate_safe_path "$AUDIO" || exit 1
+
 if [ ! -f "$AUDIO" ]; then
   printf "%b\n" "${RED}Error: audio file not found: $AUDIO${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2

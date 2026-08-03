@@ -86,13 +86,13 @@ echo "PASS: download-reference.sh prints explicit error message"
 echo "====================================="
 
 echo "=== Testing usage block for invalid arguments ==="
-if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy.wav" "invalid_model" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
+if ! bash "$SCRIPT_DIR/transcribe.sh" "/tmp/dummy.wav" "invalid_model" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
   echo "FAIL: transcribe.sh did not print usage block for invalid model" >&2
   exit 1
 fi
 echo "PASS: transcribe.sh prints usage block for invalid model"
 
-if ! bash "$SCRIPT_DIR/extract-frames.sh" "dummy.mp4" "dummy_dir" "invalid_num" 2>&1 | grep -q "Usage: extract-frames.sh <video_path> <output_dir> \[num_frames\]"; then
+if ! bash "$SCRIPT_DIR/extract-frames.sh" "/tmp/dummy.mp4" "/tmp/dummy_dir" "invalid_num" 2>&1 | grep -q "Usage: extract-frames.sh <video_path> <output_dir> \[num_frames\]"; then
   echo "FAIL: extract-frames.sh did not print usage block for invalid num_frames" >&2
   exit 1
 fi
@@ -112,7 +112,7 @@ echo "PASS: transcribe.sh Python inline script contains ANSI color codes"
 echo "====================================="
 
 echo "=== Testing help flag position flexibility ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "--help" | grep -q "Download Reference Video Script"; then
+if ! bash "$SCRIPT_DIR/download-reference.sh" "/tmp/dummy_url" "--help" | grep -q "Download Reference Video Script"; then
   echo "FAIL: download-reference.sh did not recognize --help as second argument" >&2
   exit 1
 fi
@@ -120,7 +120,7 @@ echo "PASS: download-reference.sh recognizes --help at any position"
 echo "====================================="
 
 echo "=== Testing usage block on file not found error ==="
-if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
+if ! bash "$SCRIPT_DIR/transcribe.sh" "/tmp/dummy_nonexistent.wav" "base" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
   echo "FAIL: transcribe.sh did not print usage block for file not found error" >&2
   exit 1
 fi

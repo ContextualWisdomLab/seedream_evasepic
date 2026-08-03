@@ -13,3 +13,6 @@
 ## 2024-03-05 - CLI Example Highlighting
 **Learning:** CLI 도움말이나 에러 메시지에 포함된 `Example:` 명령어 예시가 텍스트와 섞여 구분이 안 될 경우, 사용자가 복사 및 붙여넣기 하거나 시각적으로 명령어를 식별하기 어렵습니다. 청록색(Cyan) 등의 색상을 예시 명령어 부분에만 적용하면 예시라는 점이 시각적으로 명확해집니다.
 **Action:** `download-reference.sh`, `extract-frames.sh`, `transcribe.sh` 스크립트에서 사용법(Usage) 출력 시 `Example:` 뒤의 실제 실행 명령어 문자열에 `CYAN` 색상을 적용하도록 개선했습니다. 이를 통해 사용자가 명령어를 더 직관적으로 파악할 수 있도록 돕습니다.
+## 2024-03-06 - Input Validation and Path Traversal
+**Learning:** Adding validation rules like `validate_safe_path` (which uses `realpath`/`readlink -f` to restrict I/O to safe directories like `/tmp`) effectively mitigates arbitrary file read/write vulnerabilities. However, when retrofitting validation into existing bash scripts, we must carefully consider how the script is invoked. If arguments are passed dynamically or derived, ensure the validation occurs early enough to block dangerous operations but doesn't break legitimate use cases or existing tests.
+**Action:** When creating CLI tools that accept file paths as arguments, always add strict path validation. Ensure test scripts are updated to use safe paths (e.g., prefixing dummy filenames with `/tmp/`) to pass validation and avoid test failures.

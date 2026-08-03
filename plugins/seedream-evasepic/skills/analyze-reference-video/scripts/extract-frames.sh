@@ -38,6 +38,8 @@ if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   exit 2
 fi
 
+
+
 case "$NUM_FRAMES" in
   ''|*[!0-9]*|0*)
     printf "%b\n" "${RED}Error: num_frames must be a positive integer.${NC}" >&2
