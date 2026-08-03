@@ -30,7 +30,7 @@ MODEL="${2:-base}"
 case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
-    printf "%b\n" "${RED}Error: Invalid model specified: $MODEL${NC}" >&2
+    printf "%b%s%b\n" "${RED}Error: Invalid model specified: " "$MODEL" "${NC}" >&2
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
     printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
@@ -47,7 +47,7 @@ if [ -z "$AUDIO" ]; then
 fi
 
 if [ ! -f "$AUDIO" ]; then
-  printf "%b\n" "${RED}Error: audio file not found: $AUDIO${NC}" >&2
+  printf "%b%s%b\n" "${RED}Error: audio file not found: " "$AUDIO" "${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
   printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
@@ -56,7 +56,7 @@ fi
 
 # Try whisper CLI first
 if command -v whisper >/dev/null 2>&1; then
-  printf "%b\n" "${CYAN}Transcribing with whisper CLI (model: $MODEL)...${NC}"
+  printf "%b%s%b\n" "${CYAN}Transcribing with whisper CLI (model: " "$MODEL" ")...${NC}"
   OUT_DIR="${AUDIO%/*}"
   [ "$OUT_DIR" = "$AUDIO" ] && OUT_DIR="."
   [ -z "$OUT_DIR" ] && OUT_DIR="/"
@@ -68,7 +68,7 @@ if command -v whisper >/dev/null 2>&1; then
     --verbose False \
     -- "$AUDIO"
   AUDIO_BASE="${AUDIO%.*}"
-  printf "%b\n" "${GREEN}Transcript saved to $OUT_DIR/${AUDIO_BASE##*/}.txt${NC}"
+  printf "%b%s%s%s%b\n" "${GREEN}Transcript saved to " "$OUT_DIR" "/" "${AUDIO_BASE##*/}.txt" "${NC}"
   exit 0
 fi
 

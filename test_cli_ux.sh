@@ -126,3 +126,11 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing for Terminal Output Injection (printf %b) ==="
+if grep -E 'printf "%b\\n".*\$(URL|OUTPUT|VIDEO|OUT_DIR|DURATION|RESOLUTION|FPS|MODEL|AUDIO|AUDIO_BASE)' "$SCRIPT_DIR"/*.sh; then
+  echo "FAIL: Found unsafe printf '%b\n' interpolating dynamic variables" >&2
+  exit 1
+fi
+echo "PASS: No unsafe printf '%b\n' interpolation found"
+echo "====================================="
