@@ -126,3 +126,25 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+
+
+
+echo "=== Testing ANSI color codes in usage block ==="
+echo -E "$(bash "$SCRIPT_DIR/download-reference.sh" -h)" > /tmp/out1
+if ! grep -q $'\033\[0;36m' /tmp/out1; then
+  echo "FAIL: download-reference.sh usage block example is not cyan" >&2
+  exit 1
+fi
+echo -E "$(bash "$SCRIPT_DIR/extract-frames.sh" -h)" > /tmp/out2
+if ! grep -q $'\033\[0;36m' /tmp/out2; then
+  echo "FAIL: extract-frames.sh usage block example is not cyan" >&2
+  exit 1
+fi
+echo -E "$(bash "$SCRIPT_DIR/transcribe.sh" -h)" > /tmp/out3
+if ! grep -q $'\033\[0;36m' /tmp/out3; then
+  echo "FAIL: transcribe.sh usage block example is not cyan" >&2
+  exit 1
+fi
+echo "PASS: usage block examples are cyan"
+echo "====================================="
