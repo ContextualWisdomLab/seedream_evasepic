@@ -126,3 +126,10 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+echo "=== Testing yt-dlp concurrent fragments optimization ==="
+if ! grep -q -- "--concurrent-fragments 4" "$SCRIPT_DIR/download-reference.sh"; then
+  echo "FAIL: download-reference.sh does not contain --concurrent-fragments 4 flag for yt-dlp optimization" >&2
+  exit 1
+fi
+echo "PASS: yt-dlp concurrent fragments optimization is present"
+echo "====================================="

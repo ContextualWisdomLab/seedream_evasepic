@@ -60,11 +60,13 @@ printf "%b\n" "${CYAN}Target: ${NC}$OUTPUT"
 
 # Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
 # -f format spec: prefer mp4, cap at 1080p
+# ⚡ Bolt: DASH/HLS 스트림 다운로드 시 --concurrent-fragments 4 옵션으로 병렬화하여 네트워크 I/O 병목 해소
 yt-dlp \
   -f "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best" \
   --merge-output-format mp4 \
   -o "$OUTPUT" \
   --no-playlist \
+  --concurrent-fragments 4 \
   --quiet --progress \
   -- "$URL" || {
     printf "\n" >&2
