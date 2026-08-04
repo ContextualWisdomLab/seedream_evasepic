@@ -126,3 +126,29 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+echo "=== Testing ANSI Escape Sequence Injection ==="
+MALICIOUS_INPUT="\033[0;31mPWNED\033[0m"
+OUTPUT=$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$MALICIOUS_INPUT" 2>&1 || true)
+if echo -E "$OUTPUT" | grep -F -q "$MALICIOUS_INPUT"; then
+  echo "PASS: ANSI Escape Sequence Injection prevented in download-reference.sh"
+else
+  echo "FAIL: ANSI Escape Sequence Injection NOT prevented in download-reference.sh" >&2
+  exit 1
+fi
+
+OUTPUT=$(FFMPEG=/bin/echo bash "$SCRIPT_DIR/extract-frames.sh" "$MALICIOUS_INPUT" "dummy_dir" 2>&1 || true)
+if echo -E "$OUTPUT" | grep -F -q "$MALICIOUS_INPUT"; then
+  echo "PASS: ANSI Escape Sequence Injection prevented in extract-frames.sh"
+else
+  echo "FAIL: ANSI Escape Sequence Injection NOT prevented in extract-frames.sh" >&2
+  exit 1
+fi
+
+OUTPUT=$(bash "$SCRIPT_DIR/transcribe.sh" "dummy.wav" "$MALICIOUS_INPUT" 2>&1 || true)
+if echo -E "$OUTPUT" | grep -F -q "$MALICIOUS_INPUT"; then
+  echo "PASS: ANSI Escape Sequence Injection prevented in transcribe.sh"
+else
+  echo "FAIL: ANSI Escape Sequence Injection NOT prevented in transcribe.sh" >&2
+  exit 1
+fi
+echo "====================================="
