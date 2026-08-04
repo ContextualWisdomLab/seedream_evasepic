@@ -126,3 +126,19 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing Terminal Output Injection ==="
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+MALICIOUS_INPUT="$TMP_DIR/foo\n\033[0;31mbar"
+
+output=$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$MALICIOUS_INPUT")
+if echo "$output" | grep -q "bar"; then
+  if echo "$output" | grep -q 'foo\\n\\033\[0;31mbar'; then
+    echo "PASS: Terminal Output Injection prevented"
+  else
+    echo "FAIL: Malicious input was evaluated as an escape sequence!" >&2
+    exit 1
+  fi
+fi
+echo "====================================="
