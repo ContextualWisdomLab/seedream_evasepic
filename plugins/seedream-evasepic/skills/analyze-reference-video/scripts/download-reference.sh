@@ -55,6 +55,12 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
+if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
+  printf "%b\n" "${GREEN}Already downloaded: ${NC}$OUTPUT"
+  ls -lh -- "$OUTPUT"
+  exit 0
+fi
+
 printf "%b\n" "${CYAN}Downloading from: ${NC}$URL"
 printf "%b\n" "${CYAN}Target: ${NC}$OUTPUT"
 
