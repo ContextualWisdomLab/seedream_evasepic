@@ -126,3 +126,19 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing example command syntax highlighting ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" --help | grep -q $'\033\[0;36m.*download-reference.sh'; then
+  echo "FAIL: download-reference.sh help does not contain Cyan highlighting on the Example command" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/extract-frames.sh" --help | grep -q $'\033\[0;36m.*extract-frames.sh'; then
+  echo "FAIL: extract-frames.sh help does not contain Cyan highlighting on the Example command" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/transcribe.sh" --help | grep -q $'\033\[0;36m.*transcribe.sh'; then
+  echo "FAIL: transcribe.sh help does not contain Cyan highlighting on the Example command" >&2
+  exit 1
+fi
+echo "PASS: Example commands are syntax highlighted with Cyan"
+echo "====================================="
