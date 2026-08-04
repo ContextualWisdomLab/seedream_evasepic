@@ -126,3 +126,15 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing ffprobe dependency validation ==="
+TMP_DIR="$(mktemp -d)"
+echo "dummy" > "$TMP_DIR/dummy_video.mp4"
+if ! FFMPEG="/bin/echo" FFPROBE="/nonexistent/ffprobe" bash "$SCRIPT_DIR/extract-frames.sh" "$TMP_DIR/dummy_video.mp4" "$TMP_DIR/out" 12 2>&1 | grep -q "Error: ffprobe not found."; then
+  echo "FAIL: extract-frames.sh did not validate ffprobe existence explicitly" >&2
+  rm -rf "$TMP_DIR"
+  exit 1
+fi
+rm -rf "$TMP_DIR"
+echo "PASS: extract-frames.sh validates ffprobe existence explicitly"
+echo "====================================="
