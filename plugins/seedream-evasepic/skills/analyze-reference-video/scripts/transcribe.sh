@@ -14,6 +14,10 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+# shellcheck source=terminal-output.sh
+. "$SCRIPT_DIRECTORY/terminal-output.sh"
+
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Transcribe Audio Script${NC}"
@@ -30,7 +34,7 @@ MODEL="${2:-base}"
 case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
-    printf "%b\n" "${RED}Error: Invalid model specified: $MODEL${NC}" >&2
+    terminal_print_value "${RED}Error: Invalid model specified: " "$MODEL" "${NC}" >&2
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
     printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
@@ -47,7 +51,7 @@ if [ -z "$AUDIO" ]; then
 fi
 
 if [ ! -f "$AUDIO" ]; then
-  printf "%b\n" "${RED}Error: audio file not found: $AUDIO${NC}" >&2
+  terminal_print_value "${RED}Error: audio file not found: " "$AUDIO" "${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
   printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
@@ -56,7 +60,7 @@ fi
 
 # Try whisper CLI first
 if command -v whisper >/dev/null 2>&1; then
-  printf "%b\n" "${CYAN}Transcribing with whisper CLI (model: $MODEL)...${NC}"
+  terminal_print_value "${CYAN}Transcribing with whisper CLI (model: " "$MODEL" ")...${NC}"
   OUT_DIR="${AUDIO%/*}"
   [ "$OUT_DIR" = "$AUDIO" ] && OUT_DIR="."
   [ -z "$OUT_DIR" ] && OUT_DIR="/"
@@ -68,7 +72,7 @@ if command -v whisper >/dev/null 2>&1; then
     --verbose False \
     -- "$AUDIO"
   AUDIO_BASE="${AUDIO%.*}"
-  printf "%b\n" "${GREEN}Transcript saved to $OUT_DIR/${AUDIO_BASE##*/}.txt${NC}"
+  terminal_print_value "${GREEN}Transcript saved to " "$OUT_DIR/${AUDIO_BASE##*/}.txt" "${NC}"
   exit 0
 fi
 
@@ -87,14 +91,21 @@ if command -v python3 >/dev/null 2>&1; then
   export AUDIO_PATH="$AUDIO"
   export WHISPER_MODEL="$MODEL"
   python3 <<'PYEOF'
-import whisper, json, os, sys
+import json
+import os
+import re
+
+import whisper
+
 audio = os.environ.get("AUDIO_PATH")
 model_name = os.environ.get("WHISPER_MODEL")
 out_base = os.path.splitext(audio)[0]
 
+# The model name was allowlisted by Bash. User-controlled paths are deliberately
+# omitted from terminal output; they remain available only to file APIs.
 print(f"\033[0;36mLoading whisper model: {model_name}...\033[0m")
 model = whisper.load_model(model_name)
-print(f"\033[0;36mTranscribing {audio}...\033[0m")
+print("\033[0;36mTranscribing audio...\033[0m")
 result = model.transcribe(audio)
 
 # Write plain text
@@ -112,9 +123,11 @@ with open(out_base + ".segments.json", "w") as f:
         ]
     }, f, ensure_ascii=False, indent=2)
 
-print(f"\033[0;32mTranscript: {out_base}.txt\033[0m")
-print(f"\033[0;32mSegments:   {out_base}.segments.json\033[0m")
-print(f"\033[0;32mLanguage detected: {result.get('language', 'unknown')}\033[0m")
+language = str(result.get("language", "unknown"))
+if not re.fullmatch(r"[A-Za-z0-9._-]{1,32}", language):
+    language = "unknown"
+print("\033[0;32mTranscript and segment files written.\033[0m")
+print(f"\033[0;32mLanguage detected: {language}\033[0m")
 PYEOF
 
   exit 0
