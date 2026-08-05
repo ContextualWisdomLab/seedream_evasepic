@@ -155,3 +155,18 @@ echo "====================================="
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
+echo "=== Testing Example syntax highlighting ==="
+if ! bash "$SCRIPT_DIR/extract-frames.sh" -h | grep -q $'\033\[0;36m'; then
+  echo "FAIL: extract-frames.sh help text does not contain Cyan ANSI color for Example highlighting" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/download-reference.sh" -h | grep -q $'\033\[0;36m'; then
+  echo "FAIL: download-reference.sh help text does not contain Cyan ANSI color for Example highlighting" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/transcribe.sh" -h | grep -q $'\033\[0;36m'; then
+  echo "FAIL: transcribe.sh help text does not contain Cyan ANSI color for Example highlighting" >&2
+  exit 1
+fi
+echo "PASS: Example commands are properly syntax highlighted in usage blocks"
+echo "====================================="
