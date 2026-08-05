@@ -1,6 +1,8 @@
 #!/bin/bash
 # Test script to verify CLI UX enhancements (ANSI color codes)
 
+set -u
+
 SCRIPT_DIR="plugins/seedream-evasepic/skills/analyze-reference-video/scripts"
 
 echo "=== Testing download-reference.sh ==="
@@ -20,7 +22,7 @@ echo "====================================="
 
 echo "=== Testing yt-dlp argument separator ==="
 TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TMP_DIR"' EXIT
+trap 'rm -rf -- "$TMP_DIR"' EXIT
 
 cat > "$TMP_DIR/yt-dlp" <<'EOF'
 #!/bin/bash
@@ -39,7 +41,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -n "$output" ]; then
-  mkdir -p "$(dirname "$output")"
+  mkdir -p -- "$(dirname -- "$output")"
   : > "$output"
 fi
 EOF
@@ -104,11 +106,11 @@ if ! grep -q '\\033\[0;36mLoading whisper model' "$SCRIPT_DIR/transcribe.sh"; th
   echo "FAIL: transcribe.sh Python inline script does not contain ANSI color for 'Loading whisper model'" >&2
   exit 1
 fi
-if ! grep -q '\\033\[0;32mTranscript' "$SCRIPT_DIR/transcribe.sh"; then
-  echo "FAIL: transcribe.sh Python inline script does not contain ANSI color for 'Transcript'" >&2
+if ! grep -q '\\033\[0;32mTranscript and segment files written' "$SCRIPT_DIR/transcribe.sh"; then
+  echo "FAIL: transcribe.sh Python inline script does not contain ANSI color for completion" >&2
   exit 1
 fi
-echo "PASS: transcribe.sh Python inline script contains ANSI color codes"
+echo "PASS: transcribe.sh Python inline script contains trusted ANSI color codes"
 echo "====================================="
 
 echo "=== Testing error resolution steps color UX ==="
@@ -133,4 +135,31 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
   exit 1
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
+echo "====================================="
+
+echo "=== Testing ffprobe dependency preflight ==="
+DUMMY_VIDEO="$TMP_DIR/ffprobe-preflight.mp4"
+: > "$DUMMY_VIDEO"
+set +e
+ffprobe_output="$(
+  FFMPEG="/bin/true" \
+  FFPROBE="$TMP_DIR/missing-ffprobe" \
+    bash "$SCRIPT_DIR/extract-frames.sh" "$DUMMY_VIDEO" "$TMP_DIR/ffprobe-output" 12 2>&1
+)"
+ffprobe_status=$?
+set -e
+if [ "$ffprobe_status" -ne 1 ] || ! grep -q -F "Error: ffprobe not found." <<< "$ffprobe_output"; then
+  echo "FAIL: extract-frames.sh must fail before probing when ffprobe is unavailable" >&2
+  printf '%s\n' "$ffprobe_output" >&2
+  exit 1
+fi
+if ! grep -q -F "Install with: brew install ffmpeg" <<< "$ffprobe_output"; then
+  echo "FAIL: ffprobe preflight must provide an actionable installation command" >&2
+  exit 1
+fi
+echo "PASS: extract-frames.sh reports a missing ffprobe before metadata processing"
+echo "====================================="
+
+echo "=== Testing actual terminal control neutralization ==="
+bash ./test_terminal_output.sh
 echo "====================================="
