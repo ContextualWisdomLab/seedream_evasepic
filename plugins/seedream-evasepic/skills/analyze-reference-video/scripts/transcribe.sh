@@ -14,6 +14,17 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Return ordinary text unchanged, but visibly shell-escape any terminal control
+# character so untrusted paths cannot alter the user's terminal state.
+terminal_safe_text() {
+  local value="${1-}"
+  if [[ "$value" =~ [[:cntrl:]] ]]; then
+    printf '%q' "$value"
+  else
+    printf '%s' "$value"
+  fi
+}
+
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Transcribe Audio Script${NC}"
@@ -26,11 +37,13 @@ done
 
 AUDIO="${1:-}"
 MODEL="${2:-base}"
+SAFE_AUDIO="$(terminal_safe_text "$AUDIO")"
+SAFE_MODEL="$(terminal_safe_text "$MODEL")"
 
 case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
-    printf "%b%s%b\n" "${RED}Error: Invalid model specified: " "$MODEL" "${NC}" >&2
+    printf "%b%s%b\n" "${RED}Error: Invalid model specified: " "$SAFE_MODEL" "${NC}" >&2
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
     printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
@@ -47,7 +60,7 @@ if [ -z "$AUDIO" ]; then
 fi
 
 if [ ! -f "$AUDIO" ]; then
-  printf "%b%s%b\n" "${RED}Error: audio file not found: " "$AUDIO" "${NC}" >&2
+  printf "%b%s%b\n" "${RED}Error: audio file not found: " "$SAFE_AUDIO" "${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
   printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
@@ -56,7 +69,7 @@ fi
 
 # Try whisper CLI first
 if command -v whisper >/dev/null 2>&1; then
-  printf "%b%s%b\n" "${CYAN}Transcribing with whisper CLI (model: " "$MODEL" ")...${NC}"
+  printf "%b%s%b\n" "${CYAN}Transcribing with whisper CLI (model: " "$SAFE_MODEL" ")...${NC}"
   OUT_DIR="${AUDIO%/*}"
   [ "$OUT_DIR" = "$AUDIO" ] && OUT_DIR="."
   [ -z "$OUT_DIR" ] && OUT_DIR="/"
@@ -68,7 +81,8 @@ if command -v whisper >/dev/null 2>&1; then
     --verbose False \
     -- "$AUDIO"
   AUDIO_BASE="${AUDIO%.*}"
-  printf "%b%s%b\n" "${GREEN}Transcript saved to " "$OUT_DIR/${AUDIO_BASE##*/}.txt" "${NC}"
+  SAFE_TRANSCRIPT_PATH="$(terminal_safe_text "$OUT_DIR/${AUDIO_BASE##*/}.txt")"
+  printf "%b%s%b\n" "${GREEN}Transcript saved to " "$SAFE_TRANSCRIPT_PATH" "${NC}"
   exit 0
 fi
 
@@ -87,14 +101,34 @@ if command -v python3 >/dev/null 2>&1; then
   export AUDIO_PATH="$AUDIO"
   export WHISPER_MODEL="$MODEL"
   python3 <<'PYEOF'
-import whisper, json, os, sys
-audio = os.environ.get("AUDIO_PATH")
-model_name = os.environ.get("WHISPER_MODEL")
-out_base = os.path.splitext(audio)[0]
+import json
+import os
+import unicodedata
 
-print(f"\033[0;36mLoading whisper model: {model_name}...\033[0m")
+import whisper
+
+
+def terminal_safe_text(value: str) -> str:
+    """Replace terminal control characters with visible Unicode escapes."""
+
+    return "".join(
+        character
+        if unicodedata.category(character) != "Cc"
+        else f"\\u{ord(character):04x}"
+        for character in value
+    )
+
+
+audio = os.environ.get("AUDIO_PATH", "")
+model_name = os.environ.get("WHISPER_MODEL", "")
+out_base = os.path.splitext(audio)[0]
+safe_audio = terminal_safe_text(audio)
+safe_model_name = terminal_safe_text(model_name)
+safe_out_base = terminal_safe_text(out_base)
+
+print(f"\033[0;36mLoading whisper model: {safe_model_name}...\033[0m")
 model = whisper.load_model(model_name)
-print(f"\033[0;36mTranscribing {audio}...\033[0m")
+print(f"\033[0;36mTranscribing {safe_audio}...\033[0m")
 result = model.transcribe(audio)
 
 # Write plain text
@@ -112,9 +146,10 @@ with open(out_base + ".segments.json", "w") as f:
         ]
     }, f, ensure_ascii=False, indent=2)
 
-print(f"\033[0;32mTranscript: {out_base}.txt\033[0m")
-print(f"\033[0;32mSegments:   {out_base}.segments.json\033[0m")
-print(f"\033[0;32mLanguage detected: {result.get('language', 'unknown')}\033[0m")
+safe_language = terminal_safe_text(str(result.get("language", "unknown")))
+print(f"\033[0;32mTranscript: {safe_out_base}.txt\033[0m")
+print(f"\033[0;32mSegments:   {safe_out_base}.segments.json\033[0m")
+print(f"\033[0;32mLanguage detected: {safe_language}\033[0m")
 PYEOF
 
   exit 0
