@@ -37,7 +37,7 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
 fi
 
 if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
-  printf "%b\n" "${GREEN}Output file already exists, skipping download: ${NC}$OUTPUT"
+  terminal_print_value "${GREEN}Output file already exists, skipping download: " "$OUTPUT" "${NC}"
   exit 0
 fi
 
