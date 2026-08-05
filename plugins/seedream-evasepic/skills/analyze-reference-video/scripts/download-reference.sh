@@ -65,6 +65,15 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
+# Security: Prevent path traversal by restricting output to safe directories ($PWD or /tmp)
+ABS_OUT_DIR="$(realpath "$OUT_DIR")"
+ABS_PWD="$(realpath "$PWD")"
+# Add a trailing slash to prevent bypassing (e.g. /tmp-hacked) except when /tmp is the exact path
+if [[ "$ABS_OUT_DIR" != "$ABS_PWD"/* ]] && [[ "$ABS_OUT_DIR" != "$ABS_PWD" ]] && [[ "$ABS_OUT_DIR" != "/tmp"/* ]] && [[ "$ABS_OUT_DIR" != "/tmp" ]]; then
+  printf "%b\n" "${RED}Error: Path traversal detected. Output must be within the current directory or /tmp.${NC}" >&2
+  exit 1
+fi
+
 terminal_print_value "${CYAN}Downloading from: " "$URL" "${NC}"
 terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
 

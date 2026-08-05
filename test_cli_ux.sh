@@ -165,6 +165,17 @@ fi
 echo "PASS: download-reference.sh skips execution if target file already exists"
 echo "====================================="
 
+echo "=== Testing path traversal prevention ==="
+path_traversal_output="$(
+  bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "../../../var/tmp/evil_video.mp4" 2>&1 || true
+)"
+if ! grep -q -F "Path traversal detected" <<< "$path_traversal_output"; then
+  echo "FAIL: download-reference.sh did not block path traversal to /var/tmp" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh blocks path traversal"
+echo "====================================="
+
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
