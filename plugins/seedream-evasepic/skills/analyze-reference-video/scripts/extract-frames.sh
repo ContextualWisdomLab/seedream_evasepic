@@ -16,6 +16,17 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Return ordinary text unchanged, but visibly shell-escape any terminal control
+# character so untrusted paths and media metadata cannot alter the terminal.
+terminal_safe_text() {
+  local value="${1-}"
+  if [[ "$value" =~ [[:cntrl:]] ]]; then
+    printf '%q' "$value"
+  else
+    printf '%s' "$value"
+  fi
+}
+
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Extract Frames Script${NC}"
@@ -29,6 +40,8 @@ done
 VIDEO="${1:-}"
 OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
+SAFE_VIDEO="$(terminal_safe_text "$VIDEO")"
+SAFE_OUT_DIR="$(terminal_safe_text "$OUT_DIR")"
 
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
@@ -59,7 +72,7 @@ if [ ! -x "$FFMPEG" ]; then
 fi
 
 if [ ! -f "$VIDEO" ]; then
-  printf "%b%s%b\n" "${RED}Error: video not found: " "$VIDEO" "${NC}" >&2
+  printf "%b%s%b\n" "${RED}Error: video not found: " "$SAFE_VIDEO" "${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
   printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
@@ -113,8 +126,15 @@ FPS=${FPS:-unknown}
   echo "num_frames_requested=$NUM_FRAMES"
 } > "$OUT_DIR/metadata.txt"
 
-printf "%b%s\n" "${CYAN}Video: ${NC}" "${VIDEO##*/}"
-printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
+SAFE_VIDEO_NAME="$(terminal_safe_text "${VIDEO##*/}")"
+SAFE_DURATION="$(terminal_safe_text "$DURATION")"
+SAFE_RESOLUTION="$(terminal_safe_text "$RESOLUTION")"
+SAFE_FPS="$(terminal_safe_text "$FPS")"
+printf "%b%s\n" "${CYAN}Video: ${NC}" "$SAFE_VIDEO_NAME"
+printf "%b%s%b%s%b%s%b\n" \
+  "${CYAN}Duration: ${NC}" "${SAFE_DURATION}s | " \
+  "${CYAN}Resolution: ${NC}" "$SAFE_RESOLUTION | " \
+  "${CYAN}FPS: ${NC}" "$SAFE_FPS" "${NC}"
 
 # Extract evenly-spaced frames across the full duration.
 # Keep the awk program literal fixed; pass dynamic values via -v so data cannot become awk code.
@@ -140,14 +160,15 @@ shopt -s nullglob
 frames=("$OUT_DIR"/frame_*.jpg)
 shopt -u nullglob
 FRAME_COUNT="${#frames[@]}"
+SAFE_AUDIO_PATH="$(terminal_safe_text "$OUT_DIR/audio.wav")"
 
-printf "%b%s%b\n" "${GREEN}Extracted $FRAME_COUNT frames to " "$OUT_DIR" "${NC}"
+printf "%b%s%b\n" "${GREEN}Extracted $FRAME_COUNT frames to " "$SAFE_OUT_DIR" "${NC}"
 
 if [ -f "$OUT_DIR/audio.wav" ]; then
-  printf "%b%s%b\n" "${GREEN}Audio saved: " "$OUT_DIR/audio.wav" "${NC}"
+  printf "%b%s%b\n" "${GREEN}Audio saved: " "$SAFE_AUDIO_PATH" "${NC}"
 else
   printf "%b\n" "${YELLOW}No audio stream (silent video) — audio.wav not created${NC}"
   echo "audio=silent" >> "$OUT_DIR/metadata.txt"
 fi
 
-printf "%b%s%b\n" "${GREEN}Done. Output in: " "$OUT_DIR" "${NC}"
+printf "%b%s%b\n" "${GREEN}Done. Output in: " "$SAFE_OUT_DIR" "${NC}"
