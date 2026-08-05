@@ -126,3 +126,22 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
+
+echo "=== Testing terminal control-byte normalization ==="
+CONTROL_URL=$'https://example.invalid/a\033[2J\007\u0090b'
+CONTROL_OUTPUT="$TMP_DIR/control-output.mp4"
+DISPLAY_OUTPUT="$(
+  PATH="$TMP_DIR:$PATH" \
+  YT_DLP_ARGS_FILE="$ARGS_FILE" \
+    bash "$SCRIPT_DIR/download-reference.sh" "$CONTROL_URL" "$CONTROL_OUTPUT"
+)"
+if [[ "$DISPLAY_OUTPUT" == *$'\033'* || "$DISPLAY_OUTPUT" == *$'\007'* || "$DISPLAY_OUTPUT" == *$'\u0090'* ]]; then
+  echo "FAIL: raw terminal control bytes reached user-visible output" >&2
+  exit 1
+fi
+if [[ "$DISPLAY_OUTPUT" != *"Downloading from:"* ]]; then
+  echo "FAIL: terminal-safe output must preserve the message label" >&2
+  exit 1
+fi
+echo "PASS: terminal control bytes are visibly escaped before display"
+echo "====================================="
