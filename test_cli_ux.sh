@@ -152,6 +152,19 @@ fi
 echo "PASS: extract-frames.sh reports a missing ffprobe before metadata processing"
 echo "====================================="
 
+echo "=== Testing download early return optimization ==="
+DUMMY_EARLY_RETURN_OUT="$TMP_DIR/early_return.mp4"
+echo "dummy_content" > "$DUMMY_EARLY_RETURN_OUT"
+early_return_output="$(
+  bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$DUMMY_EARLY_RETURN_OUT"
+)"
+if ! grep -q -F "File already exists, skipping download" <<< "$early_return_output"; then
+  echo "FAIL: download-reference.sh did not skip download for an existing file" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh skips execution if target file already exists"
+echo "====================================="
+
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
