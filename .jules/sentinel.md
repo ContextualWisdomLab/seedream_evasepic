@@ -31,6 +31,6 @@
 **Learning:** By default, utilities parse arguments starting with `-` as options. Using these without `--` before dynamic variables is a common command injection vector.
 **Prevention:** Always use the `--` flag separator before passing user-controlled variables to standard CLI tools like `dirname`, `mkdir`, `basename`, and `ls`.
 ## 2026-07-17 - ANSI Escape Sequence Injection 방지
-**Vulnerability:** bash 스크립트에서 printf "%b"에 신뢰할 수 없는 사용자 입력이 보간되어 ANSI Escape Sequence Injection 취약점이 존재함.
-**Learning:** printf의 %b 포맷은 백슬래시 이스케이프를 평가하므로, 제어할 수 없는 사용자 변수가 포함되면 의도치 않은 동작이 발생할 수 있음.
-**Prevention:** 포맷 문자열에서 ANSI 색상 코드용으로 %b를 사용하고, 사용자 입력 출력용으로 %s를 명확히 분리하여 사용(예: printf "%b%s\n" "${COLOR}Label: " "$VAR").
+**Vulnerability:** bash 스크립트에서 printf "%b"에 신뢰할 수 없는 사용자 입력이 보간되어 백슬래시 기반 ANSI 시퀀스가 평가됐고, `%s`로만 전환해도 실제 ESC, BEL, C0/C1 제어 문자는 그대로 터미널에 도달할 수 있었습니다.
+**Learning:** 색상 상수에만 `%b`를 사용하고 사용자 데이터에는 `%s`를 사용해야 하며, 출력 전에 Unicode 제어 문자 자체도 가시적 escape 표현으로 정규화해야 합니다.
+**Prevention:** 모든 URL, 경로, 외부 도구 메타데이터를 `terminal_safe_text` 경계로 통과시킵니다. 일반 텍스트는 그대로 유지하고 `[[:cntrl:]]` 문자가 포함된 값은 Bash `%q` 또는 Python Unicode `Cc` escape로 변환한 뒤 출력합니다. 회귀 테스트는 ESC, BEL, C1 문자가 원시 바이트로 출력되지 않는지 검증합니다.
