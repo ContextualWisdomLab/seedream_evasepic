@@ -13,6 +13,17 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Return ordinary text unchanged, but visibly shell-escape any terminal control
+# character so untrusted URLs and paths cannot alter the user's terminal state.
+terminal_safe_text() {
+  local value="${1-}"
+  if [[ "$value" =~ [[:cntrl:]] ]]; then
+    printf '%q' "$value"
+  else
+    printf '%s' "$value"
+  fi
+}
+
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
@@ -55,8 +66,10 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
-printf "%b%s\n" "${CYAN}Downloading from: ${NC}" "$URL"
-printf "%b%s\n" "${CYAN}Target: ${NC}" "$OUTPUT"
+SAFE_URL="$(terminal_safe_text "$URL")"
+SAFE_OUTPUT="$(terminal_safe_text "$OUTPUT")"
+printf "%b%s\n" "${CYAN}Downloading from: ${NC}" "$SAFE_URL"
+printf "%b%s\n" "${CYAN}Target: ${NC}" "$SAFE_OUTPUT"
 
 # Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
 # -f format spec: prefer mp4, cap at 1080p
@@ -80,5 +93,5 @@ yt-dlp \
     exit 1
   }
 
-printf "%b%s\n" "${GREEN}Downloaded: ${NC}" "$OUTPUT"
+printf "%b%s\n" "${GREEN}Downloaded: ${NC}" "$SAFE_OUTPUT"
 ls -lh -- "$OUTPUT"
