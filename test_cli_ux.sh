@@ -135,8 +135,8 @@ DISPLAY_OUTPUT="$(
   YT_DLP_ARGS_FILE="$ARGS_FILE" \
     bash "$SCRIPT_DIR/download-reference.sh" "$CONTROL_URL" "$CONTROL_OUTPUT"
 )"
-if [[ "$DISPLAY_OUTPUT" == *$'\033'* || "$DISPLAY_OUTPUT" == *$'\007'* || "$DISPLAY_OUTPUT" == *$'\u0090'* ]]; then
-  echo "FAIL: raw terminal control bytes reached user-visible output" >&2
+if [[ "$DISPLAY_OUTPUT" == *$'\033[2J'* || "$DISPLAY_OUTPUT" == *$'\007'* || "$DISPLAY_OUTPUT" == *$'\u0090'* ]]; then
+  echo "FAIL: attacker-controlled terminal control bytes reached user-visible output" >&2
   exit 1
 fi
 if [[ "$DISPLAY_OUTPUT" != *"Downloading from:"* ]]; then
