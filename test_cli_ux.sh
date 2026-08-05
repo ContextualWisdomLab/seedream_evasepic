@@ -1,6 +1,8 @@
 #!/bin/bash
 # Test script to verify CLI UX enhancements (ANSI color codes)
 
+set -u
+
 SCRIPT_DIR="plugins/seedream-evasepic/skills/analyze-reference-video/scripts"
 
 echo "=== Testing download-reference.sh ==="
@@ -20,7 +22,7 @@ echo "====================================="
 
 echo "=== Testing yt-dlp argument separator ==="
 TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TMP_DIR"' EXIT
+trap 'rm -rf -- "$TMP_DIR"' EXIT
 
 cat > "$TMP_DIR/yt-dlp" <<'EOF'
 #!/bin/bash
@@ -39,7 +41,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -n "$output" ]; then
-  mkdir -p "$(dirname "$output")"
+  mkdir -p -- "$(dirname -- "$output")"
   : > "$output"
 fi
 EOF
@@ -104,11 +106,11 @@ if ! grep -q '\\033\[0;36mLoading whisper model' "$SCRIPT_DIR/transcribe.sh"; th
   echo "FAIL: transcribe.sh Python inline script does not contain ANSI color for 'Loading whisper model'" >&2
   exit 1
 fi
-if ! grep -q '\\033\[0;32mTranscript' "$SCRIPT_DIR/transcribe.sh"; then
-  echo "FAIL: transcribe.sh Python inline script does not contain ANSI color for 'Transcript'" >&2
+if ! grep -q '\\033\[0;32mTranscript and segment files written' "$SCRIPT_DIR/transcribe.sh"; then
+  echo "FAIL: transcribe.sh Python inline script does not contain ANSI color for completion" >&2
   exit 1
 fi
-echo "PASS: transcribe.sh Python inline script contains ANSI color codes"
+echo "PASS: transcribe.sh Python inline script contains trusted ANSI color codes"
 echo "====================================="
 
 echo "=== Testing help flag position flexibility ==="
@@ -126,29 +128,7 @@ if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep
 fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
-echo "=== Testing ANSI Escape Sequence Injection ==="
-MALICIOUS_INPUT="\033[0;31mPWNED\033[0m"
-OUTPUT=$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$MALICIOUS_INPUT" 2>&1 || true)
-if echo -E "$OUTPUT" | grep -F -q "$MALICIOUS_INPUT"; then
-  echo "PASS: ANSI Escape Sequence Injection prevented in download-reference.sh"
-else
-  echo "FAIL: ANSI Escape Sequence Injection NOT prevented in download-reference.sh" >&2
-  exit 1
-fi
 
-OUTPUT=$(FFMPEG=/bin/echo bash "$SCRIPT_DIR/extract-frames.sh" "$MALICIOUS_INPUT" "dummy_dir" 2>&1 || true)
-if echo -E "$OUTPUT" | grep -F -q "$MALICIOUS_INPUT"; then
-  echo "PASS: ANSI Escape Sequence Injection prevented in extract-frames.sh"
-else
-  echo "FAIL: ANSI Escape Sequence Injection NOT prevented in extract-frames.sh" >&2
-  exit 1
-fi
-
-OUTPUT=$(bash "$SCRIPT_DIR/transcribe.sh" "dummy.wav" "$MALICIOUS_INPUT" 2>&1 || true)
-if echo -E "$OUTPUT" | grep -F -q "$MALICIOUS_INPUT"; then
-  echo "PASS: ANSI Escape Sequence Injection prevented in transcribe.sh"
-else
-  echo "FAIL: ANSI Escape Sequence Injection NOT prevented in transcribe.sh" >&2
-  exit 1
-fi
+echo "=== Testing actual terminal control neutralization ==="
+bash ./test_terminal_output.sh
 echo "====================================="
