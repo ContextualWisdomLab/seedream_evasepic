@@ -62,6 +62,12 @@ if [ -z "$separator_line" ] || [ -z "$url_line" ] || [ "$url_line" -ne $((separa
   exit 1
 fi
 
+if ! grep -q -x -F -- "--concurrent-fragments" "$ARGS_FILE" || ! grep -q -x -F -- "4" "$ARGS_FILE"; then
+  echo "FAIL: yt-dlp missing --concurrent-fragments 4" >&2
+  cat "$ARGS_FILE" >&2
+  exit 1
+fi
+
 echo "PASS: yt-dlp URL is protected by -- argument separator"
 echo "====================================="
 
