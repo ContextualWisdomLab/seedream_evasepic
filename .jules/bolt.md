@@ -28,3 +28,6 @@
 ## 2024-07-18 - Avoid directory false positives with -s
 **Learning:** When using early returns to check if a file exists and is not empty before downloading, using only `-s` can cause false positive skips because `-s` evaluates to true for directories.
 **Action:** Always combine `-f` (is a regular file) and `-s` (is not empty) like `[ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]` before skipping expensive network tools like `yt-dlp`.
+## 2024-07-18 - Early return caching requires source identity
+**Learning:** Reusing an existing file based solely on path existence (`[ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]`) is not a safe optimization at the product boundary. It can silently return the wrong content if a shared path is reused without verifying the source identity (e.g., URL fingerprint).
+**Action:** Safe reuse optimizations require explicit source identity verification (like a non-secret fingerprint or metadata tracking), atomic publication, and mismatch tests. An existence-only shortcut must not be used.

@@ -13,10 +13,6 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-# shellcheck source=terminal-output.sh
-. "$SCRIPT_DIRECTORY/terminal-output.sh"
-
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
@@ -64,8 +60,8 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
-terminal_print_value "${CYAN}Downloading from: " "$URL" "${NC}"
-terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
+printf "%b\n" "${CYAN}Downloading from: ${NC}$URL"
+printf "%b\n" "${CYAN}Target: ${NC}$OUTPUT"
 
 # Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
 # -f format spec: prefer mp4, cap at 1080p
@@ -89,6 +85,5 @@ yt-dlp \
     exit 1
   }
 
-terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-FILE_SIZE_BYTES="$(wc -c < "$OUTPUT" | tr -d '[:space:]')"
-terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
+printf "%b\n" "${GREEN}Downloaded: ${NC}$OUTPUT"
+ls -lh -- "$OUTPUT"
