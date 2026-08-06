@@ -65,6 +65,67 @@ fi
 echo "PASS: yt-dlp URL is protected by -- argument separator"
 echo "====================================="
 
+echo "=== Testing download cache-hit short circuit ==="
+CACHED_OUTPUT="$TMP_DIR/cached-reference.mp4"
+CACHED_ARGS_FILE="$TMP_DIR/cached-yt-dlp.args"
+printf '%s' 'existing-video-payload' > "$CACHED_OUTPUT"
+
+set +e
+cached_output="$(
+  PATH="$TMP_DIR:$PATH" \
+  YT_DLP_ARGS_FILE="$CACHED_ARGS_FILE" \
+    bash "$SCRIPT_DIR/download-reference.sh" \
+      "https://example.invalid/cached-video" "$CACHED_OUTPUT" 2>&1
+)"
+cached_status=$?
+set -e
+
+if [ "$cached_status" -ne 0 ]; then
+  echo "FAIL: non-empty cached output must return success" >&2
+  printf '%s\n' "$cached_output" >&2
+  exit 1
+fi
+if [ -e "$CACHED_ARGS_FILE" ]; then
+  echo "FAIL: cache hit must not invoke yt-dlp" >&2
+  cat "$CACHED_ARGS_FILE" >&2
+  exit 1
+fi
+if [ "$(cat -- "$CACHED_OUTPUT")" != "existing-video-payload" ]; then
+  echo "FAIL: cache hit must preserve the existing artifact byte-for-byte" >&2
+  exit 1
+fi
+if ! grep -q -F "File already exists, skipping download:" <<< "$cached_output"; then
+  echo "FAIL: cache hit must explain why the download was skipped" >&2
+  printf '%s\n' "$cached_output" >&2
+  exit 1
+fi
+
+echo "PASS: non-empty regular file skips yt-dlp and preserves the artifact"
+echo "====================================="
+
+echo "=== Testing zero-byte output cache miss ==="
+EMPTY_OUTPUT="$TMP_DIR/empty-reference.mp4"
+EMPTY_ARGS_FILE="$TMP_DIR/empty-yt-dlp.args"
+: > "$EMPTY_OUTPUT"
+
+PATH="$TMP_DIR:$PATH" \
+YT_DLP_ARGS_FILE="$EMPTY_ARGS_FILE" \
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/empty-video" "$EMPTY_OUTPUT" >/dev/null
+
+if [ ! -f "$EMPTY_ARGS_FILE" ]; then
+  echo "FAIL: zero-byte output must not be treated as a cache hit" >&2
+  exit 1
+fi
+if ! grep -q -F -- "https://example.invalid/empty-video" "$EMPTY_ARGS_FILE"; then
+  echo "FAIL: zero-byte cache miss must invoke yt-dlp with the original URL" >&2
+  cat "$EMPTY_ARGS_FILE" >&2
+  exit 1
+fi
+
+echo "PASS: zero-byte regular file remains a cache miss"
+echo "====================================="
+
 echo "=== Testing awk fallback variable binding ==="
 if grep -n -F 'awk "BEGIN' "$SCRIPT_DIR/extract-frames.sh"; then
   echo "FAIL: extract-frames.sh must not interpolate shell variables into an awk program string" >&2
