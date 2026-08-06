@@ -10,3 +10,7 @@
 ## 2025-02-28 - 의존성 누락 오류 메시지 개선
 **Learning:** CLI 환경에서 오류 원인(Red)과 실행 가능한 해결책(Cyan)의 색상을 분리하면 사용자의 인지 부하가 감소하고 문제 해결이 빨라진다는 것을 확인함.
 **Action:** 앞으로 오류 메시지를 작성할 때는 항상 문제 상태와 조치 사항을 분리하여 다른 색상으로 명확하게 안내할 것.
+
+## 2026-08-07 - Visual Separation of Download Errors and Recovery Steps
+**Learning:** A terminal failure block is easier to scan when diagnostic causes and actionable recovery steps use distinct semantic treatments rather than one undifferentiated warning style.
+**Action:** Render download failure causes in red and recovery options in cyan, and protect the contract with a deterministic test that stubs the failing dependency and verifies every colored line.
