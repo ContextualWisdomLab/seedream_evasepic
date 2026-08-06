@@ -23,7 +23,7 @@ for arg in "$@"; do
     printf "%b\n" "${GREEN}Transcribe Audio Script${NC}"
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}"
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)"
-    printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}"
+    printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base"
     exit 0
   fi
 done
@@ -37,7 +37,7 @@ case "$MODEL" in
     terminal_print_value "${RED}Error: Invalid model specified: " "$MODEL" "${NC}" >&2
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-    printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}" >&2
+    printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
     exit 2
     ;;
 esac
@@ -46,7 +46,7 @@ if [ -z "$AUDIO" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}" >&2
+  printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
   exit 2
 fi
 
@@ -54,7 +54,7 @@ if [ ! -f "$AUDIO" ]; then
   terminal_print_value "${RED}Error: audio file not found: " "$AUDIO" "${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}" >&2
+  printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
   exit 1
 fi
 
