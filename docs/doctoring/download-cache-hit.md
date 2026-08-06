@@ -84,5 +84,6 @@ Free Software Foundation. (n.d.). *Bash conditional expressions*. GNU Bash
 Reference Manual. Retrieved August 6, 2026, from
 https://www.gnu.org/software/bash/manual/html_node/Bash-Conditional-Expressions.html
 
-yt-dlp contributors. (2026). *yt-dlp README* [Software documentation]. GitHub.
+yt-dlp contributors. (n.d.). *yt-dlp README* [Software documentation]. GitHub.
+Retrieved August 6, 2026, from
 https://github.com/yt-dlp/yt-dlp/blob/master/README.md
