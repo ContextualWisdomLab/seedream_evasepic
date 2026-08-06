@@ -155,3 +155,19 @@ echo "====================================="
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
+
+echo "=== Testing Example command syntax highlighting ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q $'\033\[0;36mdownload-reference.sh'; then
+  echo "FAIL: download-reference.sh 'Example:' is missing Cyan syntax highlighting" >&2
+  return 1 2>/dev/null || exit 1
+fi
+if ! bash "$SCRIPT_DIR/extract-frames.sh" 2>&1 | grep -q $'\033\[0;36mextract-frames.sh'; then
+  echo "FAIL: extract-frames.sh 'Example:' is missing Cyan syntax highlighting" >&2
+  return 1 2>/dev/null || exit 1
+fi
+if ! bash "$SCRIPT_DIR/transcribe.sh" 2>&1 | grep -q $'\033\[0;36mtranscribe.sh'; then
+  echo "FAIL: transcribe.sh 'Example:' is missing Cyan syntax highlighting" >&2
+  return 1 2>/dev/null || exit 1
+fi
+echo "PASS: Example commands are properly highlighted"
+echo "====================================="
