@@ -155,3 +155,34 @@ echo "====================================="
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
+
+echo "=== Testing visual separation of download failure guidance ==="
+cat > "$TMP_DIR/yt-dlp" <<'EOF'
+#!/bin/bash
+exit 1
+EOF
+chmod +x "$TMP_DIR/yt-dlp"
+
+download_failure_output="$(
+  PATH="$TMP_DIR:$PATH" \
+    bash "$SCRIPT_DIR/download-reference.sh" \
+      "https://example.invalid/video" \
+      "$TMP_DIR/download-failure.mp4" 2>&1 || true
+)"
+for expected in \
+  $'\033[0;31myt-dlp failed. Possible reasons:' \
+  $'\033[0;31m  - Private / login-required content (Instagram, X)' \
+  $'\033[0;31m  - Geo-restricted (TikTok)' \
+  $'\033[0;31m  - URL format unsupported' \
+  $'\033[0;36mFallback options:' \
+  $'\033[0;36m  1. If insane-search plugin is installed' \
+  $'\033[0;36m  2. Download manually via browser' \
+  $'\033[0;36m  3. Use a screen recording'; do
+  if ! printf '%s\n' "$download_failure_output" | grep -Fq -- "$expected"; then
+    echo "FAIL: missing expected colored failure guidance: $expected" >&2
+    printf '%s\n' "$download_failure_output" >&2
+    exit 1
+  fi
+done
+echo "PASS: download failure causes are RED and recovery steps are CYAN"
+echo "====================================="
