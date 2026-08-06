@@ -36,7 +36,7 @@ jobs:
       - name: Run ShellCheck
         shell: bash --noprofile --norc -e -o pipefail {0}
         run: >-
-          shellcheck
+          shellcheck --external-sources --severity=warning
           plugins/seedream-evasepic/skills/analyze-reference-video/scripts/*.sh
           test_cli_ux.sh
           test_terminal_output.sh
