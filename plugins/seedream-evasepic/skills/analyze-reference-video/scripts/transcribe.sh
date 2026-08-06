@@ -47,7 +47,7 @@ if [ -z "$AUDIO" ]; then
 fi
 
 if [ ! -f "$AUDIO" ]; then
-  printf "%b%s\n" "${RED}Error: audio file not found: ${NC}" "$AUDIO" >&2
+  printf "%b\n" "${RED}Error: audio file not found: $AUDIO${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
   printf "%b\n" "  Example: ${0##*/} /tmp/audio.wav base" >&2
@@ -68,7 +68,7 @@ if command -v whisper >/dev/null 2>&1; then
     --verbose False \
     -- "$AUDIO"
   AUDIO_BASE="${AUDIO%.*}"
-  printf "%b%s\n" "${GREEN}Transcript saved to ${NC}" "$OUT_DIR/${AUDIO_BASE##*/}.txt"
+  printf "%b\n" "${GREEN}Transcript saved to $OUT_DIR/${AUDIO_BASE##*/}.txt${NC}"
   exit 0
 fi
 

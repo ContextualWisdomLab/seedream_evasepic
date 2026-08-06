@@ -55,8 +55,8 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
-printf "%b%s\n" "${CYAN}Downloading from: ${NC}" "$URL"
-printf "%b%s\n" "${CYAN}Target: ${NC}" "$OUTPUT"
+printf "%b\n" "${CYAN}Downloading from: ${NC}$URL"
+printf "%b\n" "${CYAN}Target: ${NC}$OUTPUT"
 
 # Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
 # -f format spec: prefer mp4, cap at 1080p
@@ -80,5 +80,5 @@ yt-dlp \
     exit 1
   }
 
-printf "%b%s\n" "${GREEN}Downloaded: ${NC}" "$OUTPUT"
+printf "%b\n" "${GREEN}Downloaded: ${NC}$OUTPUT"
 ls -lh -- "$OUTPUT"

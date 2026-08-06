@@ -113,7 +113,7 @@ FPS=${FPS:-unknown}
   echo "num_frames_requested=$NUM_FRAMES"
 } > "$OUT_DIR/metadata.txt"
 
-printf "%b%s\n" "${CYAN}Video: ${NC}" "${VIDEO##*/}"
+printf "%b\n" "${CYAN}Video: ${NC}${VIDEO##*/}"
 printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
 
 # Extract evenly-spaced frames across the full duration.
@@ -141,7 +141,7 @@ frames=("$OUT_DIR"/frame_*.jpg)
 shopt -u nullglob
 FRAME_COUNT="${#frames[@]}"
 
-printf "%b%s\n" "${GREEN}Extracted $FRAME_COUNT frames to ${NC}" "$OUT_DIR"
+printf "%b\n" "${GREEN}Extracted $FRAME_COUNT frames to $OUT_DIR${NC}"
 
 if [ -f "$OUT_DIR/audio.wav" ]; then
   printf "%b\n" "${GREEN}Audio saved: $OUT_DIR/audio.wav${NC}"
@@ -150,4 +150,4 @@ else
   echo "audio=silent" >> "$OUT_DIR/metadata.txt"
 fi
 
-printf "%b%s\n" "${GREEN}Done. Output in: ${NC}" "$OUT_DIR"
+printf "%b\n" "${GREEN}Done. Output in: $OUT_DIR${NC}"
