@@ -13,10 +13,6 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-# shellcheck source=terminal-output.sh
-. "$SCRIPT_DIRECTORY/terminal-output.sh"
-
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
@@ -59,8 +55,8 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
-terminal_print_value "${CYAN}Downloading from: " "$URL" "${NC}"
-terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
+printf "%b\n" "${CYAN}Downloading from: ${NC}$URL"
+printf "%b\n" "${CYAN}Target: ${NC}$OUTPUT"
 
 # Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
 # -f format spec: prefer mp4, cap at 1080p
@@ -71,18 +67,18 @@ yt-dlp \
   --no-playlist \
   --quiet --progress \
   -- "$URL" || {
-    printf "\n%b\n%b\n%b\n%b\n\n%b\n%b\n%b\n%b\n" \
-      "${RED}yt-dlp failed. Possible reasons:${NC}" \
-      "  - Private / login-required content (Instagram, X)" \
-      "  - Geo-restricted (TikTok)" \
-      "  - URL format unsupported" \
-      "${YELLOW}Fallback options:${NC}" \
-      "  1. If insane-search plugin is installed, ask it to fetch: 'fetch this video URL'" \
-      "  2. Download manually via browser and pass local file path" \
-      "  3. Use a screen recording if all else fails" >&2
+    printf "\n" >&2
+    printf "%b\n" "${RED}yt-dlp failed. Possible reasons:${NC}" >&2
+    printf "%b\n" "  - Private / login-required content (Instagram, X)" >&2
+    printf "%b\n" "  - Geo-restricted (TikTok)" >&2
+    printf "%b\n" "  - URL format unsupported" >&2
+    printf "\n" >&2
+    printf "%b\n" "${YELLOW}Fallback options:${NC}" >&2
+    printf "%b\n" "  1. If insane-search plugin is installed, ask it to fetch: 'fetch this video URL'" >&2
+    printf "%b\n" "  2. Download manually via browser and pass local file path" >&2
+    printf "%b\n" "  3. Use a screen recording if all else fails" >&2
     exit 1
   }
 
-terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-FILE_SIZE_BYTES="$(wc -c < "$OUTPUT" | tr -d '[:space:]')"
-terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
+printf "%b\n" "${GREEN}Downloaded: ${NC}$OUTPUT"
+ls -lh -- "$OUTPUT"
