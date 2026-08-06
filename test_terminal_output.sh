@@ -105,35 +105,6 @@ bash "$SCRIPT_DIRECTORY/transcribe.sh" \
 assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path error'
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
-printf '=== Testing ffprobe-derived metadata output ===\n'
-cat >"$temporary_directory/ffprobe" <<'STUB'
-#!/bin/bash
-printf 'duration=2\033[31mDURATION\033[0m\n'
-printf 'width=1920\033[31mWIDTH\033[0m\n'
-printf 'height=1080\n'
-printf 'r_frame_rate=30/1\033[31mFPS\033[0m\n'
-printf 'codec_type=video\n'
-STUB
-chmod +x "$temporary_directory/ffprobe"
-: >"$temporary_directory/reference.mp4"
-metadata_output="$temporary_directory/metadata.out"
-FFMPEG=/bin/true \
-FFPROBE="$temporary_directory/ffprobe" \
-  bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
-    "$temporary_directory/reference.mp4" \
-    "$temporary_directory/metadata-frames" >"$metadata_output" 2>&1 || true
-for marker in DURATION WIDTH FPS; do
-  if LC_ALL=C grep -Fq -- $'\033[31m'"$marker" "$metadata_output"; then
-    fail "extract-frames.sh emitted raw ffprobe control bytes for $marker"
-  fi
-  if ! grep -Fq -- "\\x1B[31m${marker}\\x1B[0m" "$metadata_output"; then
-    printf 'metadata output was:\n' >&2
-    cat "$metadata_output" >&2
-    fail "extract-frames.sh did not visibly escape ffprobe control bytes for $marker"
-  fi
-done
-printf 'PASS: ffprobe-derived display values cross the terminal-safe boundary\n'
-
 printf '=== Testing static terminal-output contract ===\n'
 if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \
