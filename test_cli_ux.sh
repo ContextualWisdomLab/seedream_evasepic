@@ -135,13 +135,19 @@ EOF
 chmod +x "$TMP_DIR/yt-dlp"
 
 output="$(PATH="$TMP_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid/video" "$TMP_DIR/dummy_output.mp4" 2>&1 || true)"
-if ! printf '%s\n' "$output" | grep -Fq $'\033[0;36mFallback options:'; then
-  echo "FAIL: download-reference.sh did not print Fallback options in CYAN" >&2
-  exit 1
-fi
-if ! printf '%s\n' "$output" | grep -Fq $'\033[0;31m  - URL format unsupported'; then
-  echo "FAIL: download-reference.sh did not print possible reasons in RED" >&2
-  exit 1
-fi
+for expected in \
+  $'\033[0;31myt-dlp failed. Possible reasons:' \
+  $'\033[0;31m  - Private / login-required content (Instagram, X)' \
+  $'\033[0;31m  - Geo-restricted (TikTok)' \
+  $'\033[0;31m  - URL format unsupported' \
+  $'\033[0;36mFallback options:' \
+  $'\033[0;36m  1. If insane-search plugin is installed' \
+  $'\033[0;36m  2. Download manually via browser' \
+  $'\033[0;36m  3. Use a screen recording'; do
+  if ! printf '%s\n' "$output" | grep -Fq -- "$expected"; then
+    echo "FAIL: missing expected colored output: $expected" >&2
+    exit 1
+  fi
+done
 echo "PASS: download-reference.sh visually separates errors (RED) and actionable steps (CYAN)"
 echo "====================================="
