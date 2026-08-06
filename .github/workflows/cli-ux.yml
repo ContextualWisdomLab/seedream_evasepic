@@ -1,0 +1,50 @@
+name: CLI UX
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - ".github/workflows/cli-ux.yml"
+      - "plugins/seedream-evasepic/skills/analyze-reference-video/scripts/**"
+      - "test_cli_ux.sh"
+      - "test_terminal_output.sh"
+      - "CHANGELOG.md"
+      - "docs/doctoring/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cli-ux-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reference-video-cli:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Verify exact head
+        shell: bash --noprofile --norc -e -o pipefail {0}
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+
+      - name: Run ShellCheck
+        shell: bash --noprofile --norc -e -o pipefail {0}
+        run: >-
+          shellcheck
+          plugins/seedream-evasepic/skills/analyze-reference-video/scripts/*.sh
+          test_cli_ux.sh
+          test_terminal_output.sh
+
+      - name: Run executable CLI contracts
+        shell: bash --noprofile --norc -e -o pipefail {0}
+        run: bash ./test_cli_ux.sh
+
+      - name: Verify clean worktree
+        shell: bash --noprofile --norc -e -o pipefail {0}
+        run: git diff --exit-code
