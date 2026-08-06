@@ -87,6 +87,29 @@ fi
 echo "PASS: download-reference.sh prints explicit error message"
 echo "====================================="
 
+echo "=== Testing post-installation dependency validation ==="
+DUMMY_BIN="$TMP_DIR/mock-bin"
+mkdir -p "$DUMMY_BIN"
+cat > "$DUMMY_BIN/brew" <<'INNER_EOF'
+#!/bin/bash
+exit 0
+INNER_EOF
+chmod +x "$DUMMY_BIN/brew"
+
+set +e
+ytdlp_val_output="$(
+  PATH="$DUMMY_BIN:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "dummy_out" 2>&1
+)"
+ytdlp_val_status=$?
+set -e
+
+if [ "$ytdlp_val_status" -ne 1 ] || ! grep -q "Error: yt-dlp was installed but is not found in PATH." <<< "$ytdlp_val_output"; then
+  echo "FAIL: download-reference.sh did not re-validate yt-dlp presence post-installation" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh explicitly re-validates yt-dlp presence post-installation"
+echo "====================================="
+
 echo "=== Testing usage block for invalid arguments ==="
 if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy.wav" "invalid_model" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
   echo "FAIL: transcribe.sh did not print usage block for invalid model" >&2
