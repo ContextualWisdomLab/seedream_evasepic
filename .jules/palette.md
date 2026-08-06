@@ -11,6 +11,6 @@
 **Learning:** CLI 환경에서 오류 원인(Red)과 실행 가능한 해결책(Cyan)의 색상을 분리하면 사용자의 인지 부하가 감소하고 문제 해결이 빨라진다는 것을 확인함.
 **Action:** 앞으로 오류 메시지를 작성할 때는 항상 문제 상태와 조치 사항을 분리하여 다른 색상으로 명확하게 안내할 것.
 
-## 2026-07-23 - [CLI UX] 에러 원인과 해결 방안의 시각적 분리
-**Learning:** 에러 메시지 출력 시, 단순히 텍스트로만 나열하면 사용자가 문제 원인과 해결 방안을 구분하기 어려워 인지 부하가 증가함.
-**Action:** 에러의 원인(Possible reasons)은 빨간색(Red)으로 표시하여 에러 상태와 시각적으로 연결하고, 사용자가 취할 수 있는 해결 방안(Fallback options)은 청록색(Cyan)으로 표시하여 실행 가능한 단계임을 명확히 구분함.
+## 2026-07-23 - Visual Separation of CLI Errors and Recovery Steps
+**Learning:** When error causes and recovery steps are presented as one undifferentiated block, users must spend more effort distinguishing diagnosis from action.
+**Action:** Render possible error causes in red and actionable fallback options in cyan so the next recovery step is immediately recognizable.
