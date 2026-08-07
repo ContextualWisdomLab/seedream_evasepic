@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2026-08-08 - ffprobe 메타데이터 출력을 통한 터미널 제어 문자 삽입 취약점
+**Vulnerability:** `extract-frames.sh`에서 `ffprobe`를 통해 추출한 `DURATION`, `RESOLUTION`, `FPS` 메타데이터를 터미널에 출력할 때 `printf "%b"`를 사용하여 검증 없이 보간하였습니다.
+**Learning:** 외부 도구(예: `ffprobe`)에서 추출한 데이터도 신뢰할 수 없는 입력으로 취급해야 하며, 메타데이터에 악의적인 제어 문자가 포함될 경우 터미널 출력 변조(Terminal Output Injection)가 발생할 수 있습니다.
+**Prevention:** 신뢰할 수 없는 데이터(메타데이터 포함)를 출력할 때는 항상 `terminal_safe_text` 함수를 통해 제어 문자를 무효화하고, `%s` 포맷 스트링을 사용하여 터미널에 안전하게 렌더링해야 합니다.
