@@ -81,7 +81,7 @@ mkdir -p -- "$OUT_DIR"
 # Probe video metadata in a single call to reduce process overhead
 PROBE_OUTPUT=$("$FFPROBE" -v error \
   -show_entries format=duration:stream=width,height,r_frame_rate,codec_type \
-  -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
+  -of default=noprint_wrappers=1:nokey=0 -- "$VIDEO" 2>/dev/null || true)
 
 DURATION=0
 WIDTH=""
@@ -137,11 +137,11 @@ read -r FPS_FILTER _ <<< "$FRAME_TIMING"
 printf "%b\n" "${CYAN}Extracting frames (and audio if available)...${NC}"
 
 if [ "$HAS_AUDIO" -eq 1 ]; then
-  "$FFMPEG" -y -v warning -i "$VIDEO" \
+  "$FFMPEG" -y -v warning -i -- "$VIDEO" \
     -map 0:v:0 -vf "fps=$FPS_FILTER" -q:v 2 "$OUT_DIR/frame_%03d.jpg" \
     -map 0:a:0 -acodec pcm_s16le -ar 16000 -ac 1 "$OUT_DIR/audio.wav"
 else
-  "$FFMPEG" -y -v warning -i "$VIDEO" \
+  "$FFMPEG" -y -v warning -i -- "$VIDEO" \
     -map 0:v:0 -vf "fps=$FPS_FILTER" -q:v 2 "$OUT_DIR/frame_%03d.jpg"
 fi
 
