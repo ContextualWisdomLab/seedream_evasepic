@@ -25,7 +25,7 @@ for arg in "$@"; do
     printf "%b\n" "${GREEN}Extract Frames Script${NC}"
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}"
     printf "%b\n" "  num_frames defaults to 12"
-    printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24"
+    printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}"
     exit 0
   fi
 done
@@ -38,7 +38,7 @@ if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
-  printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
+  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
   exit 2
 fi
 
@@ -47,7 +47,7 @@ case "$NUM_FRAMES" in
     printf "%b\n" "${RED}Error: num_frames must be a positive integer.${NC}" >&2
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
     printf "%b\n" "  num_frames defaults to 12" >&2
-    printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
+    printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
     exit 2
     ;;
 esac
@@ -72,7 +72,7 @@ if [ ! -f "$VIDEO" ]; then
   terminal_print_value "${RED}Error: video not found: " "$VIDEO" "${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
-  printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
+  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
   exit 1
 fi
 

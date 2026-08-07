@@ -13,3 +13,4 @@
   - Heredoc을 따옴표로 감싸고(`<<'PYEOF'`) 환경 변수(`os.environ.get`)를 통해 파일 경로를 안전하게 전달하도록 변경하여 취약점을 해결했습니다.
 - 사용자 제공 URL·파일 경로·출력 경로·모델 인자를 터미널에 표시하기 전에 공통 neutralizer로 처리합니다. 실제 ESC/C0/C1 바이트, CR/LF, Unicode line separator 및 bidirectional control을 가시적인 escape 표기로 변환하고, trusted ANSI 색상만 control byte를 생성하도록 제한했습니다.
 - literal `\033` 문자열이 아니라 실제 control byte를 사용하는 CLI 회귀 테스트와 정적 `%b` sink 검사를 추가했습니다.
+- CLI 출력의 `Example:` 구문에 있는 예시 명령어 부분에 시각적 구분 효과를 주는 색상(Cyan)을 추가하여 가독성과 사용자 실행 유도성을 높였습니다.

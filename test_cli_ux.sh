@@ -155,3 +155,11 @@ echo "====================================="
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
+
+echo "=== Testing Examples in CLI Output Should Be Actionable and Noticeable ==="
+if ! bash "$SCRIPT_DIR/extract-frames.sh" "dummy" "dummy" "invalid" 2>&1 | grep -q $'Example: \033\[0;36m'; then
+  echo "FAIL: extract-frames.sh Example string is not colored with Cyan" >&2
+  exit 1
+fi
+echo "PASS: extract-frames.sh Example string is colored with Cyan"
+echo "====================================="
