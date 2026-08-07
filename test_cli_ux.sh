@@ -101,6 +101,23 @@ fi
 echo "PASS: extract-frames.sh prints usage block for invalid num_frames"
 echo "====================================="
 
+echo "=== Testing post-installation PATH validation ==="
+TMP_TEST_DIR="$(mktemp -d)"
+cat > "$TMP_TEST_DIR/brew" << 'STUB'
+#!/bin/bash
+echo "Brew stub called"
+STUB
+chmod +x "$TMP_TEST_DIR/brew"
+
+output=$(PATH="$TMP_TEST_DIR:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$TMP_TEST_DIR/out.mp4" 2>&1 || true)
+if ! grep -q "yt-dlp was installed but is not found in PATH" <<< "$output"; then
+  echo "FAIL: download-reference.sh did not print correct PATH error message after fake install" >&2
+  exit 1
+fi
+rm -rf -- "$TMP_TEST_DIR"
+echo "PASS: download-reference.sh correctly re-validates yt-dlp in PATH"
+echo "====================================="
+
 echo "=== Testing ANSI color codes in Python inline output ==="
 if ! grep -q '\\033\[0;36mLoading whisper model' "$SCRIPT_DIR/transcribe.sh"; then
   echo "FAIL: transcribe.sh Python inline script does not contain ANSI color for 'Loading whisper model'" >&2
