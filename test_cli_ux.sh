@@ -129,6 +129,33 @@ fi
 echo "PASS: transcribe.sh prints usage block for file not found error"
 echo "====================================="
 
+echo "=== Testing yt-dlp auto-install PATH validation ==="
+TMP_INSTALL_DIR="$(mktemp -d)"
+cat > "$TMP_INSTALL_DIR/pip3" <<'INNER_EOF'
+#!/bin/bash
+echo "Mocking pip3 install yt-dlp..."
+# Intentionally do not put yt-dlp in PATH
+exit 0
+INNER_EOF
+chmod +x "$TMP_INSTALL_DIR/pip3"
+
+set +e
+install_validation_output="$(
+  PATH="$TMP_INSTALL_DIR:/usr/bin:/bin" \
+    bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$TMP_INSTALL_DIR/output.mp4" 2>&1
+)"
+install_validation_status=$?
+set -e
+rm -rf -- "$TMP_INSTALL_DIR"
+
+if [ "$install_validation_status" -ne 1 ] || ! grep -q -F "Error: yt-dlp installed but not found in PATH." <<< "$install_validation_output"; then
+  echo "FAIL: download-reference.sh must validate yt-dlp presence after auto-installation" >&2
+  printf '%s\n' "$install_validation_output" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh re-validates yt-dlp PATH post-installation"
+echo "====================================="
+
 echo "=== Testing ffprobe dependency preflight ==="
 DUMMY_VIDEO="$TMP_DIR/ffprobe-preflight.mp4"
 : > "$DUMMY_VIDEO"
