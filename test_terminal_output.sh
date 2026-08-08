@@ -105,8 +105,36 @@ bash "$SCRIPT_DIRECTORY/transcribe.sh" \
 assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path error'
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
+printf '=== Testing ffprobe metadata terminal neutralization ===\n'
+cat >"$temporary_directory/ffprobe" <<'STUB'
+#!/bin/bash
+set -euo pipefail
+printf 'duration=1\033[31mPWNED\033[0m\n'
+printf 'width=1920\033[31mPWNED\033[0m\n'
+printf 'height=1080\n'
+printf 'r_frame_rate=30/1\033[31mPWNED\033[0m\n'
+printf 'codec_type=video\n'
+STUB
+chmod +x "$temporary_directory/ffprobe"
+metadata_video="$temporary_directory/metadata-video.mp4"
+: >"$metadata_video"
+metadata_output="$temporary_directory/metadata.out"
+FFMPEG=/bin/true \
+FFPROBE="$temporary_directory/ffprobe" \
+  bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
+    "$metadata_video" "$temporary_directory/metadata-frames" 3 >"$metadata_output" 2>&1
+if LC_ALL=C grep -Fq -- $'\033[31mPWNED' "$metadata_output"; then
+  fail 'extract-frames.sh emitted attacker-controlled ANSI from ffprobe metadata'
+fi
+if ! grep -Fq -- '\x1B[31mPWNED\x1B[0m' "$metadata_output"; then
+  printf '%s\n' 'ffprobe metadata output was:' >&2
+  cat "$metadata_output" >&2
+  fail 'extract-frames.sh did not render ffprobe metadata control bytes visibly'
+fi
+printf 'PASS: ffprobe-derived duration, resolution, and FPS stay outside terminal control sinks\n'
+
 printf '=== Testing static terminal-output contract ===\n'
-if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO)' \
+if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO|\$DURATION|\$RESOLUTION|\$FPS)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \
   "$SCRIPT_DIRECTORY/extract-frames.sh" \
   "$SCRIPT_DIRECTORY/transcribe.sh"; then
