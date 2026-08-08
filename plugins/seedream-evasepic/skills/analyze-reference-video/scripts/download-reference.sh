@@ -64,12 +64,14 @@ terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
 
 # Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
 # -f format spec: prefer mp4, cap at 1080p
+# Performance optimization: parallelize fragment fetching for DASH/HLS streams to reduce network I/O bottlenecks.
 yt-dlp \
   -f "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best" \
   --merge-output-format mp4 \
   -o "$OUTPUT" \
   --no-playlist \
   --quiet --progress \
+  --concurrent-fragments 4 \
   -- "$URL" || {
     printf "\n" >&2
     printf "%b\n" "${RED}yt-dlp failed. Possible reasons:${NC}" >&2
