@@ -152,6 +152,14 @@ fi
 echo "PASS: extract-frames.sh reports a missing ffprobe before metadata processing"
 echo "====================================="
 
+echo "=== Testing tr process removal for performance ==="
+if grep -n -F 'tr -d' "$SCRIPT_DIR/download-reference.sh"; then
+  echo "FAIL: download-reference.sh must use native bash parameter expansion instead of tr" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh uses native bash parameter expansion"
+echo "====================================="
+
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
