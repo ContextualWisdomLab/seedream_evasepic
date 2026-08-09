@@ -94,6 +94,27 @@ FFMPEG=/bin/true FFPROBE=/bin/true \
     "$temporary_directory/frames" >"$extract_output" 2>&1 || true
 assert_neutralized_file "$extract_output" 'extract-frames.sh'
 
+cat >"$temporary_directory/ffprobe" <<'STUB'
+#!/bin/bash
+printf 'duration=12\nwidth=1920\nheight=1080\nr_frame_rate=30/1\033[2JPWNED\n'
+STUB
+chmod +x "$temporary_directory/ffprobe"
+metadata_video="$temporary_directory/probe.mp4"
+: >"$metadata_video"
+metadata_output="$temporary_directory/metadata.out"
+FFMPEG=/bin/true FFPROBE="$temporary_directory/ffprobe" \
+  bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
+    "$metadata_video" "$temporary_directory/metadata-frames" >"$metadata_output" 2>&1 || true
+metadata_attacker_sequence=$'\033[2JPWNED'
+if LC_ALL=C grep -Fq -- "$metadata_attacker_sequence" "$metadata_output"; then
+  fail 'extract-frames.sh emitted attacker-controlled ffprobe ANSI bytes'
+fi
+if ! grep -Fq -- '\x1B[2JPWNED' "$metadata_output"; then
+  printf 'extract-frames.sh metadata output was:\n' >&2
+  cat "$metadata_output" >&2
+  fail 'extract-frames.sh did not render ffprobe control bytes visibly'
+fi
+
 transcribe_output="$temporary_directory/transcribe.out"
 bash "$SCRIPT_DIRECTORY/transcribe.sh" \
   "$temporary_directory/missing.wav" "$script_value" >"$transcribe_output" 2>&1 || true
