@@ -155,3 +155,18 @@ echo "====================================="
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
+echo "=== Testing syntax highlighting in help messages ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" --help | grep -q $'\033\[0;36mdownload-reference.sh'; then
+  echo "FAIL: download-reference.sh does not highlight example commands in Cyan" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/extract-frames.sh" --help | grep -q $'\033\[0;36mextract-frames.sh'; then
+  echo "FAIL: extract-frames.sh does not highlight example commands in Cyan" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/transcribe.sh" --help | grep -q $'\033\[0;36mtranscribe.sh'; then
+  echo "FAIL: transcribe.sh does not highlight example commands in Cyan" >&2
+  exit 1
+fi
+echo "PASS: Help messages highlight example commands in Cyan"
+echo "====================================="
