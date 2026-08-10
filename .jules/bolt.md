@@ -25,3 +25,6 @@
 ## 2025-02-19 - [Bash 성능 개선] 외부 명령어(basename, dirname) 호출 오버헤드 방지
 **Learning:** 스크립트 내에서 `basename`이나 `dirname`과 같은 외부 명령어를 서브셸로 호출하면 서브셸 생성 및 프로세스 포크 오버헤드가 발생하여 성능이 저하됩니다.
 **Action:** 외부 도구(basename, dirname) 대신 Bash 내장 파라미터 확장(Parameter Expansion, 예: `"${VAR##*/}"`, `"${VAR%/*}"`)을 사용하여 순수 Bash 내장 기능만으로 문자열 조작함으로써 프로세스 생성 비용을 없애고 성능을 향상시킵니다.
+## 2025-02-19 - yt-dlp 다운로드 속도 개선
+**Learning:** yt-dlp는 기본적으로 DASH/HLS 스트림 조각을 순차적으로 다운로드하므로 네트워크 I/O 병목 현상이 발생할 수 있습니다.
+**Action:** yt-dlp 실행 시 `--concurrent-fragments 4` 옵션을 추가하여 조각 가져오기를 병렬화함으로써 다운로드 속도를 크게 향상시키고 네트워크 병목을 줄입니다.

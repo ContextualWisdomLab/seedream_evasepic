@@ -65,6 +65,18 @@ fi
 echo "PASS: yt-dlp URL is protected by -- argument separator"
 echo "====================================="
 
+echo "=== Testing yt-dlp concurrent-fragments optimization ==="
+if ! grep -q -x -F -- "--concurrent-fragments" "$ARGS_FILE"; then
+  echo "FAIL: yt-dlp must use --concurrent-fragments to parallelize downloads" >&2
+  exit 1
+fi
+if ! grep -q -x -F -- "4" "$ARGS_FILE"; then
+  echo "FAIL: yt-dlp must use 4 concurrent fragments" >&2
+  exit 1
+fi
+echo "PASS: yt-dlp uses --concurrent-fragments optimization"
+echo "====================================="
+
 echo "=== Testing awk fallback variable binding ==="
 if grep -n -F 'awk "BEGIN' "$SCRIPT_DIR/extract-frames.sh"; then
   echo "FAIL: extract-frames.sh must not interpolate shell variables into an awk program string" >&2

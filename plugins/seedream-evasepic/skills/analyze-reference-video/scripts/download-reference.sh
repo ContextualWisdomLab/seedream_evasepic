@@ -69,6 +69,7 @@ yt-dlp \
   --merge-output-format mp4 \
   -o "$OUTPUT" \
   --no-playlist \
+  --concurrent-fragments 4 \
   --quiet --progress \
   -- "$URL" || {
     printf "\n" >&2
