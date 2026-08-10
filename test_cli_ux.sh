@@ -152,6 +152,30 @@ fi
 echo "PASS: extract-frames.sh reports a missing ffprobe before metadata processing"
 echo "====================================="
 
+echo "=== Testing post-installation PATH validation ==="
+TMP_TEST_DIR="$(mktemp -d)"
+# Mock pip3 to simulate successful installation
+cat > "$TMP_TEST_DIR/pip3" <<'EOF'
+#!/bin/bash
+echo "Mock installing yt-dlp..."
+EOF
+chmod +x "$TMP_TEST_DIR/pip3"
+
+set +e
+path_val_output="$(PATH="$TMP_TEST_DIR:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$TMP_TEST_DIR/out.mp4" 2>&1)"
+path_val_status=$?
+set -e
+
+if [ "$path_val_status" -ne 1 ] || ! grep -q -F "Error: yt-dlp was installed but is not accessible in your PATH." <<< "$path_val_output"; then
+  echo "FAIL: download-reference.sh did not provide specific PATH guidance after install" >&2
+  printf '%s\n' "$path_val_output" >&2
+  rm -rf "$TMP_TEST_DIR"
+  exit 1
+fi
+echo "PASS: download-reference.sh validates PATH after dependency installation"
+rm -rf "$TMP_TEST_DIR"
+echo "====================================="
+
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
