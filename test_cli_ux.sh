@@ -20,6 +20,28 @@ bash "$SCRIPT_DIR/transcribe.sh"
 echo "Exit code: $?"
 echo "====================================="
 
+echo "=== Testing post-installation PATH validation for yt-dlp ==="
+TEST_TMP="$(mktemp -d)"
+cat > "$TEST_TMP/pip3" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+chmod +x "$TEST_TMP/pip3"
+
+set +e
+output="$(PATH="$TEST_TMP:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "dummy_out" 2>&1)"
+exit_code=$?
+set -e
+rm -rf -- "$TEST_TMP"
+
+if [ "$exit_code" -ne 1 ] || ! grep -q -F "yt-dlp was installed but is not found in PATH" <<< "$output"; then
+  echo "FAIL: download-reference.sh did not print explicit error message for missing PATH post-install" >&2
+  printf '%s\n' "$output" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh prints explicit error message for missing PATH post-install"
+echo "====================================="
+
 echo "=== Testing yt-dlp argument separator ==="
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf -- "$TMP_DIR"' EXIT

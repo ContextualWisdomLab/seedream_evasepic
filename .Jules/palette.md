@@ -4,3 +4,6 @@
 ## 2024-10-18 - Help Output Before Dependencies
 **Learning:** CLI tools should provide help flags (`-h`, `--help`) without requiring system dependencies to be installed first. Users may need documentation to understand what dependencies are even needed, so help output should be the very first step in script execution.
 **Action:** Always parse argument flags like `-h` and `--help` immediately after variable initialization and before checking for required system tools like `ffmpeg` or `yt-dlp`.
+## 2024-11-20 - [CLI UX Enhancement] Post-installation PATH Validation
+**Learning:** CLI 스크립트가 의존성을 자동으로 설치(예: `pip install --user`)하더라도 사용자의 시스템 환경 설정에 따라 `$PATH`에 등록되어 있지 않을 수 있음을 배웠습니다. 이는 사용자에게 혼란을 줄 수 있습니다.
+**Action:** 의존성을 자동 설치한 직후, 해당 실행 파일이 `$PATH`에서 접근 가능한지 즉시 재확인해야 합니다. 여전히 접근 불가한 경우 PATH 설정을 수정하거나 수동으로 설치하라는 구체적인 안내 메시지를 출력하도록 변경합니다.
