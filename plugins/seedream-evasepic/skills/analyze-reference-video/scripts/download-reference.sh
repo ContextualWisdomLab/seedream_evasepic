@@ -85,5 +85,6 @@ yt-dlp \
   }
 
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-FILE_SIZE_BYTES="$(wc -c < "$OUTPUT" | tr -d '[:space:]')"
+FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
+FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
 terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
