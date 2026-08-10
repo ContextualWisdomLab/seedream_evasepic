@@ -89,6 +89,7 @@ assert_neutralized_file "$download_output" 'download-reference.sh'
 
 extract_output="$temporary_directory/extract.out"
 FFMPEG=/bin/true \
+FFPROBE=/bin/true \
   bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
     "$temporary_directory/$script_value.mp4.missing" \
     "$temporary_directory/frames" >"$extract_output" 2>&1 || true
@@ -106,7 +107,7 @@ assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path erro
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
 printf '=== Testing static terminal-output contract ===\n'
-if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO)' \
+if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO|\$DURATION|\$RESOLUTION|\$FPS|\$HAS_AUDIO|\$FRAME_COUNT)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \
   "$SCRIPT_DIRECTORY/extract-frames.sh" \
   "$SCRIPT_DIRECTORY/transcribe.sh"; then
