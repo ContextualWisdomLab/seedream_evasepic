@@ -155,3 +155,16 @@ echo "====================================="
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
+
+echo "=== Testing CLI Example Syntax Highlighting UX ==="
+shopt -s nullglob
+for script in plugins/seedream-evasepic/skills/analyze-reference-video/scripts/*.sh; do
+  if ! bash "$script" --help | grep -q $'\033\[0;36m'; then
+    if [[ "$script" != *"terminal-output.sh" ]]; then
+       echo "FAIL: $script --help does not contain syntax highlighting (Cyan) for Example command" >&2
+       exit 1
+    fi
+  fi
+done
+echo "PASS: CLI help blocks use syntax highlighting for Example commands"
+echo "=================================================================="
