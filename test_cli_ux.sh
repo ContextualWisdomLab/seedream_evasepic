@@ -152,6 +152,28 @@ fi
 echo "PASS: extract-frames.sh reports a missing ffprobe before metadata processing"
 echo "====================================="
 
+echo "=== Testing ANSI Escape Sequence Injection in ffprobe metadata ==="
+DUMMY_VIDEO="$TMP_DIR/metadata-pwn.mp4"
+: > "$DUMMY_VIDEO"
+cat > "$TMP_DIR/malicious-ffprobe" <<'EOF'
+#!/bin/bash
+echo 'duration=10\033[31mPWNED'
+echo 'width=1920\033[31mPWNED'
+echo 'height=1080'
+echo 'r_frame_rate=30/1\033[31mPWNED'
+EOF
+chmod +x "$TMP_DIR/malicious-ffprobe"
+
+OUTPUT_METADATA="$(FFMPEG="/bin/true" FFPROBE="$TMP_DIR/malicious-ffprobe" bash "$SCRIPT_DIR/extract-frames.sh" "$DUMMY_VIDEO" "$TMP_DIR/frames-pwn" 12 2>&1 || true)"
+
+MALICIOUS_INPUT='\033[31mPWNED'
+if ! echo -E "$OUTPUT_METADATA" | grep -F -q "$MALICIOUS_INPUT"; then
+  echo "FAIL: extract-frames.sh unsafely evaluated ANSI escape sequences in metadata" >&2
+  exit 1
+fi
+echo "PASS: extract-frames.sh safely handles untrusted metadata without evaluating ANSI escapes"
+echo "====================================="
+
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
