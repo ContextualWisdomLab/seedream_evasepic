@@ -51,6 +51,12 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
     printf "%b\n" "${CYAN}  pip install yt-dlp    (any OS with Python)${NC}" >&2
     exit 1
   fi
+
+  if ! command -v yt-dlp >/dev/null 2>&1; then
+    printf "%b\n" "${RED}Error: yt-dlp installed but not found in PATH.${NC}" >&2
+    printf "%b\n" "${CYAN}Please fix your \$PATH or install manually.${NC}" >&2
+    exit 1
+  fi
 fi
 
 # Ensure output directory exists

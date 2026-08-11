@@ -152,6 +152,28 @@ fi
 echo "PASS: extract-frames.sh reports a missing ffprobe before metadata processing"
 echo "====================================="
 
+echo "=== Testing yt-dlp path validation after install ==="
+TEST_YTDLP_DIR="$(mktemp -d)"
+cat > "$TEST_YTDLP_DIR/brew" << 'EOF'
+#!/bin/bash
+echo "Mock installing yt-dlp..."
+EOF
+chmod +x "$TEST_YTDLP_DIR/brew"
+
+set +e
+PATH_TEST_OUTPUT="$(PATH="$TEST_YTDLP_DIR:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "http://test" "$TEST_YTDLP_DIR/test.mp4" 2>&1)"
+PATH_TEST_STATUS=$?
+set -e
+
+if [ "$PATH_TEST_STATUS" -ne 1 ] || ! grep -q "Error: yt-dlp installed but not found in PATH." <<< "$PATH_TEST_OUTPUT"; then
+  echo "FAIL: download-reference.sh must validate yt-dlp path after installation attempt" >&2
+  printf '%s\n' "$PATH_TEST_OUTPUT" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh validates yt-dlp presence post-installation"
+rm -rf "$TEST_YTDLP_DIR"
+echo "====================================="
+
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
