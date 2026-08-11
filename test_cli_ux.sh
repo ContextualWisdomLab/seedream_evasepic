@@ -113,6 +113,25 @@ fi
 echo "PASS: transcribe.sh Python inline script contains trusted ANSI color codes"
 echo "====================================="
 
+echo "=== Testing auto-install PATH validation ==="
+TMP_DIR="$(mktemp -d)"
+mkdir -p "$TMP_DIR/bin"
+cat > "$TMP_DIR/bin/pip" <<'EOF'
+#!/bin/bash
+echo "Mock install success"
+EOF
+chmod +x "$TMP_DIR/bin/pip"
+
+PATH_TEST_OUTPUT="$(PATH="$TMP_DIR/bin:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "dummy_path" 2>&1 || true)"
+if ! grep -q "yt-dlp was installed but cannot be found in \$PATH" <<< "$PATH_TEST_OUTPUT"; then
+  echo "FAIL: download-reference.sh did not warn about PATH after mock install" >&2
+  echo "$PATH_TEST_OUTPUT" >&2
+  exit 1
+fi
+rm -rf -- "$TMP_DIR"
+echo "PASS: download-reference.sh warns when auto-install fails to expose tool in PATH"
+echo "====================================="
+
 echo "=== Testing help flag position flexibility ==="
 if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "--help" | grep -q "Download Reference Video Script"; then
   echo "FAIL: download-reference.sh did not recognize --help as second argument" >&2
