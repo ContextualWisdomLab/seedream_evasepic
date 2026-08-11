@@ -114,21 +114,24 @@ echo "PASS: transcribe.sh Python inline script contains trusted ANSI color codes
 echo "====================================="
 
 echo "=== Testing auto-install PATH validation ==="
-TMP_DIR="$(mktemp -d)"
-mkdir -p "$TMP_DIR/bin"
-cat > "$TMP_DIR/bin/pip" <<'EOF'
+PATH_TEST_DIR="$(mktemp -d)"
+mkdir -p "$PATH_TEST_DIR/bin"
+cat > "$PATH_TEST_DIR/bin/pip" <<'EOF'
 #!/bin/bash
 echo "Mock install success"
 EOF
-chmod +x "$TMP_DIR/bin/pip"
+cp "$PATH_TEST_DIR/bin/pip" "$PATH_TEST_DIR/bin/pip3"
+chmod +x "$PATH_TEST_DIR/bin/pip" "$PATH_TEST_DIR/bin/pip3"
 
-PATH_TEST_OUTPUT="$(PATH="$TMP_DIR/bin:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "dummy_path" 2>&1 || true)"
-if ! grep -q "yt-dlp was installed but cannot be found in \$PATH" <<< "$PATH_TEST_OUTPUT"; then
-  echo "FAIL: download-reference.sh did not warn about PATH after mock install" >&2
-  echo "$PATH_TEST_OUTPUT" >&2
+PATH_TEST_STATUS=0
+PATH_TEST_OUTPUT="$(PATH="$PATH_TEST_DIR/bin:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "dummy_path" 2>&1)" || PATH_TEST_STATUS=$?
+if [ "$PATH_TEST_STATUS" -ne 1 ] || ! grep -q "yt-dlp was installed but cannot be found in \\$PATH" <<< "$PATH_TEST_OUTPUT"; then
+  echo "FAIL: download-reference.sh did not fail after mock install left yt-dlp outside PATH" >&2
+  printf 'exit status: %s\n%s\n' "$PATH_TEST_STATUS" "$PATH_TEST_OUTPUT" >&2
+  rm -rf -- "$PATH_TEST_DIR"
   exit 1
 fi
-rm -rf -- "$TMP_DIR"
+rm -rf -- "$PATH_TEST_DIR"
 echo "PASS: download-reference.sh warns when auto-install fails to expose tool in PATH"
 echo "====================================="
 
