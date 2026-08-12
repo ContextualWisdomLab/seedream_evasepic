@@ -117,4 +117,3 @@ if grep -nE 'print\(f?"[^\"]*\{(audio|out_base)' "$SCRIPT_DIRECTORY/transcribe.s
   fail 'Python fallback still prints a user-controlled path to the terminal'
 fi
 printf 'PASS: static contract keeps untrusted values out of terminal control sinks\n'
-
