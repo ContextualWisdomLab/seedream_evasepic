@@ -161,3 +161,4 @@ else
 fi
 
 terminal_print_value "${GREEN}Done. Output in: " "$OUT_DIR" "${NC}"
+

@@ -138,3 +138,4 @@ printf "%b\n" "${CYAN}Install one of:${NC}" >&2
 printf "%b\n" "${CYAN}  brew install openai-whisper     (macOS, installs CLI)${NC}" >&2
 printf "%b\n" "${CYAN}  pip install openai-whisper      (any OS, requires python3)${NC}" >&2
 exit 1
+
