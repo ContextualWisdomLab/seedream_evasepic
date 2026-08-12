@@ -127,8 +127,15 @@ FFPROBE="$temporary_directory/ffprobe" \
 if LC_ALL=C grep -Fq -- $'\033[31mPWNED' "$metadata_output"; then
   fail 'extract-frames.sh emitted attacker-controlled ANSI from ffprobe metadata'
 fi
-metadata_text="$(sed 
-    printf '%s\n' 'ffprobe metadata output was:' >&2
+printf -v ansi_escape '\\033'
+metadata_text="$(sed "s/${ansi_escape}\\[[0-9;]*m//g" "$metadata_output")"
+for expected in \
+  'Duration: 1\\x1B[31mPWNED\\x1B[0ms' \
+  'Resolution: 1920\\x1B[31mPWNED\\x1B[0mx1080' \
+  'FPS: 30/1\\x1B[31mPWNED\\x1B[0m'
+do
+  if ! grep -Fq -- "$expected" <<<"$metadata_text"; then
+    printf '%s\\n' 'ffprobe metadata output was:' >&2
     cat "$metadata_output" >&2
     fail "missing visible escaped metadata field: $expected"
   fi
@@ -136,9 +143,15 @@ done
 printf 'PASS: ffprobe-derived duration, resolution, and FPS stay outside terminal control sinks\n'
 
 normalize_printf_calls() {
-  sed -e ':join' -e '/\\\\$/ { N; s/\\\\\n/ /; b join; }' "$@"
+  awk '
+    /\\\\$/ {
+      sub(/\\\\$/, " ")
+      printf "%s", $0
+      next
+    }
+    { print }
+  ' "$@"
 }
-
 unsafe_percent_b_calls() {
   normalize_printf_calls "$@" |
     awk '
