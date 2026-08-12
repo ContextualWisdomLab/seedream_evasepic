@@ -21,7 +21,7 @@ for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}"
-    printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+    printf "%b\n" "  Example: ${CYAN}${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}"
     exit 0
   fi
 done
@@ -32,8 +32,16 @@ OUTPUT="${2:-}"
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
-  printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  printf "%b\n" "  Example: ${CYAN}${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}" >&2
   exit 2
+fi
+
+# A non-empty regular output is an explicit caller-owned cache key. Return
+# before dependency discovery or network work, and render the path only through
+# the shared terminal-neutralization boundary.
+if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
+  terminal_print_value "${GREEN}File already exists, skipping download: " "$OUTPUT" "${NC}"
+  exit 0
 fi
 
 # Check for yt-dlp
@@ -49,6 +57,12 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
     printf "%b\n" "${RED}Error: cannot auto-install yt-dlp. Install manually:${NC}" >&2
     printf "%b\n" "${CYAN}  brew install yt-dlp   (macOS)${NC}" >&2
     printf "%b\n" "${CYAN}  pip install yt-dlp    (any OS with Python)${NC}" >&2
+    exit 1
+  fi
+
+  if ! command -v yt-dlp >/dev/null 2>&1; then
+    printf "%b\n" "${RED}Error: yt-dlp was installed but cannot be found in \$PATH.${NC}" >&2
+    printf "%b\n" "${CYAN}Please check your PATH environment variable or install it manually.${NC}" >&2
     exit 1
   fi
 fi
@@ -70,6 +84,7 @@ yt-dlp \
   -o "$OUTPUT" \
   --no-playlist \
   --quiet --progress \
+  --concurrent-fragments 4 \
   -- "$URL" || {
     printf "\n" >&2
     printf "%b\n" "${RED}yt-dlp failed. Possible reasons:${NC}" >&2
@@ -89,3 +104,4 @@ terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
 terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
+

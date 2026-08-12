@@ -88,7 +88,8 @@ PATH="$temporary_directory:$PATH" \
 assert_neutralized_file "$download_output" 'download-reference.sh'
 
 extract_output="$temporary_directory/extract.out"
-FFMPEG=/bin/true FFPROBE=/bin/true \
+FFMPEG=/bin/true \
+FFPROBE=/bin/true \
   bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
     "$temporary_directory/$script_value.mp4.missing" \
     "$temporary_directory/frames" >"$extract_output" 2>&1 || true
