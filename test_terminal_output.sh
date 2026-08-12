@@ -154,7 +154,9 @@ unsafe_percent_b_calls() {
       /printf[[:space:]]+["'"'"']%b[^"'"'"']*["'"'"']/ &&
         $0 ~ ("\\$\\{?" target "(\\}|[^A-Za-z0-9_])") {
           print
+          found = 1
         }
+      END { exit found ? 0 : 1 }
     '
 }
 
