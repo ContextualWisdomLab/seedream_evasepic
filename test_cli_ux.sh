@@ -195,6 +195,28 @@ fi
 echo "PASS: transcribe.sh Python inline script contains trusted ANSI color codes"
 echo "====================================="
 
+echo "=== Testing auto-install PATH validation ==="
+PATH_TEST_DIR="$(mktemp -d)"
+mkdir -p "$PATH_TEST_DIR/bin"
+cat > "$PATH_TEST_DIR/bin/pip" <<'EOF'
+#!/bin/bash
+echo "Mock install success"
+EOF
+cp "$PATH_TEST_DIR/bin/pip" "$PATH_TEST_DIR/bin/pip3"
+chmod +x "$PATH_TEST_DIR/bin/pip" "$PATH_TEST_DIR/bin/pip3"
+
+PATH_TEST_STATUS=0
+PATH_TEST_OUTPUT="$(PATH="$PATH_TEST_DIR/bin:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "dummy_path" 2>&1)" || PATH_TEST_STATUS=$?
+if [ "$PATH_TEST_STATUS" -ne 1 ] || ! grep -Fq 'yt-dlp was installed but cannot be found in $PATH' <<< "$PATH_TEST_OUTPUT"; then
+  echo "FAIL: download-reference.sh did not fail after mock install left yt-dlp outside PATH" >&2
+  printf 'exit status: %s\n%s\n' "$PATH_TEST_STATUS" "$PATH_TEST_OUTPUT" >&2
+  rm -rf -- "$PATH_TEST_DIR"
+  exit 1
+fi
+rm -rf -- "$PATH_TEST_DIR"
+echo "PASS: download-reference.sh warns when auto-install fails to expose tool in PATH"
+echo "====================================="
+
 echo "=== Testing help flag position flexibility ==="
 if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "--help" | grep -q "Download Reference Video Script"; then
   echo "FAIL: download-reference.sh did not recognize --help as second argument" >&2
