@@ -78,6 +78,7 @@ yt-dlp \
   -o "$OUTPUT" \
   --no-playlist \
   --quiet --progress \
+  --concurrent-fragments 4 \
   -- "$URL" || {
     printf "\n" >&2
     printf "%b\n" "${RED}yt-dlp failed. Possible reasons:${NC}" >&2
