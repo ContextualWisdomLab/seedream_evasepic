@@ -47,4 +47,4 @@ jobs:
 
       - name: Verify clean worktree
         shell: bash --noprofile --norc -e -o pipefail {0}
-        run: git diff --exit-code
+        run: test -z "$(git status --porcelain=v1 --untracked-files=all)"
