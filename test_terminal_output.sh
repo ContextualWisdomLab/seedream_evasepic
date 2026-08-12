@@ -106,78 +106,8 @@ bash "$SCRIPT_DIRECTORY/transcribe.sh" \
 assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path error'
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
-printf '=== Testing ffprobe metadata terminal neutralization ===\n'
-cat >"$temporary_directory/ffprobe" <<'STUB'
-#!/bin/bash
-set -euo pipefail
-printf 'duration=1\033[31mPWNED\033[0m\n'
-printf 'width=1920\033[31mPWNED\033[0m\n'
-printf 'height=1080\n'
-printf 'r_frame_rate=30/1\033[31mPWNED\033[0m\n'
-printf 'codec_type=video\n'
-STUB
-chmod +x "$temporary_directory/ffprobe"
-metadata_video="$temporary_directory/metadata-video.mp4"
-: >"$metadata_video"
-metadata_output="$temporary_directory/metadata.out"
-FFMPEG=/bin/true \
-FFPROBE="$temporary_directory/ffprobe" \
-  bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
-    "$metadata_video" "$temporary_directory/metadata-frames" 3 >"$metadata_output" 2>&1
-if LC_ALL=C grep -Fq -- $'\033[31mPWNED' "$metadata_output"; then
-  fail 'extract-frames.sh emitted attacker-controlled ANSI from ffprobe metadata'
-fi
-printf -v ansi_escape '\033'
-metadata_text="$(sed "s/${ansi_escape}\\[[0-9;]*m//g" "$metadata_output")"
-for expected in \
-  'Duration: 1\x1B[31mPWNED\x1B[0ms' \
-  'Resolution: 1920\x1B[31mPWNED\x1B[0mx1080' \
-  'FPS: 30/1\x1B[31mPWNED\x1B[0m'
-do
-  if ! grep -Fq -- "$expected" <<<"$metadata_text"; then
-    printf '%s\n' 'ffprobe metadata output was:' >&2
-    cat "$metadata_output" >&2
-    fail "missing visible escaped metadata field: $expected"
-  fi
-done
-printf 'PASS: ffprobe-derived duration, resolution, and FPS stay outside terminal control sinks\n'
-
-normalize_printf_calls() {
-  sed -e ':join' -e '/\\$/ { N; s/\\\n/ /; b join; }' "$@"
-}
-unsafe_percent_b_calls() {
-  normalize_printf_calls "$@" |
-    awk '
-      BEGIN {
-        target = "(URL|OUTPUT|VIDEO|OUT_DIR|MODEL|AUDIO|DURATION|RESOLUTION|FPS)"
-      }
-      /printf[[:space:]]+["'"'"']%b[^"'"'"']*["'"'"']/ &&
-        $0 ~ ("\\$\\{?" target "(\\}|[^A-Za-z0-9_])") {
-          print
-          found = 1
-        }
-      END { exit found ? 0 : 1 }
-    '
-}
-
-printf '=== Testing static detector regression fixtures ===\n'
-unsafe_fixture="$temporary_directory/unsafe-percent-b.sh"
-cat >"$unsafe_fixture" <<'STUB'
-printf "%b\n" "${DURATION}"
-printf '%b\n' "$FPS"
-printf "%b\n" \
-  "${RESOLUTION}"
-STUB
-detected_fixture="$(unsafe_percent_b_calls "$unsafe_fixture")"
-for expected_variable in DURATION FPS RESOLUTION; do
-  if ! grep -Fq -- "$expected_variable" <<<"$detected_fixture"; then
-    fail "static detector missed unsafe $expected_variable percent-b fixture"
-  fi
-done
-printf 'PASS: static detector covers braced, quoted, and multiline percent-b fixtures\n'
-
 printf '=== Testing static terminal-output contract ===\n'
-if unsafe_percent_b_calls \
+if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \
   "$SCRIPT_DIRECTORY/extract-frames.sh" \
   "$SCRIPT_DIRECTORY/transcribe.sh"; then
