@@ -21,7 +21,7 @@ for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}"
-    printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4"
+    printf "%b\n" "  Example: ${CYAN}${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}"
     exit 0
   fi
 done
@@ -32,7 +32,7 @@ OUTPUT="${2:-}"
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
-  printf "%b\n" "  Example: ${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4" >&2
+  printf "%b\n" "  Example: ${CYAN}${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}" >&2
   exit 2
 fi
 
@@ -102,3 +102,4 @@ yt-dlp \
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT" | tr -d '[:space:]')"
 terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
+

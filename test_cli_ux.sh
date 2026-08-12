@@ -259,3 +259,36 @@ echo "====================================="
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
+
+echo "=== Testing Examples in CLI Output Should Be Actionable and Noticeable ==="
+assert_colored_example() {
+  local output="$1"
+  local label="$2"
+  if ! grep -Fq -- $'Example: \033[0;36m' <<< "$output"; then
+    echo "FAIL: $label Example string is not colored with Cyan" >&2
+    printf '%s\n' "$output" >&2
+    exit 1
+  fi
+  if ! grep -Fq -- $'\033[0m' <<< "$output"; then
+    echo "FAIL: $label Example string does not reset terminal color" >&2
+    printf '%s\n' "$output" >&2
+    exit 1
+  fi
+}
+
+extract_example_output="$(bash "$SCRIPT_DIR/extract-frames.sh" "dummy" "dummy" "invalid" 2>&1 || true)"
+assert_colored_example "$extract_example_output" "extract-frames.sh invalid num_frames output"
+
+download_help_output="$(bash "$SCRIPT_DIR/download-reference.sh" --help 2>&1)"
+assert_colored_example "$download_help_output" "download-reference.sh --help output"
+download_error_output="$(bash "$SCRIPT_DIR/download-reference.sh" 2>&1 || true)"
+assert_colored_example "$download_error_output" "download-reference.sh error output"
+
+transcribe_help_output="$(bash "$SCRIPT_DIR/transcribe.sh" --help 2>&1)"
+assert_colored_example "$transcribe_help_output" "transcribe.sh --help output"
+transcribe_error_output="$(bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" base 2>&1 || true)"
+assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
+
+echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
+echo "====================================="
+

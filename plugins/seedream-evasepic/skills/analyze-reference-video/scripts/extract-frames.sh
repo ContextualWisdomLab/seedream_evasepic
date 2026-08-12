@@ -25,7 +25,7 @@ for arg in "$@"; do
     printf "%b\n" "${GREEN}Extract Frames Script${NC}"
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}"
     printf "%b\n" "  num_frames defaults to 12"
-    printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24"
+    printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}"
     exit 0
   fi
 done
@@ -38,7 +38,7 @@ if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
-  printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
+  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
   exit 2
 fi
 
@@ -47,7 +47,7 @@ case "$NUM_FRAMES" in
     printf "%b\n" "${RED}Error: num_frames must be a positive integer.${NC}" >&2
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
     printf "%b\n" "  num_frames defaults to 12" >&2
-    printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
+    printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
     exit 2
     ;;
 esac
@@ -72,7 +72,7 @@ if [ ! -f "$VIDEO" ]; then
   terminal_print_value "${RED}Error: video not found: " "$VIDEO" "${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
-  printf "%b\n" "  Example: ${0##*/} /tmp/video.mp4 /tmp/frames 24" >&2
+  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
   exit 1
 fi
 
@@ -81,7 +81,7 @@ mkdir -p -- "$OUT_DIR"
 # Probe video metadata in a single call to reduce process overhead
 PROBE_OUTPUT=$("$FFPROBE" -v error \
   -show_entries format=duration:stream=width,height,r_frame_rate,codec_type \
-  -of default=noprint_wrappers=1:nokey=0 "$VIDEO" 2>/dev/null || true)
+  -of default=noprint_wrappers=1:nokey=0 -- "$VIDEO" 2>/dev/null || true)
 
 DURATION=0
 WIDTH=""
@@ -137,11 +137,11 @@ read -r FPS_FILTER _ <<< "$FRAME_TIMING"
 printf "%b\n" "${CYAN}Extracting frames (and audio if available)...${NC}"
 
 if [ "$HAS_AUDIO" -eq 1 ]; then
-  "$FFMPEG" -y -v warning -i "$VIDEO" \
+  "$FFMPEG" -y -v warning -i -- "$VIDEO" \
     -map 0:v:0 -vf "fps=$FPS_FILTER" -q:v 2 "$OUT_DIR/frame_%03d.jpg" \
     -map 0:a:0 -acodec pcm_s16le -ar 16000 -ac 1 "$OUT_DIR/audio.wav"
 else
-  "$FFMPEG" -y -v warning -i "$VIDEO" \
+  "$FFMPEG" -y -v warning -i -- "$VIDEO" \
     -map 0:v:0 -vf "fps=$FPS_FILTER" -q:v 2 "$OUT_DIR/frame_%03d.jpg"
 fi
 
@@ -161,3 +161,4 @@ else
 fi
 
 terminal_print_value "${GREEN}Done. Output in: " "$OUT_DIR" "${NC}"
+
