@@ -300,3 +300,32 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing human-readable file size ==="
+TMP_DIR="$(mktemp -d)"
+OUTPUT_FILE="$TMP_DIR/ref.mp4"
+
+cat << 'MOCKYTDLP' > "$TMP_DIR/yt-dlp"
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    output="${1:-}"
+    break
+  fi
+  shift
+done
+if [ -n "$output" ]; then
+  mkdir -p -- "$(dirname -- "$output")"
+  head -c 10485760 /dev/urandom > "$output"
+fi
+MOCKYTDLP
+chmod +x "$TMP_DIR/yt-dlp"
+
+if ! PATH="$TMP_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$OUTPUT_FILE" | grep -q "Size: .*10.00 MB"; then
+  echo "FAIL: download-reference.sh did not print human-readable size correctly" >&2
+  exit 1
+fi
+rm -rf -- "$TMP_DIR"
+echo "PASS: download-reference.sh prints human-readable file size"
+echo "====================================="

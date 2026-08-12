@@ -17,3 +17,6 @@
 **Learning:** CLI 스크립트에서 누락된 의존성을 자동 설치하더라도, 설치 경로가 사용자의 시스템 환경 변수($PATH)에 포함되어 있지 않으면 이후 실행 단계에서 계속 실패하게 됩니다. 이는 사용자에게 큰 혼란을 줍니다.
 **Action:** 자동 설치 시도 직후에 해당 실행 파일이 `$PATH`에서 접근 가능한지 즉시 재확인하는 로직을 추가했습니다. 만약 접근이 불가하다면, 사용자에게 `$PATH` 환경 변수 설정이나 수동 설치가 필요하다는 명확하고 구체적인 오류 안내 메시지를 제공하여 문제 해결을 돕도록 해야 합니다.
 
+## 2025-02-28 - Human-Readable File Sizes in CLI Output
+**Learning:** Terminal output that presents raw bytes (e.g., `Size: 10485760 bytes`) is difficult for users to parse quickly, leading to poor UX when analyzing downloaded or processed file sizes. Converting bytes to human-readable formats (KB, MB, GB) provides immediate context on the operation's footprint.
+**Action:** When printing file sizes to the CLI, always parse the raw byte count into a human-readable format (e.g., using a short `awk` script to divide by 1024 and append the appropriate unit) before displaying it.
