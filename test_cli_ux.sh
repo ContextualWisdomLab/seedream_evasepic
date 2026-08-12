@@ -77,13 +77,25 @@ echo "====================================="
 echo "=== Testing download cache-hit short circuit ==="
 CACHED_OUTPUT="$TMP_DIR/cached-reference.mp4"
 CACHED_ARGS_FILE="$TMP_DIR/cached-yt-dlp.args"
-printf '%s' 'existing-video-payload' > "$CACHED_OUTPUT"
+EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
+CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
+mkdir -p -- "$CACHE_HIT_PATH"
+ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
+printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
+cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
+
+for forbidden_command in yt-dlp brew pip3 pip; do
+  if PATH="$CACHE_HIT_PATH" command -v "$forbidden_command" >/dev/null 2>&1; then
+    echo "FAIL: cache-hit PATH must exclude $forbidden_command" >&2
+    exit 1
+  fi
+done
 
 set +e
 cached_output="$(
-  PATH="$TMP_DIR:$PATH" \
+  PATH="$CACHE_HIT_PATH" \
   YT_DLP_ARGS_FILE="$CACHED_ARGS_FILE" \
-    bash "$SCRIPT_DIR/download-reference.sh" \
+    /bin/bash "$SCRIPT_DIR/download-reference.sh" \
       "https://example.invalid/cached-video" "$CACHED_OUTPUT" 2>&1
 )"
 cached_status=$?
@@ -99,7 +111,7 @@ if [ -e "$CACHED_ARGS_FILE" ]; then
   cat "$CACHED_ARGS_FILE" >&2
   exit 1
 fi
-if [ "$(cat -- "$CACHED_OUTPUT")" != "existing-video-payload" ]; then
+if ! cmp -s -- "$EXPECTED_CACHED_OUTPUT" "$CACHED_OUTPUT"; then
   echo "FAIL: cache hit must preserve the existing artifact byte-for-byte" >&2
   exit 1
 fi
