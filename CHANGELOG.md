@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### 사용자 경험 개선 (UX)
+- 참조 영상 다운로드 대상이 이미 존재하는 0바이트 초과 일반 파일이면 `yt-dlp` 설치 확인과 네트워크 호출 전에 안전하게 종료하여 기존 아티팩트를 보존합니다. 0바이트 파일과 누락 경로는 계속 다운로드하며, 캐시 적중·미스 분기를 실행 가능한 CLI 테스트로 검증합니다.
 - 참조 영상 분석 전에 `ffprobe` 실행 가능 여부를 `ffmpeg`와 별도로 검증합니다. 도구가 없으면 출력 디렉터리 생성이나 메타데이터 처리 전에 고정된 오류 원인과 설치 명령을 stderr에 표시하고 종료합니다.
 - CLI 스크립트에서 도움말 플래그(`-h`, `--help`)를 순회하며 파싱하도록 수정하여, 도움말 플래그가 첫 번째 인자가 아니더라도 정상 작동하도록 개선했습니다.
 - 다양한 셸 환경에서의 호환성 문제를 방지하기 위해 `echo -e` 대신 `printf "%b\n"`을 사용하도록 변경했습니다.
@@ -14,3 +15,6 @@
 - 사용자 제공 URL·파일 경로·출력 경로·모델 인자를 터미널에 표시하기 전에 공통 neutralizer로 처리합니다. 실제 ESC/C0/C1 바이트, CR/LF, Unicode line separator 및 bidirectional control을 가시적인 escape 표기로 변환하고, trusted ANSI 색상만 control byte를 생성하도록 제한했습니다.
 - literal `\033` 문자열이 아니라 실제 control byte를 사용하는 CLI 회귀 테스트와 정적 `%b` sink 검사를 추가했습니다.
 - `extract-frames.sh` now neutralizes ffprobe-derived duration, resolution, and FPS values with the shared terminal renderer before mixing them with trusted ANSI styling; an adversarial ffprobe regression verifies that real ESC bytes are rendered visibly instead of reaching the terminal.
+
+### Performance
+- `yt-dlp` 호출 시 `--concurrent-fragments 4` 플래그를 추가하여 DASH/HLS 스트림의 다운로드 속도를 최적화했습니다. 단일 스레드로 인한 네트워크 병목을 해소합니다.

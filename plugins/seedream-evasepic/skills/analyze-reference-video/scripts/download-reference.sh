@@ -36,6 +36,14 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+# A non-empty regular output is an explicit caller-owned cache key. Return
+# before dependency discovery or network work, and render the path only through
+# the shared terminal-neutralization boundary.
+if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
+  terminal_print_value "${GREEN}File already exists, skipping download: " "$OUTPUT" "${NC}"
+  exit 0
+fi
+
 # Check for yt-dlp
 if ! command -v yt-dlp >/dev/null 2>&1; then
   printf "%b\n" "${CYAN}yt-dlp not found. Trying to install...${NC}" >&2
@@ -70,6 +78,7 @@ yt-dlp \
   -o "$OUTPUT" \
   --no-playlist \
   --quiet --progress \
+  --concurrent-fragments 4 \
   -- "$URL" || {
     printf "\n" >&2
     printf "%b\n" "${RED}yt-dlp failed. Possible reasons:${NC}" >&2
