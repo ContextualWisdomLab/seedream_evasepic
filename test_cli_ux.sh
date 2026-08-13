@@ -142,7 +142,7 @@ if [ "$symlink_status" -eq 0 ]; then
   echo "FAIL: script must abort when output is a symbolic link" >&2
   exit 1
 fi
-if ! grep -q -F "Error: output path is a symbolic link" <<< "$symlink_output"; then
+if ! grep -q -F "Error: output path or its parent directory is a symbolic link" <<< "$symlink_output"; then
   echo "FAIL: script must print explicit error message for symbolic links" >&2
   printf '%s\n' "$symlink_output" >&2
   exit 1
@@ -150,6 +150,35 @@ fi
 
 rm -f "$SYMLINK_OUTPUT" "$REAL_TARGET"
 echo "PASS: script aborts to prevent symlink overwrite vulnerability"
+echo "====================================="
+
+echo "=== Testing parent directory symlink TOCTOU cache bypass ==="
+SYMLINK_DIR="$TMP_DIR/symlink-dir"
+REAL_DIR="$TMP_DIR/real-dir"
+mkdir -p "$REAL_DIR"
+ln -s "$REAL_DIR" "$SYMLINK_DIR"
+SYMLINK_OUTPUT_NESTED="$SYMLINK_DIR/nested-reference.mp4"
+
+set +e
+symlink_nested_output="$(
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/symlink-video" "$SYMLINK_OUTPUT_NESTED" 2>&1
+)"
+symlink_nested_status=$?
+set -e
+
+if [ "$symlink_nested_status" -eq 0 ]; then
+  echo "FAIL: script must abort when parent directory is a symbolic link" >&2
+  exit 1
+fi
+if ! grep -q -F "Error: output path or its parent directory is a symbolic link" <<< "$symlink_nested_output"; then
+  echo "FAIL: script must print explicit error message for parent directory symbolic links" >&2
+  printf '%s\n' "$symlink_nested_output" >&2
+  exit 1
+fi
+
+rm -rf "$SYMLINK_DIR" "$REAL_DIR"
+echo "PASS: script aborts to prevent parent directory symlink overwrite vulnerability"
 echo "====================================="
 
 echo "=== Testing zero-byte output cache miss ==="

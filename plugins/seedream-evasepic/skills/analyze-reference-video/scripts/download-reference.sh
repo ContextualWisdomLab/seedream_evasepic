@@ -36,11 +36,28 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+# Function to check if any path component is a symlink
+is_symlink_path() {
+  local path="$1"
+  while [ -n "$path" ] && [ "$path" != "/" ] && [ "$path" != "." ]; do
+    if [ -L "$path" ]; then
+      return 0 # symlink found
+    fi
+    # Remove the last component using native bash parameter expansion
+    local dir="${path%/*}"
+    if [ "$dir" = "$path" ]; then
+      dir="."
+    fi
+    path="$dir"
+  done
+  return 1 # no symlinks found
+}
+
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.
-if [ -L "$OUTPUT" ]; then
-  terminal_print_value "${RED}Error: output path is a symbolic link, which is not permitted: " "$OUTPUT" "${NC}" >&2
+if is_symlink_path "$OUTPUT"; then
+  terminal_print_value "${RED}Error: output path or its parent directory is a symbolic link, which is not permitted: " "$OUTPUT" "${NC}" >&2
   exit 1
 fi
 if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
