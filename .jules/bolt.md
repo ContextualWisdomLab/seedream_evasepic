@@ -31,3 +31,6 @@
 ## 2024-07-25 - [Bash 성능 개선] yt-dlp DASH/HLS 스트림 다운로드 병렬화 최적화
 **Learning:** yt-dlp를 사용하여 DASH/HLS 스트림 비디오를 다운로드할 때 기본적으로 단일 스레드로 진행하여 네트워크 I/O 병목이 발생할 수 있습니다.
 **Action:** yt-dlp 호출 시 `--concurrent-fragments N` (예: `--concurrent-fragments 4`) 플래그를 추가하여 프래그먼트들을 병렬로 다운로드하도록 최적화함으로써 다운로드 속도를 크게 향상시킵니다.
+## 2023-10-24 - [Bash] Hardcoded Parameter Expansions vs Loops with printf
+**Learning:** In Bash, performing string substitutions using direct, hardcoded parameter expansions (`${var//pattern/replacement}`) is significantly faster (around ~4x faster) than using loops with built-in commands like `printf -v`. Even though `printf` is a built-in, spawning it inside a loop for 60+ iterations adds substantial overhead compared to executing native hardcoded substitutions sequentially.
+**Action:** When a static set of replacements is known (e.g., C0 and C1 control character sanitization), use hardcoded native parameter expansions instead of loops.
