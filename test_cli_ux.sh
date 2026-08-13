@@ -264,6 +264,37 @@ fi
 echo "PASS: download-reference.sh uses native bash parameter expansion"
 echo "====================================="
 
+echo "=== Testing human-readable file size output ==="
+HR_PATH_TEST_DIR="$(mktemp -d)"
+mkdir -p "$HR_PATH_TEST_DIR/bin"
+# Mock yt-dlp to output a specific file size (1024 bytes -> 1.00 KB)
+cat > "$HR_PATH_TEST_DIR/bin/yt-dlp" <<'INNER_EOF'
+#!/bin/bash
+while [[ $# -gt 0 ]]; do
+  if [ "$1" = "-o" ]; then
+    head -c 1024 /dev/zero > "$2" 2>/dev/null || printf "%1024s" " " > "$2"
+  fi
+  shift
+done
+INNER_EOF
+chmod +x "$HR_PATH_TEST_DIR/bin/yt-dlp"
+
+HR_TEST_FILE="$TMP_DIR/hr_size_test.mp4"
+HR_TEST_OUTPUT="$(
+  PATH="$HR_PATH_TEST_DIR/bin:/usr/bin:/bin" \
+  bash "$SCRIPT_DIR/download-reference.sh" "dummy" "$HR_TEST_FILE" 2>&1 || true
+)"
+
+if ! grep -q -F 'Size: 1.00 KB' <<< "$HR_TEST_OUTPUT"; then
+  echo "FAIL: download-reference.sh did not output human-readable size (1.00 KB)" >&2
+  printf 'Output:\n%s\n' "$HR_TEST_OUTPUT" >&2
+  rm -rf -- "$HR_PATH_TEST_DIR"
+  exit 1
+fi
+rm -rf -- "$HR_PATH_TEST_DIR"
+echo "PASS: download-reference.sh outputs human-readable sizes correctly"
+echo "====================================="
+
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
