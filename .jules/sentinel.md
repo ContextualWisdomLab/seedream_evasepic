@@ -40,3 +40,13 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2024-03-XX - TOCTOU (Time-of-Check-Time-of-Use) Symlink 취약점 수정
+**Vulnerability:** 캐시 적중 여부를 판단할 때 `[ -f ]`와 `[ -s ]`만 사용하면 심볼릭 링크 파일을 캐시로 잘못 인식하여 TOCTOU(Time-of-Check-Time-of-Use) 취약점이 발생할 수 있습니다.
+**Learning:** 네트워크 통신과 같이 비용이 큰 작업을 수행하기 전에 캐시 파일을 확인할 때, 해당 파일이 심볼릭 링크인지 추가로 확인해야 악의적인 링크 파일 악용을 방지할 수 있습니다.
+**Prevention:** bash 스크립트에서 파일 존재 여부를 체크할 때, 항상 `[ ! -L "$OUTPUT" ]` 조건을 추가하여 심볼릭 링크 파일이 아닌 실제 일반 파일인지 명시적으로 확인해야 합니다.
+
+## 2024-03-XX - Symlink Arbitrary File Overwrite 예방
+**Vulnerability:** 캐시 스킵 조건에만 `[ ! -L ]`을 추가하면, 스크립트는 이를 캐시 실패(Cache Miss)로 간주하고 다운로드를 진행하여 결과물을 심볼릭 링크 타겟에 덮어씁니다(Arbitrary File Overwrite).
+**Learning:** 심볼릭 링크 악용을 방지하기 위한 가장 안전한 방법은 검증을 회피하는 것이 아니라, 링크 파일을 발견한 즉시 스크립트 실행을 완전히 중단(Abort)하는 것입니다.
+**Prevention:** 파일 쓰기나 다운로드가 발생하는 경로를 검증할 때 `if [ -L "$OUTPUT" ]; then exit 1; fi` 와 같이 즉시 차단하는 방어 로직을 구현해야 합니다.

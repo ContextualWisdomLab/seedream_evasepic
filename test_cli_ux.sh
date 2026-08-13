@@ -124,6 +124,34 @@ fi
 echo "PASS: non-empty regular file skips yt-dlp and preserves the artifact"
 echo "====================================="
 
+echo "=== Testing symlink TOCTOU cache bypass ==="
+SYMLINK_OUTPUT="$TMP_DIR/symlink-reference.mp4"
+REAL_TARGET="$TMP_DIR/real-target.mp4"
+printf 'existing-video-payload\n\001\377\n' > "$REAL_TARGET"
+ln -s "$REAL_TARGET" "$SYMLINK_OUTPUT"
+
+set +e
+symlink_output="$(
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/symlink-video" "$SYMLINK_OUTPUT" 2>&1
+)"
+symlink_status=$?
+set -e
+
+if [ "$symlink_status" -eq 0 ]; then
+  echo "FAIL: script must abort when output is a symbolic link" >&2
+  exit 1
+fi
+if ! grep -q -F "Error: output path is a symbolic link" <<< "$symlink_output"; then
+  echo "FAIL: script must print explicit error message for symbolic links" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
+
+rm -f "$SYMLINK_OUTPUT" "$REAL_TARGET"
+echo "PASS: script aborts to prevent symlink overwrite vulnerability"
+echo "====================================="
+
 echo "=== Testing zero-byte output cache miss ==="
 EMPTY_OUTPUT="$TMP_DIR/empty-reference.mp4"
 EMPTY_ARGS_FILE="$TMP_DIR/empty-yt-dlp.args"
