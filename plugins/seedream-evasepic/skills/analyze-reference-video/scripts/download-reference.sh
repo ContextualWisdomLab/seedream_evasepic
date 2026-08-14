@@ -36,10 +36,24 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+case "$OUTPUT" in
+  *../*|*/..|..)
+    terminal_print_value "${RED}Error: Path traversal sequences (..) are not allowed in output path: " "$OUTPUT" "${NC}" >&2
+    exit 1
+    ;;
+esac
+
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.
-if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
+SECURE_OUTPUT_HELPER="$SCRIPT_DIRECTORY/secure-output.py"
+if python3 "$SECURE_OUTPUT_HELPER" check "$OUTPUT"; then
+  :
+else
+  secure_check_status=$?
+  if [ "$secure_check_status" -ne 10 ]; then
+    exit "$secure_check_status"
+  fi
   terminal_print_value "${GREEN}File already exists, skipping download: " "$OUTPUT" "${NC}"
   exit 0
 fi
@@ -67,11 +81,9 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
   fi
 fi
 
-# Ensure output directory exists
-OUT_DIR="${OUTPUT%/*}"
-[ "$OUT_DIR" = "$OUTPUT" ] && OUT_DIR="."
-[ -z "$OUT_DIR" ] && OUT_DIR="/"
-mkdir -p -- "$OUT_DIR"
+DOWNLOAD_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/seedream-reference.XXXXXX")"
+trap 'rm -rf -- "$DOWNLOAD_DIRECTORY"' EXIT
+TEMPORARY_OUTPUT="$DOWNLOAD_DIRECTORY/reference.mp4"
 
 terminal_print_value "${CYAN}Downloading from: " "$URL" "${NC}"
 terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
@@ -81,7 +93,7 @@ terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
 yt-dlp \
   -f "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best" \
   --merge-output-format mp4 \
-  -o "$OUTPUT" \
+  -o "$TEMPORARY_OUTPUT" \
   --no-playlist \
   --quiet --progress \
   --concurrent-fragments 4 \
@@ -99,9 +111,12 @@ yt-dlp \
     exit 1
   }
 
+if ! python3 "$SECURE_OUTPUT_HELPER" publish "$TEMPORARY_OUTPUT" "$OUTPUT"; then
+  exit 1
+fi
+
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 # Optimization: Use native bash parameter expansion instead of spawning a tr process
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
 terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
-
