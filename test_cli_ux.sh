@@ -271,23 +271,23 @@ assert_no_external_dirname() {
   local scan_root="$1"
   local findings
   findings="$(
-    find "$scan_root" -type f \\( -name '*.sh' -o -name '*.yaml' -o -name '*.yml' \\) \
+    find "$scan_root" -type f \( -name '*.sh' -o -name '*.yaml' -o -name '*.yml' \) \
       -exec grep -nHE -- '(^|[[:space:];|&`(])([^[:space:]]*/)?dirname([[:space:]]|$)' {} + \
       2>/dev/null || true
   )"
   if [ -n "$findings" ]; then
-    printf '%s\\n' "$findings" >&2
+    printf '%s\n' "$findings" >&2
     return 1
   fi
 }
 
 DIRNAME_GATE_FIXTURE="$TMP_DIR/dirname-gate-fixture"
 mkdir -p -- "$DIRNAME_GATE_FIXTURE"
-printf '%s\\n' 'path="$(dirname -- "$target")"' > "$DIRNAME_GATE_FIXTURE/command-substitution.sh"
-printf '%s\\n' 'path=`dirname -- "$target"`' > "$DIRNAME_GATE_FIXTURE/backtick-substitution.sh"
-printf '%s\\n' 'command dirname "$target"' > "$DIRNAME_GATE_FIXTURE/prefixed-command.sh"
-printf '%s\\n' 'env TRACE=1 /usr/bin/dirname "$target"' > "$DIRNAME_GATE_FIXTURE/absolute-command.yaml"
-printf '%s\\n' 'dirname "$target"' > "$DIRNAME_GATE_FIXTURE/direct-command.yml"
+printf '%s\n' 'path="$(dirname -- "$target")"' > "$DIRNAME_GATE_FIXTURE/command-substitution.sh"
+printf '%s\n' 'path=`dirname -- "$target"`' > "$DIRNAME_GATE_FIXTURE/backtick-substitution.sh"
+printf '%s\n' 'command dirname "$target"' > "$DIRNAME_GATE_FIXTURE/prefixed-command.sh"
+printf '%s\n' 'env TRACE=1 /usr/bin/dirname "$target"' > "$DIRNAME_GATE_FIXTURE/absolute-command.yaml"
+printf '%s\n' 'dirname "$target"' > "$DIRNAME_GATE_FIXTURE/direct-command.yml"
 if assert_no_external_dirname "$DIRNAME_GATE_FIXTURE"; then
   echo "FAIL: dirname gate must reject command substitutions, backticks, prefixed, absolute, and direct invocations" >&2
   exit 1
