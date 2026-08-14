@@ -1,30 +1,43 @@
 #!/bin/bash
 # Test script to verify CLI UX enhancements (ANSI color codes)
 
-set -u
+set -euo pipefail
 
 SCRIPT_DIR="plugins/seedream-evasepic/skills/analyze-reference-video/scripts"
 
 echo "=== Testing download-reference.sh ==="
-bash "$SCRIPT_DIR/download-reference.sh"
-echo "Exit code: $?"
+if bash "$SCRIPT_DIR/download-reference.sh"; then
+  command_status=0
+else
+  command_status=$?
+fi
+echo "Exit code: $command_status"
 echo "====================================="
 
 echo "=== Testing extract-frames.sh ==="
-bash "$SCRIPT_DIR/extract-frames.sh"
-echo "Exit code: $?"
+if bash "$SCRIPT_DIR/extract-frames.sh"; then
+  command_status=0
+else
+  command_status=$?
+fi
+echo "Exit code: $command_status"
 echo "====================================="
 
 echo "=== Testing transcribe.sh ==="
-bash "$SCRIPT_DIR/transcribe.sh"
-echo "Exit code: $?"
+if bash "$SCRIPT_DIR/transcribe.sh"; then
+  command_status=0
+else
+  command_status=$?
+fi
+echo "Exit code: $command_status"
 echo "====================================="
 
 echo "=== Testing path traversal prevention ==="
-set +e
-TRAVERSAL_OUTPUT="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "../output.mp4" 2>&1)"
-traversal_status=$?
-set -e
+if TRAVERSAL_OUTPUT="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "../output.mp4" 2>&1)"; then
+  traversal_status=0
+else
+  traversal_status=$?
+fi
 if [ "$traversal_status" -eq 0 ]; then
   echo "FAIL: download-reference.sh must return a non-zero status for path traversal" >&2
   exit 1
@@ -46,10 +59,11 @@ if [ ! -L "$SYMLINK_TMP_DIR/symlink.mp4" ]; then
   echo "FAIL: file-symlink fixture was not created" >&2
   exit 1
 fi
-set +e
-symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SYMLINK_TMP_DIR/symlink.mp4" 2>&1)"
-symlink_status=$?
-set -e
+if symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SYMLINK_TMP_DIR/symlink.mp4" 2>&1)"; then
+  symlink_status=0
+else
+  symlink_status=$?
+fi
 if [ "$symlink_status" -eq 0 ]; then
   echo "FAIL: download-reference.sh must abort when output path is a symlink" >&2
   exit 1
@@ -59,16 +73,22 @@ if ! grep -q -F "Output path is a symlink. Aborting" <<< "$symlink_output"; then
   printf '%s\n' "$symlink_output" >&2
   exit 1
 fi
+if [ ! -L "$SYMLINK_TMP_DIR/symlink.mp4" ] \
+  || [ "$(cat "$SYMLINK_TMP_DIR/real_dir/output.mp4")" != "dummy" ]; then
+  echo "FAIL: rejected file symlink must remain intact without changing its target" >&2
+  exit 1
+fi
 
 ln -s "$SYMLINK_TMP_DIR/real_dir" "$SYMLINK_TMP_DIR/symlink_dir"
 if [ ! -L "$SYMLINK_TMP_DIR/symlink_dir" ]; then
   echo "FAIL: directory-symlink fixture was not created" >&2
   exit 1
 fi
-set +e
-symlink_dir_output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SYMLINK_TMP_DIR/symlink_dir/output.mp4" 2>&1)"
-symlink_dir_status=$?
-set -e
+if symlink_dir_output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SYMLINK_TMP_DIR/symlink_dir/output.mp4" 2>&1)"; then
+  symlink_dir_status=0
+else
+  symlink_dir_status=$?
+fi
 if [ "$symlink_dir_status" -eq 0 ]; then
   echo "FAIL: download-reference.sh must abort when output directory is a symlink" >&2
   exit 1
@@ -76,6 +96,11 @@ fi
 if ! grep -q -F "Output path contains a symbolic-link directory. Aborting" <<< "$symlink_dir_output"; then
   echo "FAIL: download-reference.sh must report output directory symlink detection" >&2
   printf '%s\n' "$symlink_dir_output" >&2
+  exit 1
+fi
+if [ ! -L "$SYMLINK_TMP_DIR/symlink_dir" ] \
+  || [ "$(cat "$SYMLINK_TMP_DIR/real_dir/output.mp4")" != "dummy" ]; then
+  echo "FAIL: rejected directory symlink must remain intact without changing its target" >&2
   exit 1
 fi
 
@@ -117,15 +142,16 @@ chmod +x "$TMP_DIR/yt-dlp"
 echo "=== Testing intermediate parent symlink prevention ==="
 mkdir -p -- "$TMP_DIR/real-parent"
 ln -s -- "$TMP_DIR/real-parent" "$TMP_DIR/linked-parent"
-set +e
-intermediate_output="$(
+if intermediate_output="$(
   PATH="$TMP_DIR:$PATH" \
   YT_DLP_ARGS_FILE="$TMP_DIR/intermediate-yt-dlp.args" \
     bash "$SCRIPT_DIR/download-reference.sh" \
       "dummy_url" "$TMP_DIR/linked-parent/nested/reference.mp4" 2>&1
-)"
-intermediate_status=$?
-set -e
+)"; then
+  intermediate_status=0
+else
+  intermediate_status=$?
+fi
 if [ "$intermediate_status" -eq 0 ]; then
   echo "FAIL: download-reference.sh must reject a symlink in any parent component" >&2
   exit 1
@@ -146,16 +172,17 @@ echo "=== Testing destination swap cannot overwrite another file ==="
 VICTIM_FILE="$TMP_DIR/victim.txt"
 SWAP_OUTPUT="$TMP_DIR/swap-output.mp4"
 printf '%s' "preserve-me" > "$VICTIM_FILE"
-set +e
-swap_output="$(
+if swap_output="$(
   PATH="$TMP_DIR:$PATH" \
   YT_DLP_ARGS_FILE="$TMP_DIR/swap-yt-dlp.args" \
   YT_DLP_SWAP_DESTINATION="$SWAP_OUTPUT" \
   YT_DLP_SWAP_TARGET="$VICTIM_FILE" \
     bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SWAP_OUTPUT" 2>&1
-)"
-swap_status=$?
-set -e
+)"; then
+  swap_status=0
+else
+  swap_status=$?
+fi
 if [ "$swap_status" -eq 0 ]; then
   echo "FAIL: publication must fail closed when the destination changes during download" >&2
   exit 1
@@ -217,15 +244,16 @@ for forbidden_command in yt-dlp brew pip3 pip; do
   fi
 done
 
-set +e
-cached_output="$(
+if cached_output="$(
   PATH="$CACHE_HIT_PATH" \
   YT_DLP_ARGS_FILE="$CACHED_ARGS_FILE" \
     /bin/bash "$SCRIPT_DIR/download-reference.sh" \
       "https://example.invalid/cached-video" "$CACHED_OUTPUT" 2>&1
-)"
-cached_status=$?
-set -e
+)"; then
+  cached_status=0
+else
+  cached_status=$?
+fi
 
 if [ "$cached_status" -ne 0 ]; then
   echo "FAIL: non-empty cached output must return success" >&2
@@ -288,7 +316,13 @@ echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
 echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument(s)."; then
+if missing_download_output="$(bash "$SCRIPT_DIR/download-reference.sh" 2>&1)"; then
+  missing_download_status=0
+else
+  missing_download_status=$?
+fi
+if [ "$missing_download_status" -eq 0 ] \
+  || ! grep -q "Error: Missing required argument(s)." <<< "$missing_download_output"; then
   echo "FAIL: download-reference.sh did not print explicit error message" >&2
   exit 1
 fi
@@ -296,13 +330,25 @@ echo "PASS: download-reference.sh prints explicit error message"
 echo "====================================="
 
 echo "=== Testing usage block for invalid arguments ==="
-if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy.wav" "invalid_model" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
+if invalid_model_output="$(bash "$SCRIPT_DIR/transcribe.sh" "dummy.wav" "invalid_model" 2>&1)"; then
+  invalid_model_status=0
+else
+  invalid_model_status=$?
+fi
+if [ "$invalid_model_status" -eq 0 ] \
+  || ! grep -q "Usage: transcribe.sh <audio_path> \[model\]" <<< "$invalid_model_output"; then
   echo "FAIL: transcribe.sh did not print usage block for invalid model" >&2
   exit 1
 fi
 echo "PASS: transcribe.sh prints usage block for invalid model"
 
-if ! bash "$SCRIPT_DIR/extract-frames.sh" "dummy.mp4" "dummy_dir" "invalid_num" 2>&1 | grep -q "Usage: extract-frames.sh <video_path> <output_dir> \[num_frames\]"; then
+if invalid_frames_output="$(bash "$SCRIPT_DIR/extract-frames.sh" "dummy.mp4" "dummy_dir" "invalid_num" 2>&1)"; then
+  invalid_frames_status=0
+else
+  invalid_frames_status=$?
+fi
+if [ "$invalid_frames_status" -eq 0 ] \
+  || ! grep -q "Usage: extract-frames.sh <video_path> <output_dir> \[num_frames\]" <<< "$invalid_frames_output"; then
   echo "FAIL: extract-frames.sh did not print usage block for invalid num_frames" >&2
   exit 1
 fi
@@ -344,7 +390,8 @@ echo "PASS: download-reference.sh warns when auto-install fails to expose tool i
 echo "====================================="
 
 echo "=== Testing help flag position flexibility ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "--help" | grep -q "Download Reference Video Script"; then
+help_output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "--help")"
+if ! grep -q "Download Reference Video Script" <<< "$help_output"; then
   echo "FAIL: download-reference.sh did not recognize --help as second argument" >&2
   exit 1
 fi
@@ -352,7 +399,13 @@ echo "PASS: download-reference.sh recognizes --help at any position"
 echo "====================================="
 
 echo "=== Testing usage block on file not found error ==="
-if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
+if missing_audio_output="$(bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1)"; then
+  missing_audio_status=0
+else
+  missing_audio_status=$?
+fi
+if [ "$missing_audio_status" -eq 0 ] \
+  || ! grep -q "Usage: transcribe.sh <audio_path> \[model\]" <<< "$missing_audio_output"; then
   echo "FAIL: transcribe.sh did not print usage block for file not found error" >&2
   exit 1
 fi
@@ -362,14 +415,15 @@ echo "====================================="
 echo "=== Testing ffprobe dependency preflight ==="
 DUMMY_VIDEO="$TMP_DIR/ffprobe-preflight.mp4"
 : > "$DUMMY_VIDEO"
-set +e
-ffprobe_output="$(
+if ffprobe_output="$(
   FFMPEG="/bin/true" \
   FFPROBE="$TMP_DIR/missing-ffprobe" \
     bash "$SCRIPT_DIR/extract-frames.sh" "$DUMMY_VIDEO" "$TMP_DIR/ffprobe-output" 12 2>&1
-)"
-ffprobe_status=$?
-set -e
+)"; then
+  ffprobe_status=0
+else
+  ffprobe_status=$?
+fi
 if [ "$ffprobe_status" -ne 1 ] || ! grep -q -F "Error: ffprobe not found." <<< "$ffprobe_output"; then
   echo "FAIL: extract-frames.sh must fail before probing when ffprobe is unavailable" >&2
   printf '%s\n' "$ffprobe_output" >&2
@@ -410,17 +464,17 @@ assert_colored_example() {
   fi
 }
 
-extract_example_output="$(bash "$SCRIPT_DIR/extract-frames.sh" "dummy" "dummy" "invalid" 2>&1 || true)"
+if extract_example_output="$(bash "$SCRIPT_DIR/extract-frames.sh" "dummy" "dummy" "invalid" 2>&1)"; then :; fi
 assert_colored_example "$extract_example_output" "extract-frames.sh invalid num_frames output"
 
 download_help_output="$(bash "$SCRIPT_DIR/download-reference.sh" --help 2>&1)"
 assert_colored_example "$download_help_output" "download-reference.sh --help output"
-download_error_output="$(bash "$SCRIPT_DIR/download-reference.sh" 2>&1 || true)"
+if download_error_output="$(bash "$SCRIPT_DIR/download-reference.sh" 2>&1)"; then :; fi
 assert_colored_example "$download_error_output" "download-reference.sh error output"
 
 transcribe_help_output="$(bash "$SCRIPT_DIR/transcribe.sh" --help 2>&1)"
 assert_colored_example "$transcribe_help_output" "transcribe.sh --help output"
-transcribe_error_output="$(bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" base 2>&1 || true)"
+if transcribe_error_output="$(bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" base 2>&1)"; then :; fi
 assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
