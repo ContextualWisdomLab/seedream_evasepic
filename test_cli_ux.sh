@@ -214,7 +214,7 @@ cp "$PATH_TEST_DIR/bin/pip" "$PATH_TEST_DIR/bin/pip3"
 chmod +x "$PATH_TEST_DIR/bin/pip" "$PATH_TEST_DIR/bin/pip3"
 
 PATH_TEST_STATUS=0
-PATH_TEST_OUTPUT="$(PATH="$PATH_TEST_DIR/bin:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "dummy_path" 2>&1)" || PATH_TEST_STATUS=$?
+PATH_TEST_OUTPUT="$(PATH="$PATH_TEST_DIR/bin:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "dummy_path.mp4" 2>&1)" || PATH_TEST_STATUS=$?
 if [ "$PATH_TEST_STATUS" -ne 1 ] || ! grep -Fq 'yt-dlp was installed but cannot be found in $PATH' <<< "$PATH_TEST_OUTPUT"; then
   echo "FAIL: download-reference.sh did not fail after mock install left yt-dlp outside PATH" >&2
   printf 'exit status: %s\n%s\n' "$PATH_TEST_STATUS" "$PATH_TEST_OUTPUT" >&2
@@ -292,7 +292,7 @@ assert_colored_example() {
   fi
 }
 
-extract_example_output="$(bash "$SCRIPT_DIR/extract-frames.sh" "dummy" "dummy" "invalid" 2>&1 || true)"
+extract_example_output="$(bash "$SCRIPT_DIR/extract-frames.sh" "dummy.mp4" "dummy" "invalid" 2>&1 || true)"
 assert_colored_example "$extract_example_output" "extract-frames.sh invalid num_frames output"
 
 download_help_output="$(bash "$SCRIPT_DIR/download-reference.sh" --help 2>&1)"
