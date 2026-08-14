@@ -41,7 +41,9 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -n "$output" ]; then
-  mkdir -p -- "$(dirname -- "$output")"
+  _DIR="${output%/*}"
+  [ "$_DIR" = "$output" ] && _DIR="."
+  mkdir -p -- "$_DIR"
   : > "$output"
 fi
 EOF
@@ -80,7 +82,6 @@ CACHED_ARGS_FILE="$TMP_DIR/cached-yt-dlp.args"
 EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
 CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
 mkdir -p -- "$CACHE_HIT_PATH"
-ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
 printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
 cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
 
@@ -262,6 +263,14 @@ if grep -n -F 'tr -d' "$SCRIPT_DIR/download-reference.sh"; then
   exit 1
 fi
 echo "PASS: download-reference.sh uses native bash parameter expansion"
+echo "====================================="
+
+echo "=== Testing dirname process removal for performance ==="
+if grep -n -E '\$\(dirname' plugins/seedream-evasepic/skills/analyze-reference-video/scripts/*.sh; then
+  echo "FAIL: scripts must use native bash parameter expansion instead of dirname" >&2
+  exit 1
+fi
+echo "PASS: scripts use native bash parameter expansion instead of dirname"
 echo "====================================="
 
 echo "=== Testing actual terminal control neutralization ==="
