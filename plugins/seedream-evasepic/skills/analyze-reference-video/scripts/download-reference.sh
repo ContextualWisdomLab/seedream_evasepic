@@ -36,6 +36,13 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+case "$OUTPUT" in
+  *../*|*/..|..|*/../*)
+    terminal_print_value "${RED}Error: Path traversal sequences (..) are not allowed in output path: " "$OUTPUT" "${NC}" >&2
+    exit 1
+    ;;
+esac
+
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.

@@ -20,6 +20,16 @@ bash "$SCRIPT_DIR/transcribe.sh"
 echo "Exit code: $?"
 echo "====================================="
 
+echo "=== Testing path traversal prevention ==="
+TRAVERSAL_OUTPUT="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "../output.mp4" 2>&1 || true)"
+if ! grep -q -F "Path traversal sequences (..) are not allowed in output path" <<< "$TRAVERSAL_OUTPUT"; then
+  echo "FAIL: download-reference.sh must abort when output path contains path traversal sequences" >&2
+  printf '%s\n' "$TRAVERSAL_OUTPUT" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh properly aborts on path traversal sequences"
+echo "====================================="
+
 echo "=== Testing symlink path prevention ==="
 SYMLINK_TMP_DIR="$(mktemp -d)"
 mkdir -p "$SYMLINK_TMP_DIR/real_dir"
