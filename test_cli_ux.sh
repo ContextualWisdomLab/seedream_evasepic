@@ -20,6 +20,28 @@ bash "$SCRIPT_DIR/transcribe.sh"
 echo "Exit code: $?"
 echo "====================================="
 
+echo "=== Testing symlink path prevention ==="
+SYMLINK_TMP_DIR="$(mktemp -d)"
+mkdir -p "$SYMLINK_TMP_DIR/real_dir"
+echo "dummy" > "$SYMLINK_TMP_DIR/real_dir/output.mp4"
+ln -s "$SYMLINK_TMP_DIR/real_dir/output.mp4" "$SYMLINK_TMP_DIR/symlink.mp4"
+set +e
+symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SYMLINK_TMP_DIR/symlink.mp4" 2>&1)"
+symlink_status=$?
+set -e
+if [ "$symlink_status" -eq 0 ]; then
+  echo "FAIL: download-reference.sh must abort when output path is a symlink" >&2
+  exit 1
+fi
+if ! grep -q -F "Output path is a symlink. Aborting" <<< "$symlink_output"; then
+  echo "FAIL: download-reference.sh must report symlink detection" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
+rm -rf "$SYMLINK_TMP_DIR"
+echo "PASS: download-reference.sh properly aborts on symlinked paths"
+echo "====================================="
+
 echo "=== Testing yt-dlp argument separator ==="
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf -- "$TMP_DIR"' EXIT
