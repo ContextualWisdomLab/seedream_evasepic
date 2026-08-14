@@ -162,19 +162,43 @@ echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
 echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument: <url>"; then
-  echo "FAIL: download-reference.sh did not print explicit error message for missing <url>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/extract-frames.sh" 2>&1 | grep -q "Error: Missing required argument: <video_path>"; then
-  echo "FAIL: extract-frames.sh did not print explicit error message for missing <video_path>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/transcribe.sh" 2>&1 | grep -q "Error: Missing required argument: <audio_path>"; then
-  echo "FAIL: transcribe.sh did not print explicit error message for missing <audio_path>" >&2
-  exit 1
-fi
-echo "PASS: scripts print explicit error messages for missing arguments"
+assert_missing_argument() {
+  local script_name="$1"
+  local expected_message="$2"
+  shift 2
+  local stderr_file="$TMP_DIR/${script_name}.missing.stderr"
+  local stdout_file="$TMP_DIR/${script_name}.missing.stdout"
+  local status=0
+
+  if bash "$SCRIPT_DIR/$script_name" "$@" >"$stdout_file" 2>"$stderr_file"; then
+    status=0
+  else
+    status=$?
+  fi
+
+  if [ "$status" -ne 2 ]; then
+    echo "FAIL: $script_name returned $status instead of 2 for a missing argument" >&2
+    cat "$stderr_file" >&2
+    exit 1
+  fi
+  if ! grep -Fq "$expected_message" "$stderr_file"; then
+    echo "FAIL: $script_name did not print '$expected_message' to stderr" >&2
+    cat "$stderr_file" >&2
+    exit 1
+  fi
+  if [ -s "$stdout_file" ]; then
+    echo "FAIL: $script_name wrote its missing-argument error to stdout" >&2
+    cat "$stdout_file" >&2
+    exit 1
+  fi
+}
+
+assert_missing_argument "download-reference.sh" "Error: Missing required argument: <url>"
+assert_missing_argument "download-reference.sh" "Error: Missing required argument: <output_path>" "https://example.invalid/video"
+assert_missing_argument "extract-frames.sh" "Error: Missing required argument: <video_path>"
+assert_missing_argument "extract-frames.sh" "Error: Missing required argument: <output_dir>" "$TMP_DIR/video.mp4"
+assert_missing_argument "transcribe.sh" "Error: Missing required argument: <audio_path>"
+echo "PASS: scripts return 2 and write explicit missing-argument errors only to stderr"
 echo "====================================="
 
 echo "=== Testing usage block for invalid arguments ==="
