@@ -15,6 +15,7 @@ NC='\033[0m' # No Color
 
 _DIR="${BASH_SOURCE[0]%/*}"
 [ "$_DIR" = "${BASH_SOURCE[0]}" ] && _DIR="."
+[ -z "$_DIR" ] && _DIR="/"
 SCRIPT_DIRECTORY="$(cd -- "$_DIR" && pwd -P)"
 # shellcheck source=terminal-output.sh
 . "$SCRIPT_DIRECTORY/terminal-output.sh"

@@ -43,6 +43,7 @@ done
 if [ -n "$output" ]; then
   _DIR="${output%/*}"
   [ "$_DIR" = "$output" ] && _DIR="."
+  [ -z "$_DIR" ] && _DIR="/"
   mkdir -p -- "$_DIR"
   : > "$output"
 fi
@@ -266,7 +267,7 @@ echo "PASS: download-reference.sh uses native bash parameter expansion"
 echo "====================================="
 
 echo "=== Testing dirname process removal for performance ==="
-if grep -n -E '\$\(dirname' plugins/seedream-evasepic/skills/analyze-reference-video/scripts/*.sh; then
+if grep -n -E '\$\(dirname' -- plugins/seedream-evasepic/skills/analyze-reference-video/scripts/*.sh; then
   echo "FAIL: scripts must use native bash parameter expansion instead of dirname" >&2
   exit 1
 fi
