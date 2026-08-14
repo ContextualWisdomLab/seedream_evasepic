@@ -48,6 +48,22 @@ if ! grep -q -F "Output path is a symlink. Aborting" <<< "$symlink_output"; then
   printf '%s\n' "$symlink_output" >&2
   exit 1
 fi
+
+ln -s "$SYMLINK_TMP_DIR/real_dir" "$SYMLINK_TMP_DIR/symlink_dir"
+set +e
+symlink_dir_output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SYMLINK_TMP_DIR/symlink_dir/output.mp4" 2>&1)"
+symlink_dir_status=$?
+set -e
+if [ "$symlink_dir_status" -eq 0 ]; then
+  echo "FAIL: download-reference.sh must abort when output directory is a symlink" >&2
+  exit 1
+fi
+if ! grep -q -F "Output directory is a symlink. Aborting" <<< "$symlink_dir_output"; then
+  echo "FAIL: download-reference.sh must report output directory symlink detection" >&2
+  printf '%s\n' "$symlink_dir_output" >&2
+  exit 1
+fi
+
 rm -rf "$SYMLINK_TMP_DIR"
 echo "PASS: download-reference.sh properly aborts on symlinked paths"
 echo "====================================="

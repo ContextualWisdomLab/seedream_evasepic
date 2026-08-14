@@ -43,6 +43,15 @@ case "$OUTPUT" in
     ;;
 esac
 
+OUT_DIR="${OUTPUT%/*}"
+[ "$OUT_DIR" = "$OUTPUT" ] && OUT_DIR="."
+[ -z "$OUT_DIR" ] && OUT_DIR="/"
+
+if [ -L "$OUT_DIR" ]; then
+  terminal_print_value "${RED}Error: Output directory is a symlink. Aborting to prevent arbitrary file overwrite: " "$OUT_DIR" "${NC}" >&2
+  exit 1
+fi
+
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.
@@ -80,9 +89,6 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
 fi
 
 # Ensure output directory exists
-OUT_DIR="${OUTPUT%/*}"
-[ "$OUT_DIR" = "$OUTPUT" ] && OUT_DIR="."
-[ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
 terminal_print_value "${CYAN}Downloading from: " "$URL" "${NC}"
