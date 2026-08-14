@@ -112,5 +112,5 @@ terminal_print_value() {
   local safe_value
 
   safe_value="$(terminal_safe_text "$value")"
-  printf '%b%s%b\n' "$prefix" "$safe_value" "$suffix"
+  printf '%b%s%s\n' "$prefix" "$safe_value" "$suffix"
 }
