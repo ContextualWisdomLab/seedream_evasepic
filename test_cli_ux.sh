@@ -21,7 +21,14 @@ echo "Exit code: $?"
 echo "====================================="
 
 echo "=== Testing path traversal prevention ==="
-TRAVERSAL_OUTPUT="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "../output.mp4" 2>&1 || true)"
+set +e
+TRAVERSAL_OUTPUT="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "../output.mp4" 2>&1)"
+traversal_status=$?
+set -e
+if [ "$traversal_status" -eq 0 ]; then
+  echo "FAIL: download-reference.sh must return a non-zero status for path traversal" >&2
+  exit 1
+fi
 if ! grep -q -F "Path traversal sequences (..) are not allowed in output path" <<< "$TRAVERSAL_OUTPUT"; then
   echo "FAIL: download-reference.sh must abort when output path contains path traversal sequences" >&2
   printf '%s\n' "$TRAVERSAL_OUTPUT" >&2
@@ -35,6 +42,10 @@ SYMLINK_TMP_DIR="$(mktemp -d)"
 mkdir -p "$SYMLINK_TMP_DIR/real_dir"
 echo "dummy" > "$SYMLINK_TMP_DIR/real_dir/output.mp4"
 ln -s "$SYMLINK_TMP_DIR/real_dir/output.mp4" "$SYMLINK_TMP_DIR/symlink.mp4"
+if [ ! -L "$SYMLINK_TMP_DIR/symlink.mp4" ]; then
+  echo "FAIL: file-symlink fixture was not created" >&2
+  exit 1
+fi
 set +e
 symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SYMLINK_TMP_DIR/symlink.mp4" 2>&1)"
 symlink_status=$?
@@ -50,6 +61,10 @@ if ! grep -q -F "Output path is a symlink. Aborting" <<< "$symlink_output"; then
 fi
 
 ln -s "$SYMLINK_TMP_DIR/real_dir" "$SYMLINK_TMP_DIR/symlink_dir"
+if [ ! -L "$SYMLINK_TMP_DIR/symlink_dir" ]; then
+  echo "FAIL: directory-symlink fixture was not created" >&2
+  exit 1
+fi
 set +e
 symlink_dir_output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SYMLINK_TMP_DIR/symlink_dir/output.mp4" 2>&1)"
 symlink_dir_status=$?
@@ -58,7 +73,7 @@ if [ "$symlink_dir_status" -eq 0 ]; then
   echo "FAIL: download-reference.sh must abort when output directory is a symlink" >&2
   exit 1
 fi
-if ! grep -q -F "Output directory is a symlink. Aborting" <<< "$symlink_dir_output"; then
+if ! grep -q -F "Output path contains a symbolic-link directory. Aborting" <<< "$symlink_dir_output"; then
   echo "FAIL: download-reference.sh must report output directory symlink detection" >&2
   printf '%s\n' "$symlink_dir_output" >&2
   exit 1
@@ -89,11 +104,73 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -n "$output" ]; then
+  if [ -n "${YT_DLP_SWAP_DESTINATION:-}" ]; then
+    rm -f -- "$YT_DLP_SWAP_DESTINATION"
+    ln -s -- "${YT_DLP_SWAP_TARGET:?}" "$YT_DLP_SWAP_DESTINATION"
+  fi
   mkdir -p -- "$(dirname -- "$output")"
   : > "$output"
 fi
 EOF
 chmod +x "$TMP_DIR/yt-dlp"
+
+echo "=== Testing intermediate parent symlink prevention ==="
+mkdir -p -- "$TMP_DIR/real-parent"
+ln -s -- "$TMP_DIR/real-parent" "$TMP_DIR/linked-parent"
+set +e
+intermediate_output="$(
+  PATH="$TMP_DIR:$PATH" \
+  YT_DLP_ARGS_FILE="$TMP_DIR/intermediate-yt-dlp.args" \
+    bash "$SCRIPT_DIR/download-reference.sh" \
+      "dummy_url" "$TMP_DIR/linked-parent/nested/reference.mp4" 2>&1
+)"
+intermediate_status=$?
+set -e
+if [ "$intermediate_status" -eq 0 ]; then
+  echo "FAIL: download-reference.sh must reject a symlink in any parent component" >&2
+  exit 1
+fi
+if [ -e "$TMP_DIR/real-parent/nested/reference.mp4" ]; then
+  echo "FAIL: intermediate symlink validation must happen before creating or publishing output" >&2
+  exit 1
+fi
+if ! grep -q -F "Output path contains a symbolic-link directory" <<< "$intermediate_output"; then
+  echo "FAIL: intermediate symlink rejection must use the stable security diagnostic" >&2
+  printf '%s\n' "$intermediate_output" >&2
+  exit 1
+fi
+echo "PASS: intermediate parent symlinks are rejected before publication"
+echo "====================================="
+
+echo "=== Testing destination swap cannot overwrite another file ==="
+VICTIM_FILE="$TMP_DIR/victim.txt"
+SWAP_OUTPUT="$TMP_DIR/swap-output.mp4"
+printf '%s' "preserve-me" > "$VICTIM_FILE"
+set +e
+swap_output="$(
+  PATH="$TMP_DIR:$PATH" \
+  YT_DLP_ARGS_FILE="$TMP_DIR/swap-yt-dlp.args" \
+  YT_DLP_SWAP_DESTINATION="$SWAP_OUTPUT" \
+  YT_DLP_SWAP_TARGET="$VICTIM_FILE" \
+    bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$SWAP_OUTPUT" 2>&1
+)"
+swap_status=$?
+set -e
+if [ "$swap_status" -eq 0 ]; then
+  echo "FAIL: publication must fail closed when the destination changes during download" >&2
+  exit 1
+fi
+if [ "$(cat "$VICTIM_FILE")" != "preserve-me" ]; then
+  echo "FAIL: a destination swap must never overwrite the linked target" >&2
+  exit 1
+fi
+if ! grep -q -F "Output destination changed before publication" <<< "$swap_output"; then
+  echo "FAIL: destination swap rejection must use the stable security diagnostic" >&2
+  printf '%s\n' "$swap_output" >&2
+  exit 1
+fi
+echo "PASS: destination swaps cannot overwrite another file"
+echo "====================================="
 
 ARGS_FILE="$TMP_DIR/yt-dlp.args"
 MALICIOUS_URL="--exec=touch /tmp/seedream-evasepic-pwned"
@@ -129,6 +206,7 @@ EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
 CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
 mkdir -p -- "$CACHE_HIT_PATH"
 ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
+ln -s -- "$(command -v python3)" "$CACHE_HIT_PATH/python3"
 printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
 cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
 
@@ -347,4 +425,3 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
-
