@@ -300,3 +300,15 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing human-readable file size output ==="
+HR_TEST_VIDEO="$TMP_DIR/hr-test.mp4"
+dd if=/dev/zero of="$HR_TEST_VIDEO" bs=1024 count=1500 2>/dev/null
+PATH="$TMP_DIR:$PATH" YT_DLP_ARGS_FILE="$TMP_DIR/dummy.args" \
+  bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$HR_TEST_VIDEO" > "$TMP_DIR/hr_output.txt" 2>&1
+if grep -q "bytes" "$TMP_DIR/hr_output.txt" && ! grep -q "MB" "$TMP_DIR/hr_output.txt"; then
+  echo "FAIL: download-reference.sh output raw bytes instead of human-readable format" >&2
+  cat "$TMP_DIR/hr_output.txt" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh uses human-readable file size formatting"
+echo "====================================="
