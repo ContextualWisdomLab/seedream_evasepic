@@ -301,14 +301,55 @@ echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal 
 echo "====================================="
 
 echo "=== Testing human-readable file size output ==="
-HR_TEST_VIDEO="$TMP_DIR/hr-test.mp4"
-dd if=/dev/zero of="$HR_TEST_VIDEO" bs=1024 count=1500 2>/dev/null
-PATH="$TMP_DIR:$PATH" YT_DLP_ARGS_FILE="$TMP_DIR/dummy.args" \
-  bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$HR_TEST_VIDEO" > "$TMP_DIR/hr_output.txt" 2>&1
-if grep -q "bytes" "$TMP_DIR/hr_output.txt" && ! grep -q "MB" "$TMP_DIR/hr_output.txt"; then
-  echo "FAIL: download-reference.sh output raw bytes instead of human-readable format" >&2
-  cat "$TMP_DIR/hr_output.txt" >&2
+SIZE_TEST_DIR="$TMP_DIR/human-readable-size"
+mkdir -p -- "$SIZE_TEST_DIR"
+cat > "$SIZE_TEST_DIR/yt-dlp" <<'INNER_EOF'
+#!/bin/bash
+set -euo pipefail
+output=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    output="${1:-}"
+    break
+  fi
+  shift
+done
+if [ -z "$output" ]; then
+  exit 2
+fi
+output_dir="${output%/*}"
+[ "$output_dir" = "$output" ] && output_dir="."
+[ -z "$output_dir" ] && output_dir="/"
+mkdir -p -- "$output_dir"
+dd if=/dev/zero of="$output" bs=1024 count=1500 2>/dev/null
+INNER_EOF
+chmod +x "$SIZE_TEST_DIR/yt-dlp"
+
+HR_TEST_OUTPUT_PATH="$SIZE_TEST_DIR/downloaded-reference.mp4"
+if hr_output="$(
+  PATH="$SIZE_TEST_DIR:$PATH" \
+    bash "$SCRIPT_DIR/download-reference.sh" \
+      "https://example.invalid/reference-video" "$HR_TEST_OUTPUT_PATH" 2>&1
+)"; then
+  hr_status=0
+else
+  hr_status=$?
+fi
+if [ "$hr_status" -ne 0 ]; then
+  echo "FAIL: human-readable size fixture must complete a fresh download" >&2
+  printf '%s\\n' "$hr_output" >&2
   exit 1
 fi
-echo "PASS: download-reference.sh uses human-readable file size formatting"
+if ! grep -Fq "Size: 1.46 MB" <<< "$hr_output"; then
+  echo "FAIL: download-reference.sh must print the exact human-readable size" >&2
+  printf '%s\\n' "$hr_output" >&2
+  exit 1
+fi
+if grep -Fq "bytes" <<< "$hr_output"; then
+  echo "FAIL: download-reference.sh must not expose raw byte wording" >&2
+  printf '%s\\n' "$hr_output" >&2
+  exit 1
+fi
+echo "PASS: fresh downloads report an exact human-readable file size"
 echo "====================================="
