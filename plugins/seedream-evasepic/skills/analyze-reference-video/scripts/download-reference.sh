@@ -37,7 +37,7 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
 fi
 
 case "$OUTPUT" in
-  *../*|*/..|..|*/../*)
+  *../*|*/..|..)
     terminal_print_value "${RED}Error: Path traversal sequences (..) are not allowed in output path: " "$OUTPUT" "${NC}" >&2
     exit 1
     ;;
