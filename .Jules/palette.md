@@ -4,3 +4,6 @@
 ## 2024-10-18 - Help Output Before Dependencies
 **Learning:** CLI tools should provide help flags (`-h`, `--help`) without requiring system dependencies to be installed first. Users may need documentation to understand what dependencies are even needed, so help output should be the very first step in script execution.
 **Action:** Always parse argument flags like `-h` and `--help` immediately after variable initialization and before checking for required system tools like `ffmpeg` or `yt-dlp`.
+## 2024-10-24 - [CLI UX Enhancement] Explicit Missing Argument Errors
+**Learning:** CLI 사용자가 명령어를 실행할 때 필수 인자를 누락한 경우, "Missing required argument(s)"와 같은 포괄적인 에러 메시지보다는 "Missing required argument: <url>"처럼 어떤 인자가 누락되었는지 명확히 짚어주는 것이 문제 해결에 훨씬 큰 도움을 준다는 것을 확인했습니다.
+**Action:** 앞으로는 CLI 스크립트 작성 시 여러 인자 중 어느 것이 누락되었는지를 개별적으로 확인하여 구체적인 피드백을 제공하도록 에러 메시지 출력을 개선할 것입니다.

@@ -161,12 +161,6 @@ fi
 echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
-echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument(s)."; then
-  echo "FAIL: download-reference.sh did not print explicit error message" >&2
-  exit 1
-fi
-echo "PASS: download-reference.sh prints explicit error message"
 echo "====================================="
 
 echo "=== Testing usage block for invalid arguments ==="
@@ -300,3 +294,28 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing error message clarity for missing arguments ==="
+if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument: <url>"; then
+  echo "FAIL: download-reference.sh did not print explicit missing <url> error message" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" 2>&1 | grep -q "Error: Missing required argument: <output_path>"; then
+  echo "FAIL: download-reference.sh did not print explicit missing <output_path> error message" >&2
+  exit 1
+fi
+
+if ! bash "$SCRIPT_DIR/extract-frames.sh" 2>&1 | grep -q "Error: Missing required argument: <video_path>"; then
+  echo "FAIL: extract-frames.sh did not print explicit missing <video_path> error message" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/extract-frames.sh" "dummy_video" 2>&1 | grep -q "Error: Missing required argument: <output_dir>"; then
+  echo "FAIL: extract-frames.sh did not print explicit missing <output_dir> error message" >&2
+  exit 1
+fi
+
+if ! bash "$SCRIPT_DIR/transcribe.sh" 2>&1 | grep -q "Error: Missing required argument: <audio_path>"; then
+  echo "FAIL: transcribe.sh did not print explicit missing <audio_path> error message" >&2
+  exit 1
+fi
+echo "PASS: Scripts print explicit, targeted missing argument error messages"
+echo "====================================="
