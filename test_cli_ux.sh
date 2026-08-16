@@ -120,6 +120,15 @@ if ! grep -q -F "File already exists, skipping download:" <<< "$cached_output"; 
   printf '%s\n' "$cached_output" >&2
   exit 1
 fi
+if PATH="$CACHE_HIT_PATH" command -v wc >/dev/null 2>&1; then
+  echo "FAIL: cache-hit PATH must exclude wc so size uses /usr/bin/wc or /bin/wc" >&2
+  exit 1
+fi
+if ! grep -q -F "Size: 26 bytes" <<< "$cached_output"; then
+  echo "FAIL: 26-byte cache hit must report Size: 26 bytes without wc on PATH" >&2
+  printf '%s\n' "$cached_output" >&2
+  exit 1
+fi
 
 echo "PASS: non-empty regular file skips yt-dlp and preserves the artifact"
 echo "====================================="
@@ -300,3 +309,97 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing IEC unit labels are not SI lookalikes ==="
+if grep -nE '\$\(wc -c' "$SCRIPT_DIR/download-reference.sh"; then
+  echo "FAIL: wc must be resolved from /usr/bin/wc or /bin/wc, not PATH" >&2
+  exit 1
+fi
+if grep -nE 'printf .*("%\.2f (KB|MB|GB)"|"%d\.%02d (KB|MB|GB)")' "$SCRIPT_DIR/download-reference.sh"; then
+  echo "FAIL: 1024-based sizes must not be labeled KB, MB, or GB" >&2
+  exit 1
+fi
+if ! grep -q -F 'unit_label="KiB"' "$SCRIPT_DIR/download-reference.sh" \
+  || ! grep -q -F 'unit_label="MiB"' "$SCRIPT_DIR/download-reference.sh" \
+  || ! grep -q -F 'unit_label="GiB"' "$SCRIPT_DIR/download-reference.sh"; then
+  echo "FAIL: download-reference.sh must assign IEC KiB/MiB/GiB labels" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh keeps IEC labels on 1024-based sizes"
+echo "====================================="
+
+echo "=== Testing IEC size boundaries on cache hits ==="
+assert_cache_hit_iec_size() {
+  local size_bytes="$1"
+  local expected_label="$2"
+  local artifact="$TMP_DIR/iec-${size_bytes}.bin"
+  local sized_output sized_status
+
+  if [ "$size_bytes" -eq 1 ]; then
+    printf 'x' > "$artifact"
+  else
+    dd if=/dev/zero of="$artifact" bs="$size_bytes" count=1 2>/dev/null
+  fi
+
+  set +e
+  sized_output="$(
+    PATH="$CACHE_HIT_PATH" \
+      /bin/bash "$SCRIPT_DIR/download-reference.sh" \
+        "https://example.invalid/iec-size" "$artifact" 2>&1
+  )"
+  sized_status=$?
+  set -e
+
+  if [ "$sized_status" -ne 0 ]; then
+    echo "FAIL: $size_bytes-byte cache hit must return success" >&2
+    printf '%s\n' "$sized_output" >&2
+    exit 1
+  fi
+  if ! grep -q -F "Size: $expected_label" <<< "$sized_output"; then
+    echo "FAIL: $size_bytes-byte cache hit must report Size: $expected_label" >&2
+    printf '%s\n' "$sized_output" >&2
+    exit 1
+  fi
+}
+
+assert_cache_hit_iec_size 1 "1 byte"
+assert_cache_hit_iec_size 512 "512 bytes"
+assert_cache_hit_iec_size 1024 "1.00 KiB"
+assert_cache_hit_iec_size 1536 "1.50 KiB"
+assert_cache_hit_iec_size 1048576 "1.00 MiB"
+echo "PASS: cache-hit sizes use IEC prefixes at byte/KiB/MiB boundaries"
+echo "====================================="
+
+echo "=== Testing human-readable size output ==="
+HR_BIN="$TMP_DIR/hr-bin"
+mkdir -p "$HR_BIN"
+cat << 'MOCK' > "$HR_BIN/yt-dlp"
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    output="${1:-}"
+    break
+  fi
+  shift
+done
+if [ -n "$output" ]; then
+  mkdir -p -- "${output%/*}"
+  dd if=/dev/zero of="$output" bs=1024 count=2048 2>/dev/null
+fi
+MOCK
+chmod +x "$HR_BIN/yt-dlp"
+
+DUMMY_VIDEO="$TMP_DIR/dummy_hr_size.mp4"
+output="$(PATH="$HR_BIN:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$DUMMY_VIDEO" 2>&1)"
+if ! echo "$output" | grep -q "Size: 2.00 MiB"; then
+  echo "FAIL: binary 2 MiB payload must be labeled Size: 2.00 MiB" >&2
+  printf '%s\n' "$output" >&2
+  exit 1
+fi
+if echo "$output" | grep -q "Size: 2.00 MB"; then
+  echo "FAIL: binary 2 MiB payload must not be labeled with SI MB" >&2
+  printf '%s\n' "$output" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh labels binary file sizes with IEC units"
+echo "====================================="
