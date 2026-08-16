@@ -1,5 +1,4 @@
 #!/bin/bash
-"""" 2>/dev/null || true
 set -euo pipefail
 
 SCRIPT="plugins/seedream-evasepic/skills/analyze-reference-video/scripts/download-reference.sh"
