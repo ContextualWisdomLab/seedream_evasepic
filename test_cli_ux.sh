@@ -322,10 +322,10 @@ chmod +x "$HR_TEST_DIR/bin/yt-dlp"
 
 DUMMY_VIDEO="$HR_TEST_DIR/dummy_hr_size.mp4"
 output="$(PATH="$HR_TEST_DIR/bin:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$DUMMY_VIDEO" 2>&1)"
-if ! echo "$output" | grep -q "Size: 2.00 MB"; then
-  echo "FAIL: download-reference.sh did not print human-readable size (expected 2.00 MB)" >&2
+if ! echo "$output" | grep -q "Size: 2.00 MiB"; then
+  echo "FAIL: binary 2 MiB payload must be labeled Size: 2.00 MiB" >&2
   exit 1
 fi
 rm -rf "$HR_TEST_DIR"
-echo "PASS: download-reference.sh prints human-readable size"
+echo "PASS: download-reference.sh labels binary file sizes with IEC units"
 echo "====================================="
