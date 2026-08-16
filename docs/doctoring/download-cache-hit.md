@@ -11,7 +11,10 @@ remain untouched.
 This behavior removes repeat network latency and bandwidth use for idempotent
 workflows that deliberately reuse the same output path. It also makes the skip
 visible: the CLI reports `File already exists, skipping download:` followed by
-the path through the shared terminal-output neutralizer.
+the path through the shared terminal-output neutralizer, then the same IEC
+`Size:` line used after a fresh download. Use that size to confirm the cached
+file is a real video before the next analysis step. See
+`docs/doctoring/iec-file-size.md`.
 
 ## Boundary conditions
 

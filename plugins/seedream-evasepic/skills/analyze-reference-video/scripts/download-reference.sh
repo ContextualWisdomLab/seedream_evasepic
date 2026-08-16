@@ -17,6 +17,53 @@ SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=terminal-output.sh
 . "$SCRIPT_DIRECTORY/terminal-output.sh"
 
+# Format a byte count with IEC 80000-13 binary prefixes. Divisors are powers of
+# 1024; labels are KiB/MiB/GiB so a 2,097,152-byte file reads as 2.00 MiB, not
+# the SI-looking 2.00 MB. Two-decimal rounding stays in Bash integer arithmetic
+# so cache-hit PATH does not need awk.
+format_iec_file_size() {
+  local size_bytes="${1-}"
+  local unit_divisor unit_label rounded_hundredths
+
+  case "$size_bytes" in
+    ''|*[!0-9]*)
+      printf '%s' "0 bytes"
+      return 1
+      ;;
+  esac
+
+  if [ "$size_bytes" -ge 1073741824 ]; then
+    unit_divisor=1073741824
+    unit_label="GiB"
+  elif [ "$size_bytes" -ge 1048576 ]; then
+    unit_divisor=1048576
+    unit_label="MiB"
+  elif [ "$size_bytes" -ge 1024 ]; then
+    unit_divisor=1024
+    unit_label="KiB"
+  elif [ "$size_bytes" -eq 1 ]; then
+    printf '1 byte'
+    return 0
+  else
+    printf '%s bytes' "$size_bytes"
+    return 0
+  fi
+
+  rounded_hundredths=$(( (size_bytes * 100 + unit_divisor / 2) / unit_divisor ))
+  printf '%d.%02d %s' "$((rounded_hundredths / 100))" "$((rounded_hundredths % 100))" "$unit_label"
+}
+
+# Print the on-disk size of one caller-owned path through the shared renderer.
+print_iec_output_size() {
+  local output_path="${1-}"
+  local file_size_bytes file_size_hr
+
+  file_size_bytes="$(wc -c < "$output_path")"
+  file_size_bytes="${file_size_bytes//[[:space:]]/}"
+  file_size_hr="$(format_iec_file_size "$file_size_bytes")"
+  terminal_print_value "${CYAN}Size: " "$file_size_hr" "${NC}"
+}
+
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
@@ -41,6 +88,7 @@ fi
 # the shared terminal-neutralization boundary.
 if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
   terminal_print_value "${GREEN}File already exists, skipping download: " "$OUTPUT" "${NC}"
+  print_iec_output_size "$OUTPUT"
   exit 0
 fi
 
@@ -100,17 +148,5 @@ yt-dlp \
   }
 
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-# Optimization: Use native bash parameter expansion instead of spawning a tr process
-FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
-FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-if [ "$FILE_SIZE_BYTES" -ge 1073741824 ]; then
-  FILE_SIZE_HR="$(awk -v size="$FILE_SIZE_BYTES" 'BEGIN {printf "%.2f GiB", size/1073741824}')"
-elif [ "$FILE_SIZE_BYTES" -ge 1048576 ]; then
-  FILE_SIZE_HR="$(awk -v size="$FILE_SIZE_BYTES" 'BEGIN {printf "%.2f MiB", size/1048576}')"
-elif [ "$FILE_SIZE_BYTES" -ge 1024 ]; then
-  FILE_SIZE_HR="$(awk -v size="$FILE_SIZE_BYTES" 'BEGIN {printf "%.2f KiB", size/1024}')"
-else
-  FILE_SIZE_HR="${FILE_SIZE_BYTES} bytes"
-fi
-terminal_print_value "${CYAN}Size: " "$FILE_SIZE_HR" "${NC}"
+print_iec_output_size "$OUTPUT"
 
