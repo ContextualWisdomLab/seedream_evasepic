@@ -295,27 +295,65 @@ echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal 
 echo "====================================="
 
 echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument: <url>"; then
-  echo "FAIL: download-reference.sh did not print explicit missing <url> error message" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" 2>&1 | grep -q "Error: Missing required argument: <output_path>"; then
-  echo "FAIL: download-reference.sh did not print explicit missing <output_path> error message" >&2
-  exit 1
-fi
+MISSING_ARG_PATH="$TMP_DIR/missing-arg-bin"
+mkdir -p -- "$MISSING_ARG_PATH"
+ln -s -- "$(command -v dirname)" "$MISSING_ARG_PATH/dirname"
 
-if ! bash "$SCRIPT_DIR/extract-frames.sh" 2>&1 | grep -q "Error: Missing required argument: <video_path>"; then
-  echo "FAIL: extract-frames.sh did not print explicit missing <video_path> error message" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/extract-frames.sh" "dummy_video" 2>&1 | grep -q "Error: Missing required argument: <output_dir>"; then
-  echo "FAIL: extract-frames.sh did not print explicit missing <output_dir> error message" >&2
-  exit 1
-fi
+for forbidden_command in yt-dlp brew pip3 pip ffmpeg ffprobe whisper; do
+  if PATH="$MISSING_ARG_PATH" command -v "$forbidden_command" >/dev/null 2>&1; then
+    echo "FAIL: missing-argument PATH must exclude $forbidden_command" >&2
+    exit 1
+  fi
+done
 
-if ! bash "$SCRIPT_DIR/transcribe.sh" 2>&1 | grep -q "Error: Missing required argument: <audio_path>"; then
-  echo "FAIL: transcribe.sh did not print explicit missing <audio_path> error message" >&2
-  exit 1
-fi
+assert_missing_required_argument() {
+  local script="$1"
+  local expected_error="$2"
+  local failure_message="$3"
+  shift 3
+  local output status
+  set +e
+  output="$(
+    PATH="$MISSING_ARG_PATH" \
+      /bin/bash "$SCRIPT_DIR/$script" "$@" 2>&1
+  )"
+  status=$?
+  set -e
+  if [ "$status" -ne 2 ]; then
+    echo "FAIL: $script missing-argument path must exit 2" >&2
+    printf 'exit status: %s\n%s\n' "$status" "$output" >&2
+    exit 1
+  fi
+  if ! grep -q -F "$expected_error" <<< "$output"; then
+    echo "FAIL: $failure_message" >&2
+    printf '%s\n' "$output" >&2
+    exit 1
+  fi
+}
+
+assert_missing_required_argument \
+  "download-reference.sh" \
+  "Error: Missing required argument: <url>" \
+  "download-reference.sh did not print explicit missing <url> error message"
+assert_missing_required_argument \
+  "download-reference.sh" \
+  "Error: Missing required argument: <output_path>" \
+  "download-reference.sh did not print explicit missing <output_path> error message" \
+  "dummy_url"
+
+assert_missing_required_argument \
+  "extract-frames.sh" \
+  "Error: Missing required argument: <video_path>" \
+  "extract-frames.sh did not print explicit missing <video_path> error message"
+assert_missing_required_argument \
+  "extract-frames.sh" \
+  "Error: Missing required argument: <output_dir>" \
+  "extract-frames.sh did not print explicit missing <output_dir> error message" \
+  "dummy_video"
+
+assert_missing_required_argument \
+  "transcribe.sh" \
+  "Error: Missing required argument: <audio_path>" \
+  "transcribe.sh did not print explicit missing <audio_path> error message"
 echo "PASS: Scripts print explicit, targeted missing argument error messages"
 echo "====================================="
