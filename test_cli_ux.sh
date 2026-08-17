@@ -300,3 +300,22 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing download symlink TOCTOU ==="
+DUMMY_TARGET="$TMP_DIR/dummy_target.mp4"
+DUMMY_SYMLINK="$TMP_DIR/dummy_symlink.mp4"
+echo "content" > "$DUMMY_TARGET"
+ln -s "$DUMMY_TARGET" "$DUMMY_SYMLINK"
+
+set +e
+bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$DUMMY_SYMLINK" >/dev/null 2>&1
+symlink_status=$?
+set -e
+
+if [ "$symlink_status" -eq 0 ]; then
+  echo "FAIL: download-reference.sh did not abort on symlink output path" >&2
+  exit 1
+fi
+
+rm -f "$DUMMY_TARGET" "$DUMMY_SYMLINK"
+echo "PASS: download-reference.sh aborts on symlink output path"
+echo "====================================="
