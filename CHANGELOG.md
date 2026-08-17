@@ -19,3 +19,6 @@
 ### Performance
 - `yt-dlp` 호출 시 `--concurrent-fragments 4` 플래그를 추가하여 DASH/HLS 스트림의 다운로드 속도를 최적화했습니다. 단일 스레드로 인한 네트워크 병목을 해소합니다.
 
+
+### Security
+- 🛡️ Sentinel: `ffprobe`에서 추출한 메타데이터(duration, resolution, fps)를 출력할 때 터미널 ANSI 이스케이프 주입 취약점이 발생하는 문제 해결 (`extract-frames.sh`).
