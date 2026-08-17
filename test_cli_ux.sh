@@ -185,6 +185,33 @@ fi
 echo "PASS: all scripts print explicit targeted error messages for missing arguments"
 echo "====================================="
 
+echo "=== Testing required argument precedence ==="
+set +e
+transcribe_output="$(bash "$SCRIPT_DIR/transcribe.sh" "" "invalid_model" 2>&1)"
+transcribe_status=$?
+set -e
+
+if [ "$transcribe_status" -ne 2 ]; then
+  echo "FAIL: missing audio path must remain a usage error with exit code 2" >&2
+  printf '%s\n' "$transcribe_output" >&2
+  exit 1
+fi
+
+if ! grep -Fq "Error: Missing required argument: <audio_path>" <<< "$transcribe_output"; then
+  echo "FAIL: missing <audio_path> must be reported before optional model validation" >&2
+  printf '%s\n' "$transcribe_output" >&2
+  exit 1
+fi
+
+if grep -Fq "Error: Invalid model specified:" <<< "$transcribe_output"; then
+  echo "FAIL: optional model validation must not hide the missing required audio path" >&2
+  printf '%s\n' "$transcribe_output" >&2
+  exit 1
+fi
+
+echo "PASS: required audio-path guidance takes precedence over optional model validation"
+echo "====================================="
+
 echo "=== Testing usage block for invalid arguments ==="
 if ! bash "$SCRIPT_DIR/transcribe.sh" "dummy.wav" "invalid_model" 2>&1 | grep -q "Usage: transcribe.sh <audio_path> \[model\]"; then
   echo "FAIL: transcribe.sh did not print usage block for invalid model" >&2
