@@ -20,6 +20,37 @@ bash "$SCRIPT_DIR/transcribe.sh"
 echo "Exit code: $?"
 echo "====================================="
 
+echo "=== Testing human readable file size ==="
+TEST_TMP_DIR="$(mktemp -d)"
+
+cat > "$TEST_TMP_DIR/yt-dlp" <<'EOF'
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    echo "dummy video data" > "$1"
+    break
+  fi
+  shift
+done
+EOF
+chmod +x "$TEST_TMP_DIR/yt-dlp"
+
+DUMMY_HUMAN_SIZE="$TEST_TMP_DIR/dummy-human-size.mp4"
+
+PATH="$TEST_TMP_DIR:$PATH" \
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/empty-video" "$DUMMY_HUMAN_SIZE" > "$TEST_TMP_DIR/human-size-output" 2>&1
+
+if ! grep -q "Size: 17 B" "$TEST_TMP_DIR/human-size-output"; then
+  echo "FAIL: download-reference.sh did not print human-readable size correctly" >&2
+  cat "$TEST_TMP_DIR/human-size-output" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh correctly prints human-readable size"
+echo "====================================="
+rm -rf -- "$TEST_TMP_DIR"
+
 echo "=== Testing yt-dlp argument separator ==="
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf -- "$TMP_DIR"' EXIT
