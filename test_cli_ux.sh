@@ -290,7 +290,7 @@ echo "PASS: download-reference.sh outputs human-readable file sizes"
 echo "====================================="
 
 echo "=== Testing actual terminal control neutralization ==="
-bash ./test_terminal_output.sh
+bash "$(dirname "$0")/test_terminal_output.sh"
 echo "====================================="
 
 echo "=== Testing Examples in CLI Output Should Be Actionable and Noticeable ==="
