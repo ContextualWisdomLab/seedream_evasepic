@@ -264,8 +264,33 @@ fi
 echo "PASS: download-reference.sh uses native bash parameter expansion"
 echo "====================================="
 
+echo "=== Testing human-readable file size output ==="
+TEST_TMP_DIR="$(mktemp -d)"
+mkdir -p "$TEST_TMP_DIR/bin"
+cat > "$TEST_TMP_DIR/bin/yt-dlp" <<'EOF'
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    dd if=/dev/zero of="$1" bs=1024 count=2048 2>/dev/null
+    break
+  fi
+  shift
+done
+EOF
+chmod +x "$TEST_TMP_DIR/bin/yt-dlp"
+
+if ! PATH="$TEST_TMP_DIR/bin:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$TEST_TMP_DIR/out.mp4" 2>&1 | grep -q "Size: 2.00 MB"; then
+  echo "FAIL: download-reference.sh did not output human-readable file size (expected 2.00 MB)" >&2
+  rm -rf -- "$TEST_TMP_DIR"
+  exit 1
+fi
+rm -rf -- "$TEST_TMP_DIR"
+echo "PASS: download-reference.sh outputs human-readable file sizes"
+echo "====================================="
+
 echo "=== Testing actual terminal control neutralization ==="
-bash ./test_terminal_output.sh
+bash "$(dirname "$0")/test_terminal_output.sh"
 echo "====================================="
 
 echo "=== Testing Examples in CLI Output Should Be Actionable and Noticeable ==="
