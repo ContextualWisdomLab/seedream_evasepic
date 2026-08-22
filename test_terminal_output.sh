@@ -48,6 +48,7 @@ printf '=== Testing terminal_safe_text control neutralization ===\n'
 malicious_value=$'safe\033[31mPWNED\033[0m\nFORGED\rLINE\tBELL\007'
 malicious_value+=$'\302\233CSI\342\200\256RTL\342\200\250NEXT'
 safe_value="$(terminal_safe_text "$malicious_value")"
+safe_value_var=""
 terminal_safe_text "$malicious_value" safe_value_var
 if [ "$safe_value" != "$safe_value_var" ]; then
   fail 'terminal_safe_text variable assignment does not match standard output'
