@@ -268,6 +268,35 @@ echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
 
+echo "=== Testing human-readable file size output ==="
+TEST_TMP_DIR="$(mktemp -d)"
+TEST_OUTPUT="$TEST_TMP_DIR/mock_video.mp4"
+MOCK_BIN="$TEST_TMP_DIR/bin"
+mkdir -p "$MOCK_BIN"
+cat > "$MOCK_BIN/yt-dlp" <<'EOF'
+#!/bin/bash
+while [ $# -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    head -c 2048 /dev/zero > "$2"
+    exit 0
+  fi
+  shift
+done
+exit 1
+EOF
+chmod +x "$MOCK_BIN/yt-dlp"
+
+TEST_OUTPUT_LOG="$(PATH="$MOCK_BIN:$PATH" bash "plugins/seedream-evasepic/skills/analyze-reference-video/scripts/download-reference.sh" "dummy_url" "$TEST_OUTPUT" 2>&1)"
+if ! grep -q "2.00 KB" <<< "$TEST_OUTPUT_LOG"; then
+  echo "FAIL: download-reference.sh did not output human-readable file size (2.00 KB)" >&2
+  printf '%s\n' "$TEST_OUTPUT_LOG" >&2
+  rm -rf "$TEST_TMP_DIR"
+  exit 1
+fi
+rm -rf "$TEST_TMP_DIR"
+echo "PASS: download-reference.sh outputs human-readable file size"
+echo "====================================="
+
 echo "=== Testing Examples in CLI Output Should Be Actionable and Noticeable ==="
 assert_colored_example() {
   local output="$1"
