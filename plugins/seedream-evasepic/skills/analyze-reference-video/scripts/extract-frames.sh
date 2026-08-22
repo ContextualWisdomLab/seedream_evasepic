@@ -34,8 +34,15 @@ VIDEO="${1:-}"
 OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
-if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
-  printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
+if [ -z "$VIDEO" ]; then
+  printf "%b\n" "${RED}Error: Missing required argument: <video_path>${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
+  printf "%b\n" "  num_frames defaults to 12" >&2
+  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
+  exit 2
+elif [ -z "$OUT_DIR" ]; then
+  printf "%b\n" "${RED}Error: Missing required argument: <output_dir>${NC}" >&2
+
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
   printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
