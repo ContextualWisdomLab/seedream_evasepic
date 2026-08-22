@@ -74,6 +74,28 @@ fi
 echo "PASS: yt-dlp URL is protected by -- argument separator"
 echo "====================================="
 
+echo "=== Testing TOCTOU symlink attack mitigation ==="
+TEST_TMP_DIR="$(mktemp -d)"
+MALICIOUS_SYMLINK="$TEST_TMP_DIR/symlink.mp4"
+ln -s /etc/passwd "$MALICIOUS_SYMLINK"
+
+set +e
+symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid/symlink" "$MALICIOUS_SYMLINK" 2>&1)"
+symlink_status=$?
+set -e
+
+if [ "$symlink_status" -ne 1 ]; then
+  echo "FAIL: download-reference.sh must exit non-zero when output path is a symlink" >&2
+  exit 1
+fi
+if ! grep -q "Output path is a symlink" <<< "$symlink_output"; then
+  echo "FAIL: download-reference.sh must output symlink rejection message" >&2
+  exit 1
+fi
+rm -rf -- "$TEST_TMP_DIR"
+echo "PASS: symlink target output path is explicitly rejected"
+echo "====================================="
+
 echo "=== Testing download cache-hit short circuit ==="
 CACHED_OUTPUT="$TMP_DIR/cached-reference.mp4"
 CACHED_ARGS_FILE="$TMP_DIR/cached-yt-dlp.args"
