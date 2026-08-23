@@ -140,6 +140,11 @@ if [ "$symlink_status" -eq 0 ]; then
   echo "FAIL: download-reference.sh must abort if output path is a symlink" >&2
   exit 1
 fi
+if ! grep -q -F "Error: Output path cannot be a symlink." <<< "$symlink_output"; then
+  echo "FAIL: symlink error message must be printed" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
 rm -rf -- "$TEST_TMP_DIR"
 echo "PASS: symlinks are properly rejected before processing"
 echo "====================================="
