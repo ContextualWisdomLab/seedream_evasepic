@@ -268,6 +268,18 @@ echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
 
+echo "=== Testing terminal-output.sh unrolled loops for performance ==="
+if grep -q 'for code in ' "$SCRIPT_DIR/terminal-output.sh"; then
+  echo "FAIL: terminal-output.sh must use unrolled parameter expansions instead of loops for performance" >&2
+  exit 1
+fi
+if grep -q 'printf -v' "$SCRIPT_DIR/terminal-output.sh"; then
+  echo "FAIL: terminal-output.sh must not use printf for replacements to avoid overhead" >&2
+  exit 1
+fi
+echo "PASS: terminal-output.sh uses highly efficient unrolled parameter expansions"
+echo "====================================="
+
 echo "=== Testing Examples in CLI Output Should Be Actionable and Noticeable ==="
 assert_colored_example() {
   local output="$1"
