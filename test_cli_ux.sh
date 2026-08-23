@@ -124,6 +124,31 @@ fi
 echo "PASS: non-empty regular file skips yt-dlp and preserves the artifact"
 echo "====================================="
 
+echo "=== Testing symlink mitigation (TOCTOU) ==="
+TEST_TMP_DIR="$(mktemp -d)"
+SYMLINK_TARGET="$TEST_TMP_DIR/target.mp4"
+SYMLINK_OUTPUT="$TEST_TMP_DIR/symlink.mp4"
+touch "$SYMLINK_TARGET"
+ln -s "$SYMLINK_TARGET" "$SYMLINK_OUTPUT"
+
+set +e
+symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid/symlink" "$SYMLINK_OUTPUT" 2>&1)"
+symlink_status=$?
+set -e
+
+if [ "$symlink_status" -eq 0 ]; then
+  echo "FAIL: download-reference.sh must abort if output path is a symlink" >&2
+  exit 1
+fi
+if ! grep -q -F "Error: Output path cannot be a symlink." <<< "$symlink_output"; then
+  echo "FAIL: symlink error message must be printed" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
+rm -rf -- "$TEST_TMP_DIR"
+echo "PASS: symlinks are properly rejected before processing"
+echo "====================================="
+
 echo "=== Testing zero-byte output cache miss ==="
 EMPTY_OUTPUT="$TMP_DIR/empty-reference.mp4"
 EMPTY_ARGS_FILE="$TMP_DIR/empty-yt-dlp.args"
