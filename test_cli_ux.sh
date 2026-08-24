@@ -256,6 +256,31 @@ fi
 echo "PASS: extract-frames.sh reports a missing ffprobe before metadata processing"
 echo "====================================="
 
+echo "=== Testing human-readable file size output ==="
+TEST_TMP_DIR="$(mktemp -d)"
+HUMAN_SIZE_OUTPUT="$TEST_TMP_DIR/human-size.mp4"
+
+# Mock yt-dlp to bypass network and write exactly 2048 bytes (2 KB)
+cat << EOF > "$TEST_TMP_DIR/yt-dlp"
+#!/bin/bash
+printf '%*s' 2048 "" > "$HUMAN_SIZE_OUTPUT"
+EOF
+chmod +x "$TEST_TMP_DIR/yt-dlp"
+
+set +e
+size_output="$(PATH="$TEST_TMP_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$HUMAN_SIZE_OUTPUT" 2>&1)"
+set -e
+
+if ! grep -q -E 'Size: 2\.00 KB' <<< "$size_output"; then
+  echo "FAIL: download-reference.sh did not output size in human-readable KB format" >&2
+  printf '%s\n' "$size_output" >&2
+  rm -rf -- "$TEST_TMP_DIR"
+  exit 1
+fi
+rm -rf -- "$TEST_TMP_DIR"
+echo "PASS: download-reference.sh outputs human-readable sizes correctly"
+echo "====================================="
+
 echo "=== Testing tr process removal for performance ==="
 if grep -n -F 'tr -d' "$SCRIPT_DIR/download-reference.sh"; then
   echo "FAIL: download-reference.sh must use native bash parameter expansion instead of tr" >&2
