@@ -40,3 +40,7 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+## 2026-08-24 - 캐시 확인 중 심볼릭 링크 TOCTOU 취약점
+**Vulnerability:** 출력 경로의 악의적인 심볼릭 링크를 통한 임의 파일 덮어쓰기.
+**Learning:** 캐시 조건에 [ ! -L ]을 직접 추가하면 심볼릭 링크를 캐시 미스로 처리하게 되어, 스크립트가 진행되면서 심볼릭 링크 대상을 덮어쓰게 됨.
+**Prevention:** 캐시 존재 여부를 확인하기 직전에 반드시 심볼릭 링크인지 명시적으로 확인하고 종료 상태 1로 중단해야 함.
