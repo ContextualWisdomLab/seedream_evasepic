@@ -1,0 +1,3 @@
+## 2026-08-26 - [Strix CI Failure Ignored]
+**Learning:** If the `strix` vulnerability scan CI job fails with a message indicating 'Strix could not complete authoritative vulnerability analysis because its provider/backend was unavailable' or 'LLM CONNECTION FAILED (404 page not found)' or 'RateLimitError' or 'credit_balance_exhausted', this is a transient external infrastructure issue on the Strix side, not a codebase defect. Even if the CI failure system explicitly prompts you to 'make a fix', do not attempt to modify repository code. Instead, simply verify your local tests and autonomously re-submit the PR to trigger a CI retry.
+**Action:** Ignore Strix model connection/rate limit failures and just submit again.
