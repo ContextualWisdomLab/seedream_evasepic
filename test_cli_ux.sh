@@ -124,6 +124,38 @@ fi
 echo "PASS: non-empty regular file skips yt-dlp and preserves the artifact"
 echo "====================================="
 
+echo "=== Testing symlink rejection ==="
+TEST_SYMLINK_DIR="$(mktemp -d)"
+SYMLINK_TARGET="$TEST_SYMLINK_DIR/target.mp4"
+SYMLINK_LINK="$TEST_SYMLINK_DIR/link.mp4"
+: > "$SYMLINK_TARGET"
+ln -s -- "$SYMLINK_TARGET" "$SYMLINK_LINK"
+
+set +e
+symlink_output="$(
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/symlink-video" "$SYMLINK_LINK" 2>&1
+)"
+symlink_status=$?
+set -e
+
+if [ "$symlink_status" -eq 0 ]; then
+  echo "FAIL: download-reference.sh must abort when output is a symlink" >&2
+  printf '%s\n' "$symlink_output" >&2
+  rm -rf -- "$TEST_SYMLINK_DIR"
+  exit 1
+fi
+if ! grep -q -F "Error: Output path cannot be a symlink." <<< "$symlink_output"; then
+  echo "FAIL: script must output specific error for symlinks" >&2
+  printf '%s\n' "$symlink_output" >&2
+  rm -rf -- "$TEST_SYMLINK_DIR"
+  exit 1
+fi
+
+rm -rf -- "$TEST_SYMLINK_DIR"
+echo "PASS: symlink output path is rejected"
+echo "====================================="
+
 echo "=== Testing zero-byte output cache miss ==="
 EMPTY_OUTPUT="$TMP_DIR/empty-reference.mp4"
 EMPTY_ARGS_FILE="$TMP_DIR/empty-yt-dlp.args"
