@@ -300,3 +300,58 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing UX formatting for file size and duration ==="
+TEST_UX_DIR="$(mktemp -d)"
+
+cat << 'MOCK_YTDLP' > "$TEST_UX_DIR/yt-dlp"
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    output="${1:-}"
+    break
+  fi
+  shift
+done
+if [ -n "$output" ]; then
+  dd if=/dev/zero of="$output" bs=1024 count=1500 >/dev/null 2>&1
+fi
+MOCK_YTDLP
+chmod +x "$TEST_UX_DIR/yt-dlp"
+
+dl_ux_output="$(PATH="$TEST_UX_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$TEST_UX_DIR/video.mp4" 2>&1 || true)"
+if ! grep -q "1.5 MB" <<< "$dl_ux_output"; then
+  echo "FAIL: download-reference.sh did not format size correctly to 1.5 MB" >&2
+  printf '%s\n' "$dl_ux_output" >&2
+  MOCK_EXIT=1
+fi
+echo "PASS: download-reference.sh formats size into MB"
+
+cat << 'MOCK_FFPROBE' > "$TEST_UX_DIR/ffprobe"
+#!/bin/bash
+echo "duration=3665"
+echo "width=1920"
+echo "height=1080"
+echo "r_frame_rate=30/1"
+echo "codec_type=video"
+MOCK_FFPROBE
+
+cat << 'MOCK_FFMPEG' > "$TEST_UX_DIR/ffmpeg"
+#!/bin/bash
+MOCK_FFMPEG
+chmod +x "$TEST_UX_DIR/ffprobe" "$TEST_UX_DIR/ffmpeg"
+
+touch "$TEST_UX_DIR/dummy.mp4"
+extract_ux_output="$(FFMPEG="$TEST_UX_DIR/ffmpeg" FFPROBE="$TEST_UX_DIR/ffprobe" bash "$SCRIPT_DIR/extract-frames.sh" "$TEST_UX_DIR/dummy.mp4" "$TEST_UX_DIR/frames" 12 2>&1 || true)"
+if ! grep -q "1h 1m 5s" <<< "$extract_ux_output"; then
+  echo "FAIL: extract-frames.sh did not format duration correctly to 1h 1m 5s" >&2
+  printf '%s\n' "$extract_ux_output" >&2
+  MOCK_EXIT=1
+fi
+echo "PASS: extract-frames.sh formats duration into hours, minutes, seconds"
+
+rm -rf -- "$TEST_UX_DIR"
+if [ "${MOCK_EXIT:-0}" -ne 0 ]; then
+  exit 1
+fi
+echo "====================================="

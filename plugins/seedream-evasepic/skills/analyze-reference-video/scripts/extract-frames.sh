@@ -123,8 +123,21 @@ FPS=${FPS:-unknown}
   echo "num_frames_requested=$NUM_FRAMES"
 } > "$OUT_DIR/metadata.txt"
 
+DUR_INT="${DURATION%%.*}"
+if [[ "$DUR_INT" =~ ^[0-9]+$ ]]; then
+  if [ "$DUR_INT" -ge 3600 ]; then
+    DUR_FORMAT=$(printf "%dh %dm %ds" $((DUR_INT / 3600)) $(((DUR_INT % 3600) / 60)) $((DUR_INT % 60)))
+  elif [ "$DUR_INT" -ge 60 ]; then
+    DUR_FORMAT=$(printf "%dm %ds" $((DUR_INT / 60)) $((DUR_INT % 60)))
+  else
+    DUR_FORMAT="${DUR_INT}s"
+  fi
+else
+  DUR_FORMAT="${DURATION}s"
+fi
+
 terminal_print_value "${CYAN}Video: " "${VIDEO##*/}" "${NC}"
-printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
+printf "%b\n" "${CYAN}Duration: ${NC}${DUR_FORMAT} | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
 
 # Extract evenly-spaced frames across the full duration.
 # Keep the awk program literal fixed; pass dynamic values via -v so data cannot become awk code.

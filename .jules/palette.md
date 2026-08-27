@@ -17,3 +17,6 @@
 **Learning:** CLI 스크립트에서 누락된 의존성을 자동 설치하더라도, 설치 경로가 사용자의 시스템 환경 변수($PATH)에 포함되어 있지 않으면 이후 실행 단계에서 계속 실패하게 됩니다. 이는 사용자에게 큰 혼란을 줍니다.
 **Action:** 자동 설치 시도 직후에 해당 실행 파일이 `$PATH`에서 접근 가능한지 즉시 재확인하는 로직을 추가했습니다. 만약 접근이 불가하다면, 사용자에게 `$PATH` 환경 변수 설정이나 수동 설치가 필요하다는 명확하고 구체적인 오류 안내 메시지를 제공하여 문제 해결을 돕도록 해야 합니다.
 
+## 2024-05-24 - CLI UX: Human-readable numerical output
+**Learning:** Raw bytes and raw seconds displayed directly to users in a CLI tool degrade the experience and require cognitive overhead. Bash scripts can natively transform these into readable formats (e.g., MB/KB and hours/minutes) without sacrificing execution speed by leveraging basic arithmetic and awk formatting.
+**Action:** When printing numerical metrics (like file size or duration) to standard output in CLI tools, proactively format them into human-readable units before rendering.
