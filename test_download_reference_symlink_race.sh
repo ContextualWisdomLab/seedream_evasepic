@@ -43,25 +43,31 @@ VICTIM="$TMP_DIR/victim.txt"
 OUTPUT="$TMP_DIR/reference.mp4"
 printf 'protected-victim-bytes\n' > "$VICTIM"
 
-PATH="$MOCK_BIN:$PATH" \
-RACE_OUTPUT="$OUTPUT" \
-RACE_VICTIM="$VICTIM" \
-  bash "$SCRIPT_DIR/download-reference.sh" \
-    "https://example.invalid/race-video" "$OUTPUT" >/dev/null
+set +e
+race_log="$(
+  PATH="$MOCK_BIN:$PATH" \
+  RACE_OUTPUT="$OUTPUT" \
+  RACE_VICTIM="$VICTIM" \
+    bash "$SCRIPT_DIR/download-reference.sh" \
+      "https://example.invalid/race-video" "$OUTPUT" 2>&1
+)"
+race_status=$?
+set -e
 
 if [ "$(cat "$VICTIM")" != "protected-victim-bytes" ]; then
   echo "FAIL: output-path race redirected downloaded bytes into the symlink target" >&2
   exit 1
 fi
 
-if [ -L "$OUTPUT" ] || [ ! -f "$OUTPUT" ]; then
-  echo "FAIL: successful publication must leave a regular final output, not a symlink" >&2
+if [ "$race_status" -eq 0 ]; then
+  echo "FAIL: output path appearing during download must fail closed" >&2
   exit 1
 fi
 
-if [ "$(cat "$OUTPUT")" != "downloaded-video-bytes" ]; then
-  echo "FAIL: final output does not contain the staged download payload" >&2
+if ! grep -q -F "Output path changed during download. Remove the unexpected path and retry:" <<< "$race_log"; then
+  echo "FAIL: race rejection must tell the caller how to recover safely" >&2
+  printf '%s\n' "$race_log" >&2
   exit 1
 fi
 
-echo "PASS: symlink swap after validation cannot redirect download bytes"
+echo "PASS: symlink swap after validation fails closed without modifying the target"
