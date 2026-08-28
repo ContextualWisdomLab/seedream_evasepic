@@ -37,7 +37,7 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
 fi
 
 if [ -L "$OUTPUT" ]; then
-  terminal_print_value "${RED}Error: output path is a symlink. Remove the symlink and retry: " "$OUTPUT" "${NC}" >&2
+  terminal_print_value "${RED}Error: output path is a symlink: " "$OUTPUT" ". Remove the symlink and retry.${NC}" >&2
   exit 1
 fi
 
