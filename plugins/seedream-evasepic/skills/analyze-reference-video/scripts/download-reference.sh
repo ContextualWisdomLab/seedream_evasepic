@@ -133,10 +133,11 @@ if [ -L "$STAGED_OUTPUT" ] || [ ! -f "$STAGED_OUTPUT" ]; then
   exit 1
 fi
 
-# Publish with an atomic no-clobber hard link on the same filesystem. If any
-# process creates the destination while the download is running (including a
-# symlink), ln fails without following or overwriting that object or its target.
-if ! ln -- "$STAGED_OUTPUT" "$OUTPUT" 2>/dev/null; then
+# Publish with the standard link utility's direct link(2)-style two-path
+# operation. Unlike ln's directory-target mode, link treats OUTPUT as exactly
+# one new directory entry, so a file, directory, or symlink appearing during
+# download makes publication fail without following or overwriting it.
+if ! command -p link "$STAGED_OUTPUT" "$OUTPUT" 2>/dev/null; then
   terminal_print_value "${RED}Error: Output path changed during download. Remove the unexpected path and retry: " "$OUTPUT" "${NC}" >&2
   exit 1
 fi
