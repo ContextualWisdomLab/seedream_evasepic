@@ -7,6 +7,7 @@ on:
       - ".github/workflows/cli-ux.yml"
       - "plugins/seedream-evasepic/skills/analyze-reference-video/scripts/**"
       - "test_cli_ux.sh"
+      - "test_download_reference_dash_output.sh"
       - "test_download_reference_symlink_race.sh"
       - "test_terminal_output.sh"
       - "CHANGELOG.md"
@@ -40,6 +41,7 @@ jobs:
           shellcheck --external-sources --severity=warning
           plugins/seedream-evasepic/skills/analyze-reference-video/scripts/*.sh
           test_cli_ux.sh
+          test_download_reference_dash_output.sh
           test_download_reference_symlink_race.sh
           test_terminal_output.sh
 
@@ -47,6 +49,7 @@ jobs:
         shell: bash --noprofile --norc -e -o pipefail {0}
         run: |
           bash ./test_cli_ux.sh
+          bash ./test_download_reference_dash_output.sh
           bash ./test_download_reference_symlink_race.sh
 
       - name: Verify clean worktree
