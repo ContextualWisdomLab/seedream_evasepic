@@ -136,8 +136,14 @@ fi
 # Publish with the standard link utility's direct link(2)-style two-path
 # operation. Unlike ln's directory-target mode, link treats OUTPUT as exactly
 # one new directory entry, so a file, directory, or symlink appearing during
-# download makes publication fail without following or overwriting it.
-if ! command -p link "$STAGED_OUTPUT" "$OUTPUT" 2>/dev/null; then
+# download makes publication fail without following or overwriting it. Prefix a
+# dash-leading relative path with ./ so the utility cannot parse the requested
+# pathname as an option; this names the same directory entry.
+PUBLISH_OUTPUT="$OUTPUT"
+case "$PUBLISH_OUTPUT" in
+  -*) PUBLISH_OUTPUT="./$PUBLISH_OUTPUT" ;;
+esac
+if ! command -p link "$STAGED_OUTPUT" "$PUBLISH_OUTPUT" 2>/dev/null; then
   terminal_print_value "${RED}Error: Output path changed during download. Remove the unexpected path and retry: " "$OUTPUT" "${NC}" >&2
   exit 1
 fi
