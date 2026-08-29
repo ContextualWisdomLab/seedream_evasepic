@@ -9,6 +9,7 @@
 - 다양한 셸 환경에서의 호환성 문제를 방지하기 위해 `echo -e` 대신 `printf "%b\n"`을 사용하도록 변경했습니다.
 
 ### 보안 패치 (Security)
+- **HIGH**: `download-reference.sh`가 최종 출력 경로를 `yt-dlp`에 직접 전달하던 TOCTOU/symlink overwrite 경계를 제거했습니다. 다운로드는 동일 파일시스템의 private staging 경로에서 수행하고, 최종 게시 시 no-clobber hard-link를 사용해 다운로드 도중 출력 경로에 symlink나 다른 객체가 생기면 덮어쓰지 않고 실패합니다. 충돌 시 사용자가 예기치 않은 경로를 제거한 뒤 재시도하도록 다음 행동을 안내하며, 회귀 테스트와 CWE-59/CWE-367 추적 문서를 추가했습니다.
 - **CRITICAL**: `transcribe.sh` 스크립트에서 발생하는 파이썬 코드 인젝션(Code Injection) 취약점 수정.
   - 기존에는 악의적인 파일명(예: 큰따옴표가 포함된 파일명)을 통해 임의의 파이썬 코드가 실행될 위험이 있었습니다.
   - Heredoc을 따옴표로 감싸고(`<<'PYEOF'`) 환경 변수(`os.environ.get`)를 통해 파일 경로를 안전하게 전달하도록 변경하여 취약점을 해결했습니다.
