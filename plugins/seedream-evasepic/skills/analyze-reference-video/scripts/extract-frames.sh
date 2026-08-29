@@ -76,6 +76,11 @@ if [ ! -f "$VIDEO" ]; then
   exit 1
 fi
 
+if [ -L "$OUT_DIR" ]; then
+  printf "%b\n" "${RED}Error: Output directory cannot be a symlink to prevent overwriting sensitive files.${NC}" >&2
+  exit 1
+fi
+
 mkdir -p -- "$OUT_DIR"
 
 # Probe video metadata in a single call to reduce process overhead
