@@ -76,11 +76,12 @@ OUT_DIR="${OUTPUT%/*}"
 [ "$OUT_DIR" = "$OUTPUT" ] && OUT_DIR="."
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
+OUT_DIR_REAL="$(cd -P -- "$OUT_DIR" 2>/dev/null && pwd -P || echo "$OUT_DIR")"
 
 # Never let the downloader open a caller-controlled destination. Download into a
 # private staging directory first, then publish with Bash noclobber semantics so
 # a destination created or replaced during the network operation fails closed.
-STAGING_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/seedream-evasepic-download.XXXXXX")"
+STAGING_DIRECTORY="$(mktemp -d "${OUT_DIR}/.seedream-evasepic-download.XXXXXX")"
 cleanup_staging() {
   rm -rf -- "$STAGING_DIRECTORY"
 }
@@ -129,7 +130,21 @@ if [ -e "$OUTPUT" ]; then
 fi
 
 if ! (set -C; cat "$STAGED_OUTPUT" > "$OUTPUT") 2>/dev/null; then
-  printf "%b\n" "${RED}Error: Output path changed during download. Choose an unused output path and retry.${NC}" >&2
+  # The parent directory could have been replaced by a symlink during the download
+  if [ -L "$OUT_DIR" ] || [ ! -d "$OUT_DIR" ] || [ "$(cd -P -- "$OUT_DIR" 2>/dev/null && pwd -P || echo "$OUT_DIR")" != "$OUT_DIR_REAL" ]; then
+    printf "%b\n" "${RED}Error: Output directory changed during download. Choose an unused output path in a stable directory and retry.${NC}" >&2
+  else
+    printf "%b\n" "${RED}Error: Output path changed during download. Choose an unused output path and retry.${NC}" >&2
+  fi
+  exit 1
+fi
+
+# We must also explicitly check if OUT_DIR was changed to a symlink and fail closed,
+# even if `set -C; cat` succeeds (e.g. because the target didn't exist).
+if [ -L "$OUT_DIR" ] || [ ! -d "$OUT_DIR" ] || [ "$(cd -P -- "$OUT_DIR" 2>/dev/null && pwd -P || echo "$OUT_DIR")" != "$OUT_DIR_REAL" ]; then
+  # Remove the written file since it went to the wrong (raced) place
+  rm -f -- "$OUTPUT"
+  printf "%b\n" "${RED}Error: Output directory changed during download. Choose an unused output path in a stable directory and retry.${NC}" >&2
   exit 1
 fi
 

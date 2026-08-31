@@ -169,7 +169,7 @@ YT_DLP_ARGS_FILE="$DESTINATION_ARGS_FILE" \
     "https://example.invalid/destination-filesystem-video" "$DESTINATION_OUTPUT" >/dev/null
 
 staged_output="$(awk 'previous == "-o" { print; exit } { previous = $0 }' "$DESTINATION_ARGS_FILE")"
-if [[ "$staged_output" != ./.seedream-evasepic-download.*/* ]]; then
+if [[ "$staged_output" != "$DESTINATION_DIR"/.seedream-evasepic-download.*/* ]]; then
   echo "FAIL: yt-dlp staging must stay inside the captured destination directory" >&2
   printf 'staged output: %s\n' "$staged_output" >&2
   exit 1
