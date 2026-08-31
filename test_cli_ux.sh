@@ -44,6 +44,11 @@ if [ -n "${YT_DLP_RACE_OUTPUT:-}" ]; then
   ln -sf -- "${YT_DLP_RACE_TARGET:?}" "$YT_DLP_RACE_OUTPUT"
 fi
 
+if [ -n "${YT_DLP_RACE_PARENT:-}" ]; then
+  mv -- "$YT_DLP_RACE_PARENT" "${YT_DLP_RACE_PARENT_ORIGINAL:?}"
+  ln -s -- "${YT_DLP_RACE_PARENT_TARGET:?}" "$YT_DLP_RACE_PARENT"
+fi
+
 if [ -n "$output" ]; then
   mkdir -p -- "$(dirname -- "$output")"
   : > "$output"
@@ -151,23 +156,51 @@ fi
 echo "PASS: zero-byte regular file remains a cache miss"
 echo "====================================="
 
+echo "=== Testing destination-filesystem staging ==="
+DESTINATION_DIR="$TMP_DIR/destination-filesystem"
+DESTINATION_OUTPUT="$DESTINATION_DIR/reference.mp4"
+DESTINATION_ARGS_FILE="$TMP_DIR/destination-yt-dlp.args"
+mkdir -p -- "$DESTINATION_DIR"
+
+TMPDIR="$TMP_DIR/nonexistent-temp-filesystem" \
+PATH="$TMP_DIR:$PATH" \
+YT_DLP_ARGS_FILE="$DESTINATION_ARGS_FILE" \
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/destination-filesystem-video" "$DESTINATION_OUTPUT" >/dev/null
+
+staged_output="$(awk 'previous == "-o" { print; exit } { previous = $0 }' "$DESTINATION_ARGS_FILE")"
+if [[ "$staged_output" != ./.seedream-evasepic-download.*/* ]]; then
+  echo "FAIL: yt-dlp staging must stay inside the captured destination directory" >&2
+  printf 'staged output: %s\n' "$staged_output" >&2
+  exit 1
+fi
+if [ ! -f "$DESTINATION_OUTPUT" ]; then
+  echo "FAIL: destination-filesystem staging must publish the completed artifact" >&2
+  exit 1
+fi
+
+echo "PASS: staging ignores TMPDIR and stays on the destination filesystem"
+echo "====================================="
+
 echo "=== Testing output publish race resistance ==="
 RACE_OUTPUT="$TMP_DIR/raced-reference.mp4"
 RACE_TARGET="$TMP_DIR/protected-target.txt"
 RACE_ARGS_FILE="$TMP_DIR/raced-yt-dlp.args"
 printf 'protected-target-payload\n' > "$RACE_TARGET"
 
-set +e
-race_message="$(
+race_status=0
+if race_message="$(
   PATH="$TMP_DIR:$PATH" \
   YT_DLP_ARGS_FILE="$RACE_ARGS_FILE" \
   YT_DLP_RACE_OUTPUT="$RACE_OUTPUT" \
   YT_DLP_RACE_TARGET="$RACE_TARGET" \
     bash "$SCRIPT_DIR/download-reference.sh" \
       "https://example.invalid/raced-video" "$RACE_OUTPUT" 2>&1
-)"
-race_status=$?
-set -e
+)"; then
+  race_status=0
+else
+  race_status=$?
+fi
 
 if [ "$race_status" -eq 0 ]; then
   echo "FAIL: output-path replacement during download must fail closed" >&2
@@ -178,12 +211,63 @@ if [ "$(cat "$RACE_TARGET")" != "protected-target-payload" ]; then
   exit 1
 fi
 if ! grep -q -F "Output path changed during download" <<< "$race_message"; then
+  echo "FAIL: race rejection must identify the destination mutation" >&2
+  printf '%s\n' "$race_message" >&2
+  exit 1
+fi
+if ! grep -q -F "Choose an unused output path and retry." <<< "$race_message"; then
   echo "FAIL: race rejection must tell the caller to retry with an unused output path" >&2
   printf '%s\n' "$race_message" >&2
   exit 1
 fi
 
 echo "PASS: output publish fails closed when the destination is replaced during download"
+echo "====================================="
+
+echo "=== Testing parent-directory replacement resistance ==="
+PARENT_RACE_ROOT="$TMP_DIR/parent-race"
+PARENT_RACE_DIR="$PARENT_RACE_ROOT/destination"
+PARENT_RACE_ORIGINAL="$PARENT_RACE_ROOT/original-destination"
+PARENT_RACE_TARGET="$PARENT_RACE_ROOT/attacker-target"
+PARENT_RACE_OUTPUT="$PARENT_RACE_DIR/reference.mp4"
+PARENT_RACE_ARGS_FILE="$TMP_DIR/parent-race-yt-dlp.args"
+mkdir -p -- "$PARENT_RACE_DIR" "$PARENT_RACE_TARGET"
+
+parent_race_status=0
+if parent_race_message="$(
+  PATH="$TMP_DIR:$PATH" \
+  YT_DLP_ARGS_FILE="$PARENT_RACE_ARGS_FILE" \
+  YT_DLP_RACE_PARENT="$PARENT_RACE_DIR" \
+  YT_DLP_RACE_PARENT_ORIGINAL="$PARENT_RACE_ORIGINAL" \
+  YT_DLP_RACE_PARENT_TARGET="$PARENT_RACE_TARGET" \
+    bash "$SCRIPT_DIR/download-reference.sh" \
+      "https://example.invalid/parent-raced-video" "$PARENT_RACE_OUTPUT" 2>&1
+)"; then
+  parent_race_status=0
+else
+  parent_race_status=$?
+fi
+
+if [ "$parent_race_status" -eq 0 ]; then
+  echo "FAIL: parent-directory replacement during download must fail closed" >&2
+  exit 1
+fi
+if [ -e "$PARENT_RACE_TARGET/reference.mp4" ]; then
+  echo "FAIL: parent-directory replacement must never redirect the completed artifact" >&2
+  exit 1
+fi
+if ! grep -q -F "Output directory changed during download" <<< "$parent_race_message"; then
+  echo "FAIL: parent-directory race rejection must identify the changed directory" >&2
+  printf '%s\n' "$parent_race_message" >&2
+  exit 1
+fi
+if ! grep -q -F "Choose an unused output path in a stable directory and retry." <<< "$parent_race_message"; then
+  echo "FAIL: parent-directory race rejection must provide a concrete retry action" >&2
+  printf '%s\n' "$parent_race_message" >&2
+  exit 1
+fi
+
+echo "PASS: parent-directory replacement cannot redirect the completed artifact"
 echo "====================================="
 
 echo "=== Testing awk fallback variable binding ==="
