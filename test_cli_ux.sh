@@ -40,6 +40,10 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
+if [ -n "${YT_DLP_RACE_OUTPUT:-}" ]; then
+  ln -sf -- "${YT_DLP_RACE_TARGET:?}" "$YT_DLP_RACE_OUTPUT"
+fi
+
 if [ -n "$output" ]; then
   mkdir -p -- "$(dirname -- "$output")"
   : > "$output"
@@ -145,6 +149,41 @@ if ! grep -q -F -- "https://example.invalid/empty-video" "$EMPTY_ARGS_FILE"; the
 fi
 
 echo "PASS: zero-byte regular file remains a cache miss"
+echo "====================================="
+
+echo "=== Testing output publish race resistance ==="
+RACE_OUTPUT="$TMP_DIR/raced-reference.mp4"
+RACE_TARGET="$TMP_DIR/protected-target.txt"
+RACE_ARGS_FILE="$TMP_DIR/raced-yt-dlp.args"
+printf 'protected-target-payload\n' > "$RACE_TARGET"
+
+set +e
+race_message="$(
+  PATH="$TMP_DIR:$PATH" \
+  YT_DLP_ARGS_FILE="$RACE_ARGS_FILE" \
+  YT_DLP_RACE_OUTPUT="$RACE_OUTPUT" \
+  YT_DLP_RACE_TARGET="$RACE_TARGET" \
+    bash "$SCRIPT_DIR/download-reference.sh" \
+      "https://example.invalid/raced-video" "$RACE_OUTPUT" 2>&1
+)"
+race_status=$?
+set -e
+
+if [ "$race_status" -eq 0 ]; then
+  echo "FAIL: output-path replacement during download must fail closed" >&2
+  exit 1
+fi
+if [ "$(cat "$RACE_TARGET")" != "protected-target-payload" ]; then
+  echo "FAIL: output-path race must never overwrite the symlink target" >&2
+  exit 1
+fi
+if ! grep -q -F "Output path changed during download" <<< "$race_message"; then
+  echo "FAIL: race rejection must tell the caller to retry with an unused output path" >&2
+  printf '%s\n' "$race_message" >&2
+  exit 1
+fi
+
+echo "PASS: output publish fails closed when the destination is replaced during download"
 echo "====================================="
 
 echo "=== Testing awk fallback variable binding ==="
@@ -279,7 +318,6 @@ assert_colored_example() {
   fi
   if ! grep -Fq -- $'\033[0m' <<< "$output"; then
     echo "FAIL: $label Example string does not reset terminal color" >&2
-    printf '%s\n' "$output" >&2
     exit 1
   fi
 }
