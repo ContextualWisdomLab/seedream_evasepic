@@ -318,6 +318,7 @@ assert_colored_example() {
   fi
   if ! grep -Fq -- $'\033[0m' <<< "$output"; then
     echo "FAIL: $label Example string does not reset terminal color" >&2
+    printf '%s\n' "$output" >&2
     exit 1
   fi
 }
