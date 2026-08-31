@@ -31,3 +31,7 @@
 ## 2024-07-25 - [Bash 성능 개선] yt-dlp DASH/HLS 스트림 다운로드 병렬화 최적화
 **Learning:** yt-dlp를 사용하여 DASH/HLS 스트림 비디오를 다운로드할 때 기본적으로 단일 스레드로 진행하여 네트워크 I/O 병목이 발생할 수 있습니다.
 **Action:** yt-dlp 호출 시 `--concurrent-fragments N` (예: `--concurrent-fragments 4`) 플래그를 추가하여 프래그먼트들을 병렬로 다운로드하도록 최적화함으로써 다운로드 속도를 크게 향상시킵니다.
+
+## 2024-09-01 - Bash Subshell Forking Performance
+**Learning:** Bash에서 서브쉘(`$()`)을 사용하여 함수 출력을 캡처하는 것은 상당한 프로세스 포크 오버헤드를 발생시킵니다.
+**Action:** 유틸리티 함수에서 서브쉘 사용을 피하고 API 하위 호환성을 유지하기 위해, 선택적 출력 변수 이름을 인자로 전달받아 `printf -v`로 결과를 변수에 직접 할당하는 방식을 사용합니다.
