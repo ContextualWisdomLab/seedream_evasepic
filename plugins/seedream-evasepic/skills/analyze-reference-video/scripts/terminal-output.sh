@@ -9,25 +9,26 @@
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
   local value="${1-}"
-  local code octal control replacement
+  local out_var="${2-}"
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
-  for code in {1..31}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\${octal}"
-    printf -v replacement '\\x%02X' "$code"
-    value=${value//"$control"/"$replacement"}
-  done
-  value=${value//$'\177'/\\x7F}
+  value=${value//$'\001'/\\x01}; value=${value//$'\002'/\\x02}; value=${value//$'\003'/\\x03}; value=${value//$'\004'/\\x04}; value=${value//$'\005'/\\x05}
+  value=${value//$'\006'/\\x06}; value=${value//$'\007'/\\x07}; value=${value//$'\010'/\\x08}; value=${value//$'\011'/\\x09}; value=${value//$'\012'/\\x0A}
+  value=${value//$'\013'/\\x0B}; value=${value//$'\014'/\\x0C}; value=${value//$'\015'/\\x0D}; value=${value//$'\016'/\\x0E}; value=${value//$'\017'/\\x0F}
+  value=${value//$'\020'/\\x10}; value=${value//$'\021'/\\x11}; value=${value//$'\022'/\\x12}; value=${value//$'\023'/\\x13}; value=${value//$'\024'/\\x14}
+  value=${value//$'\025'/\\x15}; value=${value//$'\026'/\\x16}; value=${value//$'\027'/\\x17}; value=${value//$'\030'/\\x18}; value=${value//$'\031'/\\x19}
+  value=${value//$'\032'/\\x1A}; value=${value//$'\033'/\\x1B}; value=${value//$'\034'/\\x1C}; value=${value//$'\035'/\\x1D}; value=${value//$'\036'/\\x1E}
+  value=${value//$'\037'/\\x1F}; value=${value//$'\177'/\\x7F}
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
-  for code in {128..159}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\302\\${octal}"
-    printf -v replacement '\\u%04X' "$code"
-    value=${value//"$control"/"$replacement"}
-  done
+  value=${value//$'\xc2\200'/\\u0080}; value=${value//$'\xc2\201'/\\u0081}; value=${value//$'\xc2\202'/\\u0082}; value=${value//$'\xc2\203'/\\u0083}; value=${value//$'\xc2\204'/\\u0084}
+  value=${value//$'\xc2\205'/\\u0085}; value=${value//$'\xc2\206'/\\u0086}; value=${value//$'\xc2\207'/\\u0087}; value=${value//$'\xc2\210'/\\u0088}; value=${value//$'\xc2\211'/\\u0089}
+  value=${value//$'\xc2\212'/\\u008A}; value=${value//$'\xc2\213'/\\u008B}; value=${value//$'\xc2\214'/\\u008C}; value=${value//$'\xc2\215'/\\u008D}; value=${value//$'\xc2\216'/\\u008E}
+  value=${value//$'\xc2\217'/\\u008F}; value=${value//$'\xc2\220'/\\u0090}; value=${value//$'\xc2\221'/\\u0091}; value=${value//$'\xc2\222'/\\u0092}; value=${value//$'\xc2\223'/\\u0093}
+  value=${value//$'\xc2\224'/\\u0094}; value=${value//$'\xc2\225'/\\u0095}; value=${value//$'\xc2\226'/\\u0096}; value=${value//$'\xc2\227'/\\u0097}; value=${value//$'\xc2\230'/\\u0098}
+  value=${value//$'\xc2\231'/\\u0099}; value=${value//$'\xc2\232'/\\u009A}; value=${value//$'\xc2\233'/\\u009B}; value=${value//$'\xc2\234'/\\u009C}; value=${value//$'\xc2\235'/\\u009D}
+  value=${value//$'\xc2\236'/\\u009E}; value=${value//$'\xc2\237'/\\u009F}
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
   # from changing terminal line structure or the visual ordering of a path/URL.
@@ -51,7 +52,11 @@ terminal_safe_text() {
   value=${value//$'\330\234'/\\u061C}     # ARABIC LETTER MARK
   value=${value//$'\357\273\277'/\\uFEFF} # ZERO WIDTH NO-BREAK SPACE/BOM
 
-  printf '%s' "$value"
+  if [[ -n "$out_var" ]]; then
+    printf -v "$out_var" '%s' "$value"
+  else
+    printf '%s' "$value"
+  fi
 }
 
 # Print trusted ANSI prefix/suffix around a neutralized untrusted value.
@@ -59,8 +64,8 @@ terminal_print_value() {
   local prefix="${1-}"
   local value="${2-}"
   local suffix="${3-}"
-  local safe_value
+  local safe_value=""
 
-  safe_value="$(terminal_safe_text "$value")"
+  terminal_safe_text "$value" safe_value
   printf '%b%s%b\n' "$prefix" "$safe_value" "$suffix"
 }
