@@ -147,6 +147,36 @@ fi
 echo "PASS: zero-byte regular file remains a cache miss"
 echo "====================================="
 
+echo "=== Testing symlink rejection for output cache ==="
+SYMLINK_TEST_DIR="$(mktemp -d)"
+SYMLINK_OUTPUT="$SYMLINK_TEST_DIR/symlink-reference.mp4"
+SYMLINK_TARGET="$SYMLINK_TEST_DIR/symlink-target.mp4"
+: > "$SYMLINK_TARGET"
+ln -s -- "$SYMLINK_TARGET" "$SYMLINK_OUTPUT"
+
+set +e
+symlink_status=0
+symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$SYMLINK_OUTPUT" 2>&1)" || symlink_status=$?
+set -e
+
+if [ "$symlink_status" -ne 1 ]; then
+  echo "FAIL: symlink output path must fail with exit code 1" >&2
+  rm -rf -- "$SYMLINK_TEST_DIR"
+  echo "TEST FAILED" >&2
+  exit 1
+fi
+if ! grep -q -F "Output path is a symlink" <<< "$symlink_output"; then
+  echo "FAIL: symlink rejection must output clear error message" >&2
+  printf '%s\n' "$symlink_output" >&2
+  rm -rf -- "$SYMLINK_TEST_DIR"
+  echo "TEST FAILED" >&2
+  exit 1
+fi
+
+rm -rf -- "$SYMLINK_TEST_DIR"
+echo "PASS: symlink output path is explicitly rejected"
+echo "====================================="
+
 echo "=== Testing awk fallback variable binding ==="
 if grep -n -F 'awk "BEGIN' "$SCRIPT_DIR/extract-frames.sh"; then
   echo "FAIL: extract-frames.sh must not interpolate shell variables into an awk program string" >&2
