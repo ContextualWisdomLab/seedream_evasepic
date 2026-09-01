@@ -55,7 +55,12 @@ terminal_safe_text() {
   if [[ -n "$out_var" ]]; then
     printf -v "$out_var" '%s' "$value"
   else
+    local out_var="${2-}"
+  if [[ -n "$out_var" ]]; then
+    printf -v "$out_var" '%s' "$value"
+  else
     printf '%s' "$value"
+  fi
   fi
 }
 
@@ -64,7 +69,7 @@ terminal_print_value() {
   local prefix="${1-}"
   local value="${2-}"
   local suffix="${3-}"
-  local safe_value=""
+  local safe_value=""=""
 
   terminal_safe_text "$value" safe_value
   printf '%b%s%b\n' "$prefix" "$safe_value" "$suffix"
