@@ -1,5 +1,7 @@
 # seedream_evasepic
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ContextualWisdomLab/seedream_evasepic)
+
 > **Product brief in → 5-episode cinematic series prompt kit out.**
 > Built for Seedream (image) + Seedance 2.0 (video) by ByteDance.
 > Optimized for K-beauty / cosmetics brands.
