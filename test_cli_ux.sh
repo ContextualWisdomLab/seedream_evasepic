@@ -81,6 +81,8 @@ EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
 CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
 mkdir -p -- "$CACHE_HIT_PATH"
 ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
+ln -s -- "$(command -v wc)" "$CACHE_HIT_PATH/wc"
+ln -s -- "$(command -v awk)" "$CACHE_HIT_PATH/awk"
 printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
 cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
 
@@ -300,3 +302,29 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing human-readable file size output ==="
+DUMMY_MB_FILE="$TMP_DIR/dummy_mb_file.mp4"
+dd if=/dev/zero of="$DUMMY_MB_FILE" bs=1024 count=3000 2>/dev/null
+PATH="$TMP_DIR:$PATH" \
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/dummy-mb" "$DUMMY_MB_FILE" > "$TMP_DIR/dummy_mb_out" 2>&1 || true
+
+if ! grep -q "Size: 2.9 MB" "$TMP_DIR/dummy_mb_out"; then
+  echo "FAIL: download-reference.sh did not format large file size to MB" >&2
+  cat "$TMP_DIR/dummy_mb_out" >&2
+  exit 1
+fi
+
+DUMMY_KB_FILE="$TMP_DIR/dummy_kb_file.mp4"
+dd if=/dev/zero of="$DUMMY_KB_FILE" bs=1024 count=500 2>/dev/null
+PATH="$TMP_DIR:$PATH" \
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/dummy-kb" "$DUMMY_KB_FILE" > "$TMP_DIR/dummy_kb_out" 2>&1 || true
+
+if ! grep -q "Size: 500.0 KB" "$TMP_DIR/dummy_kb_out"; then
+  echo "FAIL: download-reference.sh did not format medium file size to KB" >&2
+  cat "$TMP_DIR/dummy_kb_out" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh outputs human-readable file sizes"
+echo "====================================="

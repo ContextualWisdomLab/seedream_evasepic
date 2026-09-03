@@ -41,6 +41,16 @@ fi
 # the shared terminal-neutralization boundary.
 if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
   terminal_print_value "${GREEN}File already exists, skipping download: " "$OUTPUT" "${NC}"
+  FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
+  FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
+  if [ -n "$FILE_SIZE_BYTES" ] && [ "$FILE_SIZE_BYTES" -ge 1048576 ]; then
+    FILE_SIZE_FORMATTED=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {printf "%.1f MB", bytes / 1048576}')
+  elif [ -n "$FILE_SIZE_BYTES" ] && [ "$FILE_SIZE_BYTES" -ge 1024 ]; then
+    FILE_SIZE_FORMATTED=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {printf "%.1f KB", bytes / 1024}')
+  else
+    FILE_SIZE_FORMATTED="${FILE_SIZE_BYTES} bytes"
+  fi
+  terminal_print_value "${CYAN}Size: " "${FILE_SIZE_FORMATTED}" "${NC}"
   exit 0
 fi
 
@@ -103,5 +113,12 @@ terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 # Optimization: Use native bash parameter expansion instead of spawning a tr process
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
+if [ -n "$FILE_SIZE_BYTES" ] && [ "$FILE_SIZE_BYTES" -ge 1048576 ]; then
+  FILE_SIZE_FORMATTED=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {printf "%.1f MB", bytes / 1048576}')
+elif [ -n "$FILE_SIZE_BYTES" ] && [ "$FILE_SIZE_BYTES" -ge 1024 ]; then
+  FILE_SIZE_FORMATTED=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {printf "%.1f KB", bytes / 1024}')
+else
+  FILE_SIZE_FORMATTED="${FILE_SIZE_BYTES} bytes"
+fi
+terminal_print_value "${CYAN}Size: " "${FILE_SIZE_FORMATTED}" "${NC}"
 
