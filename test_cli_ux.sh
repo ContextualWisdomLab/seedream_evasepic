@@ -162,27 +162,41 @@ echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
 echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument: <url>"; then
-  echo "FAIL: download-reference.sh did not print explicit error message for <url>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/download-reference.sh" "http://example.com" 2>&1 | grep -q "Error: Missing required argument: <output_path>"; then
-  echo "FAIL: download-reference.sh did not print explicit error message for <output_path>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/extract-frames.sh" 2>&1 | grep -q "Error: Missing required argument: <video_path>"; then
-  echo "FAIL: extract-frames.sh did not print explicit error message for <video_path>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/extract-frames.sh" "/tmp/video.mp4" 2>&1 | grep -q "Error: Missing required argument: <output_dir>"; then
-  echo "FAIL: extract-frames.sh did not print explicit error message for <output_dir>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/transcribe.sh" 2>&1 | grep -q "Error: Missing required argument: <audio_path>"; then
-  echo "FAIL: transcribe.sh did not print explicit error message for <audio_path>" >&2
-  exit 1
-fi
-echo "PASS: all scripts print explicit error messages for missing arguments"
+assert_missing_argument_error() {
+  local expected_message="$1"
+  shift
+  local output
+  local status=0
+
+  output="$("$@" 2>&1)" || status=$?
+  if [ "$status" -ne 2 ]; then
+    echo "FAIL: $* returned $status for a missing required argument; expected exit 2" >&2
+    printf '%s\n' "$output" >&2
+    exit 1
+  fi
+  if ! grep -Fq -- "$expected_message" <<< "$output"; then
+    echo "FAIL: $* did not print: $expected_message" >&2
+    printf '%s\n' "$output" >&2
+    exit 1
+  fi
+}
+
+assert_missing_argument_error \
+  "Error: Missing required argument: <url>" \
+  bash "$SCRIPT_DIR/download-reference.sh"
+assert_missing_argument_error \
+  "Error: Missing required argument: <output_path>" \
+  bash "$SCRIPT_DIR/download-reference.sh" "http://example.com"
+assert_missing_argument_error \
+  "Error: Missing required argument: <video_path>" \
+  bash "$SCRIPT_DIR/extract-frames.sh"
+assert_missing_argument_error \
+  "Error: Missing required argument: <output_dir>" \
+  bash "$SCRIPT_DIR/extract-frames.sh" "/tmp/video.mp4"
+assert_missing_argument_error \
+  "Error: Missing required argument: <audio_path>" \
+  bash "$SCRIPT_DIR/transcribe.sh"
+echo "PASS: all scripts return exit 2 and print explicit missing-argument errors"
 echo "====================================="
 
 echo "=== Testing usage block for invalid arguments ==="
@@ -315,4 +329,3 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
-
