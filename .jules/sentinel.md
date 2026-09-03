@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2026-09-03 - Prevent Symlink/TOCTOU Vulnerability on Output Paths
+**Vulnerability:** The script previously allowed output paths that could be symlinks without explicit rejection, leading to potential file overwrite or TOCTOU attacks when the cache logic bypasses or overwrites.
+**Learning:** Adding `! -L` inside the cache hit condition treats symlinks as cache misses, allowing malicious writes to proceed.
+**Prevention:** Explicitly reject symlinks (`if [ -L "$FILE" ]; then exit 1; fi`) immediately before evaluating cache conditions for target output paths.
