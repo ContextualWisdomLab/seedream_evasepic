@@ -8,10 +8,12 @@
 
 
 
+
 ## 2026-07-10 - yt-dlp 인자 주입(Argument Injection) 취약점 수정
 **Vulnerability:** yt-dlp 실행 시 외부 입력 URL이 검증 없이 인자로 사용되어 악의적인 옵션 주입 가능
 **Learning:** bash 스크립트에서 외부 입력을 명령어 인자로 넘길 때 하이픈(-)으로 시작하는 문자열이 옵션으로 오인될 수 있음
 **Prevention:** 명령어와 인자 사이에 '--'를 명시하여 옵션의 끝을 알리고, 변수가 순수한 인자로만 처리되도록 방어해야 함
+
 
 
 
@@ -27,10 +29,12 @@
 
 
 
+
 ## 2026-07-12 - [CRITICAL] Arithmetic injection via missing numeric validation
 **Vulnerability:** The `extract-frames.sh` script does not validate the `NUM_FRAMES` argument, exposing arithmetic operations and `bc` to potential arithmetic or command injection via malformed input.
 **Learning:** Numeric inputs passed from command line should be strictly validated before being passed to arithmetic evaluation or external tools.
 **Prevention:** Validate numeric inputs strictly using POSIX-compatible regex like `echo "$VAR" | grep -Eq '^[1-9][0-9]*$'` prior to usage.
+
 
 
 
@@ -47,6 +51,7 @@
 
 
 
+
 ## 2026-07-07 to 2026-07-13 - [Command and Option Injection in Bash Scripts]
 **Vulnerability:** [Unvalidated arithmetic expressions in `bc`, direct `awk` program interpolation, and option injection in `yt-dlp` argument parsing]
 **Learning:** [Keep arithmetic inputs strictly validated, keep the `awk` program fixed while passing values with `-v`, and use `--` before dynamic `yt-dlp` arguments; direct arbitrary command execution applies to the interpolated `awk` program case]
@@ -56,10 +61,12 @@
 
 
 
+
 ## 2024-07-13 - [Option Injection in Bash Utilities]
 **Vulnerability:** User-controlled file paths were passed directly to bash utilities (dirname, mkdir, ls, basename) without the end-of-options separator (--), allowing for option injection if a path begins with a hyphen.
 **Learning:** By default, utilities parse arguments starting with `-` as options. Using these without `--` before dynamic variables is a common command injection vector.
 **Prevention:** Always use the `--` flag separator before passing user-controlled variables to standard CLI tools like `dirname`, `mkdir`, `basename`, and `ls`.
+
 
 
 
@@ -76,6 +83,7 @@
 
 
 
+
 ## 2026-08-05 - Actual terminal control bytes require output neutralization
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
@@ -85,10 +93,12 @@
 
 
 
+
 ## 2026-08-06 - Prevent ANSI Control Sequence Injection in video metadata extraction
 **Vulnerability:** The script `extract-frames.sh` reads untrusted video metadata (`duration`, `resolution`, `fps`) using `ffprobe`. These raw strings were directly passed to `printf "%b"` to print them alongside ANSI colors, risking that embedded terminal control sequences are evaluated if the metadata values contained strings like `\033[31m`.
 **Learning:** Terminal control bytes are not only dangerous in path names or explicit URLs but also when external tools dynamically read untrusted data such as video metadata. Such metadata might contain shell injection patterns or valid ANSI control characters intentionally embedded to disrupt or exploit the developer's terminal.
 **Prevention:** Sanitize untrusted metadata values utilizing `terminal_safe_text` into dedicated variables and subsequently emit them as plain string format `%s`, strictly keeping the evaluated ANSI sequence format string `%b` exclusively for trusted color controls. Furthermore, update tests to rigorously detect these fields within terminal control sinks.
+
 
 
 
