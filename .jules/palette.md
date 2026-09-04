@@ -17,3 +17,6 @@
 **Learning:** CLI 스크립트에서 누락된 의존성을 자동 설치하더라도, 설치 경로가 사용자의 시스템 환경 변수($PATH)에 포함되어 있지 않으면 이후 실행 단계에서 계속 실패하게 됩니다. 이는 사용자에게 큰 혼란을 줍니다.
 **Action:** 자동 설치 시도 직후에 해당 실행 파일이 `$PATH`에서 접근 가능한지 즉시 재확인하는 로직을 추가했습니다. 만약 접근이 불가하다면, 사용자에게 `$PATH` 환경 변수 설정이나 수동 설치가 필요하다는 명확하고 구체적인 오류 안내 메시지를 제공하여 문제 해결을 돕도록 해야 합니다.
 
+## 2025-01-20 - [CLI Argument Error UX]
+**Learning:** Generic error messages like 'Missing required argument(s)' fail to guide users on exactly what went wrong. Users benefit greatly from explicit feedback identifying which specific argument or parameter is missing.
+**Action:** When implementing CLI argument parsing, validate and report missing required arguments individually (e.g., 'Missing required argument: <url>') before evaluating optional arguments to ensure correct error reporting precedence and actionable guidance.

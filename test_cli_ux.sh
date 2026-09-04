@@ -162,11 +162,41 @@ echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
 echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument(s)."; then
-  echo "FAIL: download-reference.sh did not print explicit error message" >&2
+dl_url_status=0
+output_dl_url="$(bash "$SCRIPT_DIR/download-reference.sh" 2>&1)" || dl_url_status=$?
+if ! grep -q "Error: Missing required argument: <url>" <<< "$output_dl_url" || [ "$dl_url_status" -ne 2 ]; then
+  echo "FAIL: download-reference.sh did not print explicit error message for <url> or failed with wrong code" >&2
   exit 1
 fi
-echo "PASS: download-reference.sh prints explicit error message"
+
+dl_out_status=0
+output_dl_out="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy" 2>&1)" || dl_out_status=$?
+if ! grep -q "Error: Missing required argument: <output_path>" <<< "$output_dl_out" || [ "$dl_out_status" -ne 2 ]; then
+  echo "FAIL: download-reference.sh did not print explicit error message for <output_path> or failed with wrong code" >&2
+  exit 1
+fi
+
+ef_vid_status=0
+output_ef_vid="$(bash "$SCRIPT_DIR/extract-frames.sh" 2>&1)" || ef_vid_status=$?
+if ! grep -q "Error: Missing required argument: <video_path>" <<< "$output_ef_vid" || [ "$ef_vid_status" -ne 2 ]; then
+  echo "FAIL: extract-frames.sh did not print explicit error message for <video_path> or failed with wrong code" >&2
+  exit 1
+fi
+
+ef_out_status=0
+output_ef_out="$(bash "$SCRIPT_DIR/extract-frames.sh" "dummy" 2>&1)" || ef_out_status=$?
+if ! grep -q "Error: Missing required argument: <output_dir>" <<< "$output_ef_out" || [ "$ef_out_status" -ne 2 ]; then
+  echo "FAIL: extract-frames.sh did not print explicit error message for <output_dir> or failed with wrong code" >&2
+  exit 1
+fi
+
+tr_aud_status=0
+output_tr_aud="$(bash "$SCRIPT_DIR/transcribe.sh" 2>&1)" || tr_aud_status=$?
+if ! grep -q "Error: Missing required argument: <audio_path>" <<< "$output_tr_aud" || [ "$tr_aud_status" -ne 2 ]; then
+  echo "FAIL: transcribe.sh did not print explicit error message for <audio_path> or failed with wrong code" >&2
+  exit 1
+fi
+echo "PASS: scripts print exact error messages for missing arguments and return correct exit status"
 echo "====================================="
 
 echo "=== Testing usage block for invalid arguments ==="
