@@ -17,20 +17,6 @@ SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=terminal-output.sh
 . "$SCRIPT_DIRECTORY/terminal-output.sh"
 
-# Keep cache-hit and post-download size rendering on one contract so the same
-# byte count cannot be presented differently depending on the network path.
-format_file_size() {
-  local size_bytes="$1"
-
-  if [ "$size_bytes" -ge 1048576 ]; then
-    awk -v bytes="$size_bytes" 'BEGIN {printf "%.1f MB", bytes / 1048576}'
-  elif [ "$size_bytes" -ge 1024 ]; then
-    awk -v bytes="$size_bytes" 'BEGIN {printf "%.1f KB", bytes / 1024}'
-  else
-    printf '%s bytes' "$size_bytes"
-  fi
-}
-
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
@@ -57,7 +43,13 @@ if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
   terminal_print_value "${GREEN}File already exists, skipping download: " "$OUTPUT" "${NC}"
   FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
   FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-  FILE_SIZE_FORMATTED="$(format_file_size "$FILE_SIZE_BYTES")"
+  if [ -n "$FILE_SIZE_BYTES" ] && [ "$FILE_SIZE_BYTES" -ge 1048576 ]; then
+    FILE_SIZE_FORMATTED=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {printf "%.1f MB", bytes / 1048576}')
+  elif [ -n "$FILE_SIZE_BYTES" ] && [ "$FILE_SIZE_BYTES" -ge 1024 ]; then
+    FILE_SIZE_FORMATTED=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {printf "%.1f KB", bytes / 1024}')
+  else
+    FILE_SIZE_FORMATTED="${FILE_SIZE_BYTES} bytes"
+  fi
   terminal_print_value "${CYAN}Size: " "${FILE_SIZE_FORMATTED}" "${NC}"
   exit 0
 fi
@@ -118,9 +110,15 @@ yt-dlp \
   }
 
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-# Use native Bash whitespace removal rather than spawning an extra process.
+# Optimization: Use native bash parameter expansion instead of spawning a tr process
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-FILE_SIZE_FORMATTED="$(format_file_size "$FILE_SIZE_BYTES")"
+if [ -n "$FILE_SIZE_BYTES" ] && [ "$FILE_SIZE_BYTES" -ge 1048576 ]; then
+  FILE_SIZE_FORMATTED=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {printf "%.1f MB", bytes / 1048576}')
+elif [ -n "$FILE_SIZE_BYTES" ] && [ "$FILE_SIZE_BYTES" -ge 1024 ]; then
+  FILE_SIZE_FORMATTED=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {printf "%.1f KB", bytes / 1024}')
+else
+  FILE_SIZE_FORMATTED="${FILE_SIZE_BYTES} bytes"
+fi
 terminal_print_value "${CYAN}Size: " "${FILE_SIZE_FORMATTED}" "${NC}"
 
