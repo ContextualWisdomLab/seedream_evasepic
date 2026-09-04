@@ -9,6 +9,8 @@
 - 다양한 셸 환경에서의 호환성 문제를 방지하기 위해 `echo -e` 대신 `printf "%b\n"`을 사용하도록 변경했습니다.
 
 ### 보안 패치 (Security)
+- **HIGH**: `extract-frames.sh`에서 `ffprobe`로 추출한 미디어 메타데이터(`$DURATION`, `$RESOLUTION`, `$FPS`)를 터미널에 출력할 때 발생하는 ANSI 이스케이프 명령 삽입(Command Injection) 취약점을 수정했습니다. 안전한 출력을 위해 `terminal_safe_text` 함수로 값들을 검증하도록 변경했습니다.
+
 - **CRITICAL**: `transcribe.sh` 스크립트에서 발생하는 파이썬 코드 인젝션(Code Injection) 취약점 수정.
   - 기존에는 악의적인 파일명(예: 큰따옴표가 포함된 파일명)을 통해 임의의 파이썬 코드가 실행될 위험이 있었습니다.
   - Heredoc을 따옴표로 감싸고(`<<'PYEOF'`) 환경 변수(`os.environ.get`)를 통해 파일 경로를 안전하게 전달하도록 변경하여 취약점을 해결했습니다.
