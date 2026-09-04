@@ -307,7 +307,7 @@ DUMMY_MB_FILE="$TMP_DIR/dummy_mb_file.mp4"
 dd if=/dev/zero of="$DUMMY_MB_FILE" bs=1024 count=3000 2>/dev/null
 PATH="$TMP_DIR:$PATH" \
   bash "$SCRIPT_DIR/download-reference.sh" \
-    "https://example.invalid/dummy-mb" "$DUMMY_MB_FILE" > "$TMP_DIR/dummy_mb_out" 2>&1 || true
+    "https://example.invalid/dummy-mb" "$DUMMY_MB_FILE" > "$TMP_DIR/dummy_mb_out" 2>&1
 
 if ! grep -q "Size: 2.9 MB" "$TMP_DIR/dummy_mb_out"; then
   echo "FAIL: download-reference.sh did not format large file size to MB" >&2
@@ -319,12 +319,44 @@ DUMMY_KB_FILE="$TMP_DIR/dummy_kb_file.mp4"
 dd if=/dev/zero of="$DUMMY_KB_FILE" bs=1024 count=500 2>/dev/null
 PATH="$TMP_DIR:$PATH" \
   bash "$SCRIPT_DIR/download-reference.sh" \
-    "https://example.invalid/dummy-kb" "$DUMMY_KB_FILE" > "$TMP_DIR/dummy_kb_out" 2>&1 || true
+    "https://example.invalid/dummy-kb" "$DUMMY_KB_FILE" > "$TMP_DIR/dummy_kb_out" 2>&1
 
 if ! grep -q "Size: 500.0 KB" "$TMP_DIR/dummy_kb_out"; then
   echo "FAIL: download-reference.sh did not format medium file size to KB" >&2
   cat "$TMP_DIR/dummy_kb_out" >&2
   exit 1
 fi
-echo "PASS: download-reference.sh outputs human-readable file sizes"
+
+echo "=== Testing file-size unit boundaries ==="
+DUMMY_BYTES_FILE="$TMP_DIR/dummy_bytes_file.mp4"
+dd if=/dev/zero of="$DUMMY_BYTES_FILE" bs=1 count=1023 2>/dev/null
+bash "$SCRIPT_DIR/download-reference.sh" \
+  "https://example.invalid/dummy-bytes" "$DUMMY_BYTES_FILE" > "$TMP_DIR/dummy_bytes_out" 2>&1
+if ! grep -q -F "Size: 1023 bytes" "$TMP_DIR/dummy_bytes_out"; then
+  echo "FAIL: 1023 bytes must remain in the bytes unit" >&2
+  cat "$TMP_DIR/dummy_bytes_out" >&2
+  exit 1
+fi
+
+DUMMY_KIB_BOUNDARY_FILE="$TMP_DIR/dummy_kib_boundary_file.mp4"
+dd if=/dev/zero of="$DUMMY_KIB_BOUNDARY_FILE" bs=1024 count=1 2>/dev/null
+bash "$SCRIPT_DIR/download-reference.sh" \
+  "https://example.invalid/dummy-kib-boundary" "$DUMMY_KIB_BOUNDARY_FILE" > "$TMP_DIR/dummy_kib_boundary_out" 2>&1
+if ! grep -q -F "Size: 1.0 KB" "$TMP_DIR/dummy_kib_boundary_out"; then
+  echo "FAIL: 1024 bytes must enter the KB unit" >&2
+  cat "$TMP_DIR/dummy_kib_boundary_out" >&2
+  exit 1
+fi
+
+DUMMY_MIB_BOUNDARY_FILE="$TMP_DIR/dummy_mib_boundary_file.mp4"
+dd if=/dev/zero of="$DUMMY_MIB_BOUNDARY_FILE" bs=1024 count=1024 2>/dev/null
+bash "$SCRIPT_DIR/download-reference.sh" \
+  "https://example.invalid/dummy-mib-boundary" "$DUMMY_MIB_BOUNDARY_FILE" > "$TMP_DIR/dummy_mib_boundary_out" 2>&1
+if ! grep -q -F "Size: 1.0 MB" "$TMP_DIR/dummy_mib_boundary_out"; then
+  echo "FAIL: 1048576 bytes must enter the MB unit" >&2
+  cat "$TMP_DIR/dummy_mib_boundary_out" >&2
+  exit 1
+fi
+
+echo "PASS: download-reference.sh preserves bytes/KB/MB boundary semantics"
 echo "====================================="
