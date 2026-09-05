@@ -56,17 +56,13 @@ if [ -z "$captured_output" ] || [ "$captured_output" = "$OUTPUT" ]; then
   exit 1
 fi
 
-if [ "$status" -ne 0 ]; then
-  echo "FAIL: safe atomic publication should replace the raced final symlink without touching its target" >&2
+if [ "$status" -eq 0 ]; then
+  echo "FAIL: publication must fail closed when the final path appears during download" >&2
   exit 1
 fi
-if [ -L "$OUTPUT" ] || [ ! -f "$OUTPUT" ]; then
-  echo "FAIL: final output must be a regular published artifact, not the raced symlink" >&2
-  exit 1
-fi
-if ! grep -Fxq 'downloaded-artifact' "$OUTPUT"; then
-  echo "FAIL: safely downloaded artifact was not published to the requested output" >&2
+if [ ! -L "$OUTPUT" ]; then
+  echo "FAIL: failed publication must not silently replace the concurrently-created entry" >&2
   exit 1
 fi
 
-echo "PASS: downloader writes a private staging path and publication does not follow raced final symlinks"
+printf 'PASS: downloader stages privately and publication fails closed on a raced final path\n'
