@@ -72,21 +72,44 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
   fi
 fi
 
-# Ensure output directory exists
+# Ensure output directory exists.
 OUT_DIR="${OUTPUT%/*}"
 [ "$OUT_DIR" = "$OUTPUT" ] && OUT_DIR="."
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
+# A zero-byte regular file has historically meant cache miss. Remove only that
+# directory entry before staging. If another entry appears later, publication
+# fails atomically instead of asking yt-dlp to open the caller-owned final path.
+if [ -e "$OUTPUT" ] || [ -L "$OUTPUT" ]; then
+  if [ -f "$OUTPUT" ] && [ ! -L "$OUTPUT" ] && [ ! -s "$OUTPUT" ]; then
+    rm -f -- "$OUTPUT"
+  else
+    printf "%b\n" "${RED}Error: output path changed before download; refusing to overwrite it.${NC}" >&2
+    exit 1
+  fi
+fi
+
+STAGING_DIR="$(mktemp -d "$OUT_DIR/.seedream-download.XXXXXX")"
+STAGED_OUTPUT="$STAGING_DIR/reference.mp4"
+cleanup_staging() {
+  if [ -n "${STAGING_DIR:-}" ] && [ -d "$STAGING_DIR" ]; then
+    rm -rf -- "$STAGING_DIR"
+  fi
+}
+trap cleanup_staging EXIT HUP INT TERM
+
 terminal_print_value "${CYAN}Downloading from: " "$URL" "${NC}"
 terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
 
-# Use best quality mp4 that fits common editors. Max 1080p to avoid huge files.
-# -f format spec: prefer mp4, cap at 1080p
+# yt-dlp is intentionally confined to a private staging path. The caller-owned
+# final pathname is published only after a successful download, so a symlink
+# swap at that final component cannot redirect yt-dlp's writes.
 yt-dlp \
   -f "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best" \
   --merge-output-format mp4 \
-  -o "$OUTPUT" \
+  --force-overwrites \
+  -o "$STAGED_OUTPUT" \
   --no-playlist \
   --quiet --progress \
   --concurrent-fragments 4 \
@@ -104,9 +127,26 @@ yt-dlp \
     exit 1
   }
 
-terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-# Optimization: Use native bash parameter expansion instead of spawning a tr process
-FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
-FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
+if [ -L "$STAGED_OUTPUT" ] || [ ! -f "$STAGED_OUTPUT" ] || [ ! -s "$STAGED_OUTPUT" ]; then
+  printf "%b\n" "${RED}Error: downloader did not produce a non-empty regular staged artifact.${NC}" >&2
+  exit 1
+fi
 
+FILE_SIZE_BYTES="$(wc -c < "$STAGED_OUTPUT")"
+FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
+
+# link(2)-style publication is same-filesystem and no-clobber: it fails if any
+# file, directory, or symlink appeared at OUTPUT while the download was running,
+# and it never follows that final entry. Removing the private staging name after
+# the link leaves the published artifact as the only directory entry we own.
+if ! ln -- "$STAGED_OUTPUT" "$OUTPUT"; then
+  printf "%b\n" "${RED}Error: output path changed during download; refusing to publish.${NC}" >&2
+  exit 1
+fi
+rm -f -- "$STAGED_OUTPUT"
+rmdir -- "$STAGING_DIR"
+STAGING_DIR=""
+trap - EXIT HUP INT TERM
+
+terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
+terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
