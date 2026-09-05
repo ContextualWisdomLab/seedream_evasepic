@@ -162,8 +162,8 @@ echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
 echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument(s)."; then
-  echo "FAIL: download-reference.sh did not print explicit error message" >&2
+if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument: <url>"; then
+  echo "FAIL: download-reference.sh did not print explicit error message for missing <url>" >&2
   exit 1
 fi
 echo "PASS: download-reference.sh prints explicit error message"
