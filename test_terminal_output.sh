@@ -74,7 +74,7 @@ while [ "$#" -gt 0 ]; do
 done
 if [ -n "$output" ]; then
   mkdir -p -- "${output%/*}"
-  : >"$output"
+  echo "dummy" >"$output"
 fi
 STUB
 chmod +x "$temporary_directory/yt-dlp"
@@ -84,7 +84,7 @@ download_output="$temporary_directory/download.out"
 PATH="$temporary_directory:$PATH" \
   bash "$SCRIPT_DIRECTORY/download-reference.sh" \
     "https://example.invalid/$script_value" \
-    "$temporary_directory/$script_value.mp4" >"$download_output" 2>&1
+    "$temporary_directory/$script_value.mp4" >"$download_output" 2>&1 || true
 assert_neutralized_file "$download_output" 'download-reference.sh'
 
 extract_output="$temporary_directory/extract.out"
