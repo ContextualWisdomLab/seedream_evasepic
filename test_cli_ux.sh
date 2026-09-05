@@ -300,3 +300,42 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing human-readable size formatting ==="
+TEST_HR_DIR="$(mktemp -d)"
+HR_OUTPUT="$TEST_HR_DIR/hr-test.mp4"
+HR_PATH_DIR="$TEST_HR_DIR/bin"
+mkdir -p "$HR_PATH_DIR"
+cat > "$HR_PATH_DIR/yt-dlp" <<'MOCK'
+#!/bin/bash
+OUTPUT_FILE=""
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -o) OUTPUT_FILE="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+if [ -n "$OUTPUT_FILE" ]; then
+  head -c 1536000 /dev/zero > "$OUTPUT_FILE"
+fi
+exit 0
+MOCK
+chmod +x "$HR_PATH_DIR/yt-dlp"
+
+set +e
+hr_output="$(PATH="$HR_PATH_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$HR_OUTPUT" 2>&1)"
+hr_status=$?
+set -e
+
+if [ "$hr_status" -ne 0 ]; then
+  echo "FAIL: download-reference.sh failed during hr size test" >&2
+  printf '%s\n' "$hr_output" >&2
+  exit 1
+fi
+if ! grep -q -F "Size: 1.46 MB" <<< "$hr_output"; then
+  echo "FAIL: download-reference.sh did not print correct human-readable size (1.46 MB)" >&2
+  printf '%s\n' "$hr_output" >&2
+  exit 1
+fi
+rm -rf -- "$TEST_HR_DIR"
+echo "PASS: download-reference.sh correctly formats size to human-readable (1.46 MB)"
+echo "====================================="
