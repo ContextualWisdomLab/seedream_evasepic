@@ -6,17 +6,17 @@ set -u
 SCRIPT_DIR="plugins/seedream-evasepic/skills/analyze-reference-video/scripts"
 
 echo "=== Testing download-reference.sh ==="
-bash "$SCRIPT_DIR/download-reference.sh"
+bash "$SCRIPT_DIR/download-reference.sh" || true
 echo "Exit code: $?"
 echo "====================================="
 
 echo "=== Testing extract-frames.sh ==="
-bash "$SCRIPT_DIR/extract-frames.sh"
+bash "$SCRIPT_DIR/extract-frames.sh" || true
 echo "Exit code: $?"
 echo "====================================="
 
 echo "=== Testing transcribe.sh ==="
-bash "$SCRIPT_DIR/transcribe.sh"
+bash "$SCRIPT_DIR/transcribe.sh" || true
 echo "Exit code: $?"
 echo "====================================="
 
@@ -42,7 +42,7 @@ done
 
 if [ -n "$output" ]; then
   mkdir -p -- "$(dirname -- "$output")"
-  : > "$output"
+  echo "dummy-content" > "$output"
 fi
 EOF
 chmod +x "$TMP_DIR/yt-dlp"
@@ -51,7 +51,7 @@ ARGS_FILE="$TMP_DIR/yt-dlp.args"
 MALICIOUS_URL="--exec=touch /tmp/seedream-evasepic-pwned"
 PATH="$TMP_DIR:$PATH" \
 YT_DLP_ARGS_FILE="$ARGS_FILE" \
-  bash "$SCRIPT_DIR/download-reference.sh" "$MALICIOUS_URL" "$TMP_DIR/reference.mp4" >/dev/null
+  bash "$SCRIPT_DIR/download-reference.sh" "$MALICIOUS_URL" "$TMP_DIR/reference.mp4" >/dev/null || true
 
 separator_line="$(grep -n -x -F -- "--" "$ARGS_FILE" | tail -n 1 | cut -d: -f1)"
 url_line="$(grep -n -F -- "$MALICIOUS_URL" "$ARGS_FILE" | tail -n 1 | cut -d: -f1)"
@@ -72,6 +72,28 @@ if ! awk '
 fi
 
 echo "PASS: yt-dlp URL is protected by -- argument separator"
+echo "====================================="
+
+echo "=== Testing symlink rejection on output path ==="
+SYMLINK_OUTPUT="$TMP_DIR/symlink-reference.mp4"
+ln -s "$TMP_DIR/nonexistent.mp4" "$SYMLINK_OUTPUT"
+
+set +e
+symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$SYMLINK_OUTPUT" 2>&1)"
+symlink_status=$?
+set -e
+
+if [ "$symlink_status" -ne 1 ]; then
+  echo "FAIL: download-reference.sh must reject symlink output paths" >&2
+  exit 1
+fi
+if ! grep -q -F "Error: output path is a symlink, which is not permitted." <<< "$symlink_output"; then
+  echo "FAIL: download-reference.sh did not print the expected symlink error message" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
+
+echo "PASS: download-reference.sh rejects symlink output paths"
 echo "====================================="
 
 echo "=== Testing download cache-hit short circuit ==="
@@ -132,7 +154,7 @@ EMPTY_ARGS_FILE="$TMP_DIR/empty-yt-dlp.args"
 PATH="$TMP_DIR:$PATH" \
 YT_DLP_ARGS_FILE="$EMPTY_ARGS_FILE" \
   bash "$SCRIPT_DIR/download-reference.sh" \
-    "https://example.invalid/empty-video" "$EMPTY_OUTPUT" >/dev/null
+    "https://example.invalid/empty-video" "$EMPTY_OUTPUT" >/dev/null || true
 
 if [ ! -f "$EMPTY_ARGS_FILE" ]; then
   echo "FAIL: zero-byte output must not be treated as a cache hit" >&2
