@@ -74,6 +74,28 @@ fi
 echo "PASS: yt-dlp URL is protected by -- argument separator"
 echo "====================================="
 
+echo "=== Testing symlink rejection on output path ==="
+SYMLINK_OUTPUT="$TMP_DIR/symlink-reference.mp4"
+ln -s "$TMP_DIR/nonexistent.mp4" "$SYMLINK_OUTPUT"
+
+set +e
+symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$SYMLINK_OUTPUT" 2>&1)"
+symlink_status=$?
+set -e
+
+if [ "$symlink_status" -ne 1 ]; then
+  echo "FAIL: download-reference.sh must reject symlink output paths" >&2
+  exit 1
+fi
+if ! grep -q -F "Error: output path is a symlink, which is not permitted." <<< "$symlink_output"; then
+  echo "FAIL: download-reference.sh did not print the expected symlink error message" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
+
+echo "PASS: download-reference.sh rejects symlink output paths"
+echo "====================================="
+
 echo "=== Testing download cache-hit short circuit ==="
 CACHED_OUTPUT="$TMP_DIR/cached-reference.mp4"
 CACHED_ARGS_FILE="$TMP_DIR/cached-yt-dlp.args"
