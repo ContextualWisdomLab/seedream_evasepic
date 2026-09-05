@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### 문서·라이선스 경계
+- Root README를 ContextualWisdomLab fork의 제품 가치·사용 경로·검증·upstream 권위가 바로 보이도록 정리하고, fork에서 별도로 검증되지 않은 release/deployment 상태를 주장하지 않도록 했습니다.
+- Upstream README와 marketplace metadata는 MIT를 선언하지만 upstream root LICENSE/완전한 저작권·허가 고지가 없다는 provenance blocker를 명시했습니다. ContextualWisdomLab이 새 저작권자나 완전한 MIT grant를 임의로 만들어내지 않습니다.
+- `awesome-seedance-2-prompts`에서 가져오거나 변형했다고 저장소 자체가 밝힌 curated prompt 자료에 대해 CC BY 4.0의 상업 이용 가능성과 attribution/license-link/change-indication 의무를 `THIRD_PARTY_NOTICES.md`에 기록했습니다.
+- `arcads-claude-code`는 MIT source reference/inspiration으로 별도 식별하고, 실제 파일 복제/파생 여부는 file-level provenance evidence 없이 단정하지 않습니다.
+
 ### 사용자 경험 개선 (UX)
 - 참조 영상 다운로드 대상이 이미 존재하는 0바이트 초과 일반 파일이면 `yt-dlp` 설치 확인과 네트워크 호출 전에 안전하게 종료하여 기존 아티팩트를 보존합니다. 0바이트 파일과 누락 경로는 계속 다운로드하며, 캐시 적중·미스 분기를 실행 가능한 CLI 테스트로 검증합니다.
 - 참조 영상 분석 전에 `ffprobe` 실행 가능 여부를 `ffmpeg`와 별도로 검증합니다. 도구가 없으면 출력 디렉터리 생성이나 메타데이터 처리 전에 고정된 오류 원인과 설치 명령을 stderr에 표시하고 종료합니다.
