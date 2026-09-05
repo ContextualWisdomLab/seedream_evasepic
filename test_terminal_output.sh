@@ -95,6 +95,35 @@ FFPROBE=/bin/true \
     "$temporary_directory/frames" >"$extract_output" 2>&1 || true
 assert_neutralized_file "$extract_output" 'extract-frames.sh'
 
+printf '=== Testing successful ffprobe metadata display ===\n'
+cat >"$temporary_directory/ffprobe" <<'STUB'
+#!/bin/bash
+printf 'duration=1.0\n'
+printf 'width=1920\033[31mPWNED\033[0m\n'
+printf 'height=1080\n'
+printf 'r_frame_rate=30/1\n'
+printf 'codec_type=video\n'
+STUB
+chmod +x "$temporary_directory/ffprobe"
+metadata_video="$temporary_directory/metadata-video.mp4"
+: >"$metadata_video"
+metadata_output="$temporary_directory/metadata.out"
+if ! FFMPEG=/bin/true \
+  FFPROBE="$temporary_directory/ffprobe" \
+  bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
+    "$metadata_video" "$temporary_directory/metadata-frames" 1 >"$metadata_output" 2>&1; then
+  cat "$metadata_output" >&2
+  fail 'extract-frames.sh metadata fixture did not reach the successful display path'
+fi
+if LC_ALL=C grep -Fq -- $'\033[31mPWNED' "$metadata_output"; then
+  fail 'extract-frames.sh emitted raw ffprobe terminal controls'
+fi
+if ! grep -Fq -- '\x1B[31mPWNED\x1B[0m' "$metadata_output"; then
+  cat "$metadata_output" >&2
+  fail 'extract-frames.sh did not render ffprobe terminal controls visibly'
+fi
+printf 'PASS: successful ffprobe metadata is neutralized before terminal output\n'
+
 transcribe_output="$temporary_directory/transcribe.out"
 bash "$SCRIPT_DIRECTORY/transcribe.sh" \
   "$temporary_directory/missing.wav" "$script_value" >"$transcribe_output" 2>&1 || true
@@ -107,7 +136,7 @@ assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path erro
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
 printf '=== Testing static terminal-output contract ===\n'
-if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO)' \
+if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO|\$DURATION|\$RESOLUTION|\$FPS)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \
   "$SCRIPT_DIRECTORY/extract-frames.sh" \
   "$SCRIPT_DIRECTORY/transcribe.sh"; then
