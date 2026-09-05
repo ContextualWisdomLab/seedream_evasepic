@@ -31,6 +31,3 @@
 ## 2024-07-25 - [Bash 성능 개선] yt-dlp DASH/HLS 스트림 다운로드 병렬화 최적화
 **Learning:** yt-dlp를 사용하여 DASH/HLS 스트림 비디오를 다운로드할 때 기본적으로 단일 스레드로 진행하여 네트워크 I/O 병목이 발생할 수 있습니다.
 **Action:** yt-dlp 호출 시 `--concurrent-fragments N` (예: `--concurrent-fragments 4`) 플래그를 추가하여 프래그먼트들을 병렬로 다운로드하도록 최적화함으로써 다운로드 속도를 크게 향상시킵니다.
-## 2024-05-24 - Bash Loop Unrolling for Parameter Expansion
-**Learning:** Built-in command invocations (like `printf`) inside Bash loops carry significant execution overhead. For repetitive string replacements across a known set of characters, unrolling the loop into direct parameter expansions (e.g., `value=${value//pattern/replacement}`) is vastly faster.
-**Action:** When performing deterministic character neutralizations or replacements in Bash, avoid iterating with `for` loops and `printf`; use statically generated, unrolled parameter expansions to minimize subshell/invocation overhead.
