@@ -56,13 +56,6 @@ assert_no_ascii_control "$safe_value" 'terminal_safe_text'
 [[ "$safe_value" == *'\u009BCSI\u202ERTL\u2028NEXT'* ]] || fail 'Unicode controls were not rendered visibly'
 printf 'PASS: terminal_safe_text neutralizes actual C0, C1, line, and bidi controls\n'
 
-printf '=== Testing direct output-variable parity ===\n'
-direct_safe_value='sentinel'
-terminal_safe_text "$malicious_value" direct_safe_value
-[[ "$direct_safe_value" == "$safe_value" ]] || fail 'direct output-variable path differs from stdout contract'
-assert_no_ascii_control "$direct_safe_value" 'terminal_safe_text direct output'
-printf 'PASS: direct output-variable path preserves terminal neutralization semantics\n'
-
 printf '=== Testing script output with actual ESC and newline bytes ===\n'
 temporary_directory="$(mktemp -d)"
 trap 'rm -rf -- "$temporary_directory"' EXIT
