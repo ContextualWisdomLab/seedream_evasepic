@@ -56,6 +56,25 @@ assert_no_ascii_control "$safe_value" 'terminal_safe_text'
 [[ "$safe_value" == *'\u009BCSI\u202ERTL\u2028NEXT'* ]] || fail 'Unicode controls were not rendered visibly'
 printf 'PASS: terminal_safe_text neutralizes actual C0, C1, line, and bidi controls\n'
 
+printf '=== Testing exact C0/C1 substitution table coverage ===\n'
+for code in {1..31}; do
+  printf -v octal '%03o' "$code"
+  printf -v control '%b' "\\${octal}"
+  printf -v expected 'left\\x%02Xright' "$code"
+  actual="$(terminal_safe_text "left${control}right")"
+  [[ "$actual" == "$expected" ]] || fail "C0 0x$(printf '%02X' "$code") did not map to its exact visible escape"
+done
+actual="$(terminal_safe_text $'left\177right')"
+[[ "$actual" == 'left\x7Fright' ]] || fail 'DEL did not map to its exact visible escape'
+for code in {128..159}; do
+  printf -v octal '%03o' "$code"
+  printf -v control '%b' "\\302\\${octal}"
+  printf -v expected 'left\\u%04Xright' "$code"
+  actual="$(terminal_safe_text "left${control}right")"
+  [[ "$actual" == "$expected" ]] || fail "C1 U+$(printf '%04X' "$code") did not map to its exact visible escape"
+done
+printf 'PASS: every C0, DEL, and C1 table entry preserves the governed visible-escape contract\n'
+
 printf '=== Testing script output with actual ESC and newline bytes ===\n'
 temporary_directory="$(mktemp -d)"
 trap 'rm -rf -- "$temporary_directory"' EXIT
