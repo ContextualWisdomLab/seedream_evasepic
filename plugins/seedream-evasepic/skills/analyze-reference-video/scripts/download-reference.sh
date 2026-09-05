@@ -16,6 +16,8 @@ NC='\033[0m' # No Color
 SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=terminal-output.sh
 . "$SCRIPT_DIRECTORY/terminal-output.sh"
+# shellcheck source=file-size.sh
+. "$SCRIPT_DIRECTORY/file-size.sh"
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
@@ -100,8 +102,9 @@ yt-dlp \
   }
 
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-# Optimization: Use native bash parameter expansion instead of spawning a tr process
+# Keep the exact byte count while presenting standards-defined binary multiples.
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
+FILE_SIZE_STR="$(format_file_size_bytes "$FILE_SIZE_BYTES")"
+terminal_print_value "${CYAN}Size: " "$FILE_SIZE_STR" "${NC}"
 
