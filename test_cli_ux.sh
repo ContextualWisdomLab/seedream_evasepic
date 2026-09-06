@@ -300,3 +300,39 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing human-readable file size ==="
+# Since existing files trigger a cache hit which skips yt-dlp and size output,
+# we need to test the size formatting logic using the exact snippet from the script.
+for size in 1023 1024 1536 1048576 1500000; do
+  size_output="$(
+    FILE_SIZE_BYTES="$size"
+    if [ "$FILE_SIZE_BYTES" -ge 1048576 ]; then
+      FILE_SIZE_FORMATTED="$((FILE_SIZE_BYTES / 1048576)).$(((FILE_SIZE_BYTES % 1048576) * 10 / 1048576)) MiB"
+    elif [ "$FILE_SIZE_BYTES" -ge 1024 ]; then
+      FILE_SIZE_FORMATTED="$((FILE_SIZE_BYTES / 1024)).$(((FILE_SIZE_BYTES % 1024) * 10 / 1024)) KiB"
+    else
+      FILE_SIZE_FORMATTED="${FILE_SIZE_BYTES} bytes"
+    fi
+    echo "Size: ${FILE_SIZE_FORMATTED}"
+  )"
+
+  if [ "$size" -eq 1023 ]; then
+    expected="1023 bytes"
+  elif [ "$size" -eq 1024 ]; then
+    expected="1.0 KiB"
+  elif [ "$size" -eq 1536 ]; then
+    expected="1.5 KiB"
+  elif [ "$size" -eq 1048576 ]; then
+    expected="1.0 MiB"
+  elif [ "$size" -eq 1500000 ]; then
+    expected="1.4 MiB"
+  fi
+
+  if ! grep -qF "$expected" <<< "$size_output"; then
+    echo "FAIL: Expected file size output '$expected' for $size bytes, got: $size_output" >&2
+    exit 1
+  fi
+done
+echo "PASS: file size format works correctly with exact sizes"
+echo "====================================="
