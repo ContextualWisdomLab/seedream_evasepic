@@ -300,3 +300,37 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing human-readable file size ==="
+DUMMY_URL="https://example.invalid/size-test"
+for size in 1023 1024 1536 1048576 1500000; do
+  DUMMY_OUTPUT="$TMP_DIR/size-test-$size.mp4"
+  # Create a dummy file with exactly $size bytes
+  head -c "$size" /dev/zero > "$DUMMY_OUTPUT"
+
+  # Extract the size output line from download-reference.sh
+  size_output="$(
+    PATH="$CACHE_HIT_PATH" \
+    YT_DLP_ARGS_FILE="$TMP_DIR/size-test-$size.args" \
+      bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1 | grep "Size:"
+  )"
+
+  if [ "$size" -eq 1023 ]; then
+    expected="1023 bytes"
+  elif [ "$size" -eq 1024 ]; then
+    expected="1.0 KiB"
+  elif [ "$size" -eq 1536 ]; then
+    expected="1.5 KiB"
+  elif [ "$size" -eq 1048576 ]; then
+    expected="1.0 MiB"
+  elif [ "$size" -eq 1500000 ]; then
+    expected="1.4 MiB"
+  fi
+
+  if ! grep -qF "$expected" <<< "$size_output"; then
+    echo "FAIL: Expected file size output '$expected' for $size bytes, got: $size_output" >&2
+    exit 1
+  fi
+done
+echo "PASS: file size format works correctly with exact sizes"
+echo "====================================="
