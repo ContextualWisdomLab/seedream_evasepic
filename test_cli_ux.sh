@@ -43,6 +43,16 @@ done
 if [ -n "$output" ]; then
   mkdir -p -- "$(dirname -- "$output")"
   : > "$output"
+  if [ -n "${YT_DLP_OUTPUT_BYTES:-}" ]; then
+    blocks=$((YT_DLP_OUTPUT_BYTES / 1024))
+    remainder=$((YT_DLP_OUTPUT_BYTES % 1024))
+    if [ "$blocks" -gt 0 ]; then
+      dd if=/dev/zero bs=1024 count="$blocks" >> "$output" 2>/dev/null
+    fi
+    if [ "$remainder" -gt 0 ]; then
+      dd if=/dev/zero bs=1 count="$remainder" >> "$output" 2>/dev/null
+    fi
+  fi
 fi
 EOF
 chmod +x "$TMP_DIR/yt-dlp"
@@ -300,39 +310,45 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing human-readable file size through download-reference.sh ==="
+for case in \
+  "1023|1023 bytes" \
+  "1024|1.0 KiB" \
+  "1536|1.5 KiB" \
+  "1048576|1.0 MiB" \
+  "1500000|1.4 MiB"; do
+  size="${case%%|*}"
+  expected="${case#*|}"
+  size_output_path="$TMP_DIR/file-size-${size}.mp4"
+  size_args_file="$TMP_DIR/file-size-${size}.args"
+  rm -f -- "$size_output_path" "$size_args_file"
 
-echo "=== Testing human-readable file size ==="
-# Since existing files trigger a cache hit which skips yt-dlp and size output,
-# we need to test the size formatting logic using the exact snippet from the script.
-for size in 1023 1024 1536 1048576 1500000; do
+  set +e
   size_output="$(
-    FILE_SIZE_BYTES="$size"
-    if [ "$FILE_SIZE_BYTES" -ge 1048576 ]; then
-      FILE_SIZE_FORMATTED="$((FILE_SIZE_BYTES / 1048576)).$(((FILE_SIZE_BYTES % 1048576) * 10 / 1048576)) MiB"
-    elif [ "$FILE_SIZE_BYTES" -ge 1024 ]; then
-      FILE_SIZE_FORMATTED="$((FILE_SIZE_BYTES / 1024)).$(((FILE_SIZE_BYTES % 1024) * 10 / 1024)) KiB"
-    else
-      FILE_SIZE_FORMATTED="${FILE_SIZE_BYTES} bytes"
-    fi
-    echo "Size: ${FILE_SIZE_FORMATTED}"
+    PATH="$TMP_DIR:$PATH" \
+    YT_DLP_ARGS_FILE="$size_args_file" \
+    YT_DLP_OUTPUT_BYTES="$size" \
+      bash "$SCRIPT_DIR/download-reference.sh" \
+        "https://example.invalid/file-size-${size}" "$size_output_path" 2>&1
   )"
+  size_status=$?
+  set -e
 
-  if [ "$size" -eq 1023 ]; then
-    expected="1023 bytes"
-  elif [ "$size" -eq 1024 ]; then
-    expected="1.0 KiB"
-  elif [ "$size" -eq 1536 ]; then
-    expected="1.5 KiB"
-  elif [ "$size" -eq 1048576 ]; then
-    expected="1.0 MiB"
-  elif [ "$size" -eq 1500000 ]; then
-    expected="1.4 MiB"
+  if [ "$size_status" -ne 0 ]; then
+    echo "FAIL: production file-size path failed for $size bytes" >&2
+    printf '%s\n' "$size_output" >&2
+    exit 1
   fi
-
-  if ! grep -qF "$expected" <<< "$size_output"; then
-    echo "FAIL: Expected file size output '$expected' for $size bytes, got: $size_output" >&2
+  if [ "$(wc -c < "$size_output_path" | tr -d '[:space:]')" != "$size" ]; then
+    echo "FAIL: fake yt-dlp did not create the requested $size-byte artifact" >&2
+    exit 1
+  fi
+  if ! grep -qF -- "Size: $expected" <<< "$size_output"; then
+    echo "FAIL: expected production output 'Size: $expected' for $size bytes" >&2
+    printf '%s\n' "$size_output" >&2
     exit 1
   fi
 done
-echo "PASS: file size format works correctly with exact sizes"
+
+echo "PASS: download-reference.sh reports byte, KiB, and MiB thresholds from real artifact sizes"
 echo "====================================="
