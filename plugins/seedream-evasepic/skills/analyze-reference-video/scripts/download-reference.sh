@@ -103,5 +103,18 @@ terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 # Optimization: Use native bash parameter expansion instead of spawning a tr process
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
+FILE_SIZE_HR=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {
+  split("B KB MB GB TB", v, " ")
+  i = 1
+  while (bytes >= 1024 && i < 5) {
+    bytes /= 1024
+    i++
+  }
+  if (i == 1) {
+    printf "%d %s", bytes, v[i]
+  } else {
+    printf "%.2f %s", bytes, v[i]
+  }
+}')
+terminal_print_value "${CYAN}Size: " "${FILE_SIZE_HR}" "${NC}"
 
