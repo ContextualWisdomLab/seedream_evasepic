@@ -9,7 +9,6 @@
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
   local value="${1-}"
-  local replacement
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
   # ⚡ Bolt Optimization: Loop unrolled for performance.
