@@ -162,11 +162,31 @@ echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
 echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument(s)."; then
-  echo "FAIL: download-reference.sh did not print explicit error message" >&2
+if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument: <url>"; then
+  echo "FAIL: download-reference.sh did not print explicit error message for url" >&2
   exit 1
 fi
-echo "PASS: download-reference.sh prints explicit error message"
+if ! bash "$SCRIPT_DIR/download-reference.sh" "http://url" 2>&1 | grep -q "Error: Missing required argument: <output_path>"; then
+  echo "FAIL: download-reference.sh did not print explicit error message for output_path" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/extract-frames.sh" 2>&1 | grep -q "Error: Missing required argument: <video_path>"; then
+  echo "FAIL: extract-frames.sh did not print explicit error message for video_path" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/extract-frames.sh" "video.mp4" 2>&1 | grep -q "Error: Missing required argument: <output_dir>"; then
+  echo "FAIL: extract-frames.sh did not print explicit error message for output_dir" >&2
+  exit 1
+fi
+echo "PASS: scripts print explicit error messages for missing arguments"
+echo "====================================="
+
+echo "=== Testing transcribe.sh argument validation precedence ==="
+if ! bash "$SCRIPT_DIR/transcribe.sh" "" "invalid_model" 2>&1 | grep -q "Error: Missing required argument: <audio_path>"; then
+  echo "FAIL: transcribe.sh did not check required argument before optional model argument" >&2
+  exit 1
+fi
+echo "PASS: transcribe.sh required argument validation precedence"
 echo "====================================="
 
 echo "=== Testing usage block for invalid arguments ==="
