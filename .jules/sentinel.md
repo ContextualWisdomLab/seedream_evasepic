@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2026-08-05 - ANSI Escape Sequence Injection via ffprobe metadata in extract-frames.sh
+**Vulnerability:** ffprobe에서 추출한 `DURATION`, `RESOLUTION`, `FPS` 메타데이터가 검증 없이 `%b` 포맷을 통해 직접 출력되어 ANSI Escape Sequence Injection 취약점이 존재했습니다.
+**Learning:** 외부 도구(ffprobe 등)에서 추출된 메타데이터도 사용자가 제어할 수 있는 입력(untrusted user input)으로 간주해야 하며, 이를 터미널에 출력할 때는 반드시 `terminal_safe_text`와 `%s`를 사용하여 제어 문자를 무효화해야 합니다.
+**Prevention:** 새로 도입되는 모든 메타데이터 출력 변수는 `terminal_safe_text`로 변환하고 `printf`의 `%s` 포맷으로 출력하며, 정적 테스트 정규식에 해당 변수들(`$DURATION`, `$RESOLUTION`, `$FPS` 등)을 추가하여 안전한 출력을 보장합니다.
