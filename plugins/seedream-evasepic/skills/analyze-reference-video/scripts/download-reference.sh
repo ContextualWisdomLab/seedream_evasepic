@@ -29,8 +29,14 @@ done
 URL="${1:-}"
 OUTPUT="${2:-}"
 
-if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
-  printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
+if [ -z "$URL" ]; then
+  printf "%b\n" "${RED}Error: Missing required argument: <url>${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
+  printf "%b\n" "  Example: ${CYAN}${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}" >&2
+  exit 2
+elif [ -z "$OUTPUT" ]; then
+  printf "%b\n" "${RED}Error: Missing required argument: <output_path>${NC}" >&2
+
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
   printf "%b\n" "  Example: ${CYAN}${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}" >&2
   exit 2
