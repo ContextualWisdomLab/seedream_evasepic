@@ -31,3 +31,6 @@
 ## 2024-07-25 - [Bash 성능 개선] yt-dlp DASH/HLS 스트림 다운로드 병렬화 최적화
 **Learning:** yt-dlp를 사용하여 DASH/HLS 스트림 비디오를 다운로드할 때 기본적으로 단일 스레드로 진행하여 네트워크 I/O 병목이 발생할 수 있습니다.
 **Action:** yt-dlp 호출 시 `--concurrent-fragments N` (예: `--concurrent-fragments 4`) 플래그를 추가하여 프래그먼트들을 병렬로 다운로드하도록 최적화함으로써 다운로드 속도를 크게 향상시킵니다.
+## 2026-08-26 - [Bash 성능 개선] 내장 루프 내 printf 호출 방지 및 반복 언롤링
+**Learning:** 쉘 스크립트 내에서 `for` 루프 안에 `printf` 등 내장 명령어 호출이나 명령어 대치를 반복적으로 수행하여 동적 변환을 구성하는 것은 오버헤드를 크게 증가시킵니다.
+**Action:** 정적인 문자열 치환이나 처리의 경우 루프를 언롤링하여(Bash native parameter expansion을 직접 나열하여) 실행 속도를 최적화합니다.
