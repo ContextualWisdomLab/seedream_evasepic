@@ -41,7 +41,10 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -n "$output" ]; then
-  mkdir -p -- "$(dirname -- "$output")"
+  _DIR="${output%/*}"
+  [ "$_DIR" = "$output" ] && _DIR="."
+  [ -z "$_DIR" ] && _DIR="/"
+  mkdir -p -- "$_DIR"
   : > "$output"
 fi
 EOF
@@ -80,7 +83,6 @@ CACHED_ARGS_FILE="$TMP_DIR/cached-yt-dlp.args"
 EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
 CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
 mkdir -p -- "$CACHE_HIT_PATH"
-ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
 printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
 cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
 
@@ -262,6 +264,54 @@ if grep -n -F 'tr -d' "$SCRIPT_DIR/download-reference.sh"; then
   exit 1
 fi
 echo "PASS: download-reference.sh uses native bash parameter expansion"
+echo "====================================="
+
+echo "=== Testing dirname process removal for performance ==="
+assert_no_external_dirname() {
+  local scan_root="$1"
+  local findings
+  findings="$(
+    find "$scan_root" -type f \( -name '*.sh' -o -name '*.yaml' -o -name '*.yml' \) \
+      -exec grep -nHE -- '(^|[[:space:];|&`(])([^[:space:]]*/)?dirname([[:space:]]|$)' {} + \
+      2>/dev/null || true
+  )"
+  if [ -n "$findings" ]; then
+    printf '%s\n' "$findings" >&2
+    return 1
+  fi
+}
+
+DIRNAME_GATE_FIXTURE="$TMP_DIR/dirname-gate-fixture"
+mkdir -p -- "$DIRNAME_GATE_FIXTURE"
+printf '%s\n' 'path="$(dirname -- "$target")"' > "$DIRNAME_GATE_FIXTURE/command-substitution.sh"
+printf '%s\n' 'path=`dirname -- "$target"`' > "$DIRNAME_GATE_FIXTURE/backtick-substitution.sh"
+printf '%s\n' 'command dirname "$target"' > "$DIRNAME_GATE_FIXTURE/prefixed-command.sh"
+printf '%s\n' 'env TRACE=1 /usr/bin/dirname "$target"' > "$DIRNAME_GATE_FIXTURE/absolute-command.yaml"
+printf '%s\n' 'dirname "$target"' > "$DIRNAME_GATE_FIXTURE/direct-command.yml"
+if assert_no_external_dirname "$DIRNAME_GATE_FIXTURE"; then
+  echo "FAIL: dirname gate must reject command substitutions, backticks, prefixed, absolute, and direct invocations" >&2
+  exit 1
+fi
+rm -rf -- "$DIRNAME_GATE_FIXTURE"
+
+if ! assert_no_external_dirname "$SCRIPT_DIR"; then
+  echo "FAIL: product scripts must not invoke dirname" >&2
+  exit 1
+fi
+if [ -d .github ] && ! assert_no_external_dirname .github; then
+  echo "FAIL: workflow shell blocks must not invoke dirname" >&2
+  exit 1
+fi
+for script in \
+  "$SCRIPT_DIR/download-reference.sh" \
+  "$SCRIPT_DIR/extract-frames.sh" \
+  "$SCRIPT_DIR/transcribe.sh"; do
+  if ! grep -Fq '${BASH_SOURCE[0]%/*}' "$script"; then
+    echo "FAIL: $script must derive its directory with Bash parameter expansion" >&2
+    exit 1
+  fi
+done
+echo "PASS: scripts and workflow shell blocks use Bash parameter expansion instead of dirname"
 echo "====================================="
 
 echo "=== Testing actual terminal control neutralization ==="

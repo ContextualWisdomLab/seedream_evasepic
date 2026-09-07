@@ -13,7 +13,10 @@ YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+_DIR="${BASH_SOURCE[0]%/*}"
+[ "$_DIR" = "${BASH_SOURCE[0]}" ] && _DIR="."
+[ -z "$_DIR" ] && _DIR="/"
+SCRIPT_DIRECTORY="$(cd -- "$_DIR" && pwd -P)"
 # shellcheck source=terminal-output.sh
 . "$SCRIPT_DIRECTORY/terminal-output.sh"
 
