@@ -17,3 +17,6 @@
 **Learning:** CLI 스크립트에서 누락된 의존성을 자동 설치하더라도, 설치 경로가 사용자의 시스템 환경 변수($PATH)에 포함되어 있지 않으면 이후 실행 단계에서 계속 실패하게 됩니다. 이는 사용자에게 큰 혼란을 줍니다.
 **Action:** 자동 설치 시도 직후에 해당 실행 파일이 `$PATH`에서 접근 가능한지 즉시 재확인하는 로직을 추가했습니다. 만약 접근이 불가하다면, 사용자에게 `$PATH` 환경 변수 설정이나 수동 설치가 필요하다는 명확하고 구체적인 오류 안내 메시지를 제공하여 문제 해결을 돕도록 해야 합니다.
 
+## 2025-02-28 - Explicit and Targeted Error Messages for Missing Arguments
+**Learning:** Generic error messages like "Missing required argument(s)" are less helpful than pointing out the exact missing argument (e.g., `<url>`). Also, when implementing CLI argument parsing, required arguments must be validated before optional arguments. Otherwise, the script might error out on an invalid optional argument even when the fundamental required argument is missing, confusing the user.
+**Action:** Replaced generic missing argument errors with specific targeting (e.g., `Error: Missing required argument: <url>`) using explicit `if/elif` blocks in `download-reference.sh` and `extract-frames.sh`. Reordered validation in `transcribe.sh` to check for `<audio_path>` before verifying the optional `[model]`.
