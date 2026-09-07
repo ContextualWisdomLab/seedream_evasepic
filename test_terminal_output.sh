@@ -37,7 +37,7 @@ assert_neutralized_file() {
   if LC_ALL=C grep -Fq -- "$attacker_sequence" "$output_file"; then
     fail "$label emitted the attacker-controlled ANSI sequence"
   fi
-  if ! grep -Fq -- '\x1B[31mPWNED\x1B[0m\x0AFORGED\x0DLINE' "$output_file"; then
+  if ! grep -Fq -- '\x1B[31mPWNED\x1B[0m\x0AFORGED\x0DLINE' "$output_file" && ! grep -Fq -- '\x1B[31mPWNED\x1B[0m\x0BFORGED\x0BLINE' "$output_file"; then
     printf '%s output was:\n' "$label" >&2
     cat "$output_file" >&2
     fail "$label did not preserve the malicious value as visible escaped text"
@@ -104,10 +104,25 @@ transcribe_path_output="$temporary_directory/transcribe-path.out"
 bash "$SCRIPT_DIRECTORY/transcribe.sh" \
   "$temporary_directory/$script_value.wav" base >"$transcribe_path_output" 2>&1 || true
 assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path error'
+
+ffprobe_metadata_output="$temporary_directory/ffprobe-metadata.out"
+cat >"$temporary_directory/ffprobe" <<'STUB'
+#!/bin/bash
+printf 'duration=safe\033[31mPWNED\033[0m\vFORGED\vLINE\n'
+STUB
+chmod +x "$temporary_directory/ffprobe"
+: >"$temporary_directory/dummy_ffprobe.mp4"
+FFMPEG=/bin/true \
+FFPROBE="$temporary_directory/ffprobe" \
+  bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
+    "$temporary_directory/dummy_ffprobe.mp4" \
+    "$temporary_directory/frames" 12 >"$ffprobe_metadata_output" 2>&1 || true
+assert_neutralized_file "$ffprobe_metadata_output" 'extract-frames.sh ffprobe metadata'
+
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
 printf '=== Testing static terminal-output contract ===\n'
-if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO)' \
+if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO|\$DURATION|\$RESOLUTION|\$FPS)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \
   "$SCRIPT_DIRECTORY/extract-frames.sh" \
   "$SCRIPT_DIRECTORY/transcribe.sh"; then
