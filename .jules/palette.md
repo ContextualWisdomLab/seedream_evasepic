@@ -17,6 +17,6 @@
 **Learning:** CLI 스크립트에서 누락된 의존성을 자동 설치하더라도, 설치 경로가 사용자의 시스템 환경 변수($PATH)에 포함되어 있지 않으면 이후 실행 단계에서 계속 실패하게 됩니다. 이는 사용자에게 큰 혼란을 줍니다.
 **Action:** 자동 설치 시도 직후에 해당 실행 파일이 `$PATH`에서 접근 가능한지 즉시 재확인하는 로직을 추가했습니다. 만약 접근이 불가하다면, 사용자에게 `$PATH` 환경 변수 설정이나 수동 설치가 필요하다는 명확하고 구체적인 오류 안내 메시지를 제공하여 문제 해결을 돕도록 해야 합니다.
 
-## 2026-09-07 - Human-Readable File Sizes in CLI Output
-**Learning:** Terminal outputs reporting raw byte counts for downloaded files (e.g., video files) are difficult for users to parse at a glance and degrade the CLI experience. Adding human-readable unit conversions (KiB, MiB, GiB) using accurate binary prefix arithmetic improves UX without relying on external dependencies like `numfmt` (which is not POSIX-compliant or universally available).
-**Action:** When displaying file sizes in CLI tools, explicitly format them into human-readable binary units (KiB, MiB, GiB) to provide immediate cognitive clarity, using built-in standard tools like `awk` for floating-point calculation.
+## 2026-09-07 - CLI 출력에서 사람이 읽기 쉬운 파일 크기 표시
+**Learning:** 다운로드된 파일(예: 비디오 파일)의 크기를 CLI 출력에서 단순 바이트 단위로 표시하면 사용자가 한눈에 파악하기 어렵고 CLI 경험이 저하된다는 점을 배웠습니다. 정확한 이진 접두사 연산을 사용하여 사람이 읽기 쉬운 단위(KiB, MiB, GiB)로 변환하면 POSIX 호환성이 없거나 널리 사용되지 않는 `numfmt`와 같은 외부 도구에 의존하지 않고도 UX를 개선할 수 있습니다.
+**Action:** CLI 도구에서 파일 크기를 표시할 때는 부동소수점 계산을 위해 `awk`와 같은 표준 도구를 사용하여 사람이 읽기 쉬운 이진 단위(KiB, MiB, GiB)로 명시적으로 포맷하여 정보 인지 속도와 가독성을 높일 것입니다.

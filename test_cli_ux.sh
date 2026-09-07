@@ -306,17 +306,6 @@ if ! grep -q 'FILE_SIZE_HUMAN' "$SCRIPT_DIR/download-reference.sh"; then
   exit 1
 fi
 
-cat > "$TMP_DIR/wc" <<'WC_EOF'
-#!/bin/bash
-if [ "$#" -gt 0 ] && [ "$1" = "-c" ]; then
-  # Mock wc -c to output 2.5 MiB
-  echo "2621440"
-else
-  /usr/bin/wc "$@"
-fi
-WC_EOF
-chmod +x "$TMP_DIR/wc"
-
 cat > "$TMP_DIR/yt-dlp" <<'YTDLP_EOF'
 #!/bin/bash
 # Mock yt-dlp success
@@ -328,12 +317,33 @@ DUMMY_URL="https://example.com/dummy"
 DUMMY_OUT="$TMP_DIR/dummy_size.mp4"
 touch "$DUMMY_OUT"
 
-PATH="$TMP_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUT" >"$TMP_DIR/out" 2>&1 || true
+verify_size_conversion() {
+  local mock_bytes="$1"
+  local expected_output="$2"
 
-if ! grep -q '2.50 MiB' "$TMP_DIR/out"; then
-  echo "FAIL: file size not correctly converted to MiB" >&2
-  cat "$TMP_DIR/out" >&2
-  exit 1
+  cat > "$TMP_DIR/wc" <<WC_EOF
+#!/bin/bash
+if [ "\$#" -gt 0 ] && [ "\$1" = "-c" ]; then
+  echo "$mock_bytes"
+else
+  /usr/bin/wc "\$@"
 fi
-echo "PASS: download-reference.sh correctly formats file size as human-readable"
+WC_EOF
+  chmod +x "$TMP_DIR/wc"
+
+  PATH="$TMP_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUT" >"$TMP_DIR/out" 2>&1 || true
+
+  if ! grep -q "$expected_output" "$TMP_DIR/out"; then
+    echo "FAIL: file size not correctly converted to $expected_output (input: $mock_bytes bytes)" >&2
+    cat "$TMP_DIR/out" >&2
+    exit 1
+  fi
+}
+
+verify_size_conversion "2147483648" "2.00 GiB"
+verify_size_conversion "2621440" "2.50 MiB"
+verify_size_conversion "1536" "1.50 KiB"
+verify_size_conversion "500" "500 bytes"
+
+echo "PASS: download-reference.sh correctly formats file size as human-readable for all units"
 echo "====================================="
