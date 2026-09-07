@@ -91,14 +91,16 @@ for forbidden_command in yt-dlp brew pip3 pip; do
   fi
 done
 
-set +e
-cached_output="$(
+if cached_output="$(
   PATH="$CACHE_HIT_PATH" \
   YT_DLP_ARGS_FILE="$CACHED_ARGS_FILE" \
     /bin/bash "$SCRIPT_DIR/download-reference.sh" \
       "https://example.invalid/cached-video" "$CACHED_OUTPUT" 2>&1
-)"
-cached_status=$?
+)"; then
+  cached_status=0
+else
+  cached_status=$?
+fi
 set -e
 
 if [ "$cached_status" -ne 0 ]; then
@@ -122,6 +124,33 @@ if ! grep -q -F "File already exists, skipping download:" <<< "$cached_output"; 
 fi
 
 echo "PASS: non-empty regular file skips yt-dlp and preserves the artifact"
+echo "====================================="
+
+echo "=== Testing download symlink mitigation ==="
+SYMLINK_OUTPUT="$TMP_DIR/malicious-symlink.mp4"
+ln -s /dev/null "$SYMLINK_OUTPUT"
+
+if symlink_output="$(
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/symlink-video" "$SYMLINK_OUTPUT" 2>&1
+)"; then
+  symlink_status=0
+else
+  symlink_status=$?
+fi
+
+if [ "$symlink_status" -eq 0 ]; then
+  echo "FAIL: symlink output must be rejected to prevent arbitrary file overwrite" >&2
+  exit 1
+fi
+if ! grep -q -F "Error: output path is a symlink:" <<< "$symlink_output"; then
+  echo "FAIL: symlink rejection must output a clear error message" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
+rm -f -- "$SYMLINK_OUTPUT"
+
+echo "PASS: symlink output properly rejected to prevent TOCTOU overwrites"
 echo "====================================="
 
 echo "=== Testing zero-byte output cache miss ==="
@@ -236,14 +265,15 @@ echo "====================================="
 echo "=== Testing ffprobe dependency preflight ==="
 DUMMY_VIDEO="$TMP_DIR/ffprobe-preflight.mp4"
 : > "$DUMMY_VIDEO"
-set +e
-ffprobe_output="$(
+if ffprobe_output="$(
   FFMPEG="/bin/true" \
   FFPROBE="$TMP_DIR/missing-ffprobe" \
     bash "$SCRIPT_DIR/extract-frames.sh" "$DUMMY_VIDEO" "$TMP_DIR/ffprobe-output" 12 2>&1
-)"
-ffprobe_status=$?
-set -e
+)"; then
+  ffprobe_status=0
+else
+  ffprobe_status=$?
+fi
 if [ "$ffprobe_status" -ne 1 ] || ! grep -q -F "Error: ffprobe not found." <<< "$ffprobe_output"; then
   echo "FAIL: extract-frames.sh must fail before probing when ffprobe is unavailable" >&2
   printf '%s\n' "$ffprobe_output" >&2

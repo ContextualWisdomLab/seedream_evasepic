@@ -36,6 +36,11 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+if [ -L "$OUTPUT" ]; then
+  terminal_print_value "${RED}Error: output path is a symlink: " "$OUTPUT" ". Remove the symlink and retry.${NC}" >&2
+  exit 1
+fi
+
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.
@@ -67,11 +72,35 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
   fi
 fi
 
-# Ensure output directory exists
+# Ensure output directory exists.
 OUT_DIR="${OUTPUT%/*}"
 [ "$OUT_DIR" = "$OUTPUT" ] && OUT_DIR="."
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
+
+# A caller-owned zero-byte regular file is a cache miss under the established
+# contract. Remove only that output entry before network work. A directory,
+# socket, FIFO, device, or other non-regular object is never a valid target.
+if [ -e "$OUTPUT" ]; then
+  if [ -f "$OUTPUT" ] && [ ! -s "$OUTPUT" ]; then
+    rm -f -- "$OUTPUT"
+  else
+    terminal_print_value "${RED}Error: output path exists but is not a regular file. Choose a different output path: " "$OUTPUT" "${NC}" >&2
+    exit 1
+  fi
+fi
+
+# Download into a private, unpredictable staging directory inside the output
+# filesystem. yt-dlp never receives the caller-controlled final pathname, so a
+# symlink introduced after validation cannot redirect download bytes.
+STAGING_DIR="$(mktemp -d "$OUT_DIR/.seedream-download.XXXXXX")"
+cleanup_staging() {
+  if [ -n "${STAGING_DIR:-}" ]; then
+    rm -rf -- "$STAGING_DIR"
+  fi
+}
+trap cleanup_staging EXIT
+STAGED_OUTPUT="$STAGING_DIR/reference.mp4"
 
 terminal_print_value "${CYAN}Downloading from: " "$URL" "${NC}"
 terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
@@ -81,7 +110,7 @@ terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
 yt-dlp \
   -f "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best" \
   --merge-output-format mp4 \
-  -o "$OUTPUT" \
+  -o "$STAGED_OUTPUT" \
   --no-playlist \
   --quiet --progress \
   --concurrent-fragments 4 \
@@ -98,6 +127,31 @@ yt-dlp \
     printf "%b\n" "  3. Use a screen recording if all else fails" >&2
     exit 1
   }
+
+if [ -L "$STAGED_OUTPUT" ] || [ ! -f "$STAGED_OUTPUT" ]; then
+  printf "%b\n" "${RED}Error: yt-dlp did not produce a regular staged output. Retry the download.${NC}" >&2
+  exit 1
+fi
+
+# Publish with the standard link utility's direct link(2)-style two-path
+# operation. Unlike ln's directory-target mode, link treats OUTPUT as exactly
+# one new directory entry, so a file, directory, or symlink appearing during
+# download makes publication fail without following or overwriting it. Prefix a
+# dash-leading relative path with ./ so the utility cannot parse the requested
+# pathname as an option; this names the same directory entry.
+PUBLISH_OUTPUT="$OUTPUT"
+case "$PUBLISH_OUTPUT" in
+  -*) PUBLISH_OUTPUT="./$PUBLISH_OUTPUT" ;;
+esac
+if ! command -p link "$STAGED_OUTPUT" "$PUBLISH_OUTPUT" 2>/dev/null; then
+  terminal_print_value "${RED}Error: Output path changed during download. Remove the unexpected path and retry: " "$OUTPUT" "${NC}" >&2
+  exit 1
+fi
+
+rm -f -- "$STAGED_OUTPUT"
+cleanup_staging
+STAGING_DIR=""
+trap - EXIT
 
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 # Optimization: Use native bash parameter expansion instead of spawning a tr process
