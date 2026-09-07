@@ -19,3 +19,4 @@
 ### Performance
 - `yt-dlp` 호출 시 `--concurrent-fragments 4` 플래그를 추가하여 DASH/HLS 스트림의 다운로드 속도를 최적화했습니다. 단일 스레드로 인한 네트워크 병목을 해소합니다.
 
+- **Bash 성능 개선**: 터미널 출력 이스케이프 함수(`terminal_safe_text`)에서 발생하는 서브셸 및 `printf` 외부 프로세스 오버헤드를 줄이기 위해, C0 및 C1 제어 문자 변환 루프를 63개의 고정 파라미터 확장 문법(`value=${value//pattern/replacement}`)으로 언롤링(Unrolling) 최적화했습니다.
