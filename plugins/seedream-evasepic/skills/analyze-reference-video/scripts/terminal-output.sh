@@ -14,6 +14,9 @@ terminal_safe_text() {
   # We use unrolled static parameter expansions here instead of a loop calling 'printf -v'
   # dynamically for every control character. This avoids the significant runtime overhead of
   # built-in commands executing 63 times per function call, making text sanitization much faster.
+  # We use unrolled static parameter expansions here instead of a loop calling 'printf -v'
+  # dynamically for every control character. This avoids the significant runtime overhead of
+  # built-in commands executing 63 times per function call, making text sanitization much faster.
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
   value=${value//$'\001'/\\x01}
   value=${value//$'\002'/\\x02}
