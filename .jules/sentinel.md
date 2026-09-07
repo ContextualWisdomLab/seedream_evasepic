@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2026-08-21 - [CRITICAL] Arbitrary File Overwrite via Symlink (TOCTOU) 방지
+**Vulnerability:** `download-reference.sh`에서 출력 파일 존재 여부(`[ -f ]` 및 `[ -s ]`)를 확인할 때 심볼릭 링크 여부를 검사하지 않아, 공격자가 악의적인 심볼릭 링크를 미리 생성해 두면 시스템의 임의 파일을 덮어쓰거나 무단으로 조작할 수 있는 TOCTOU(Time-of-check to time-of-use) 취약점이 발생할 수 있습니다.
+**Learning:** 파일 기반 캐시 체크나 출력 경로 유효성 검사 시 심볼릭 링크를 단순하게 묵인하면 Arbitrary File Overwrite 취약점으로 이어집니다. 캐시 조건과 결합 시 단순한 AND 조건(`&& [ ! -L ]`) 처리는 심볼릭 링크를 캐시 미스로 처리하게 되어 오히려 취약점을 트리거하게 됩니다.
+**Prevention:** 출력 대상 파일이 캐시인지 확인하기 직전에 반드시 `if [ -L "$OUTPUT" ]; then exit 1; fi` 형태로 명시적인 심볼릭 링크 검증 및 강제 종료 로직을 추가하여 방어해야 합니다.
