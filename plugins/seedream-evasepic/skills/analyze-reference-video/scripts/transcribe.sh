@@ -31,6 +31,14 @@ done
 AUDIO="${1:-}"
 MODEL="${2:-base}"
 
+if [ -z "$AUDIO" ]; then
+  printf "%b\n" "${RED}Error: Missing required argument: <audio_path>${NC}" >&2
+  printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
+  printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
+  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}" >&2
+  exit 2
+fi
+
 case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
@@ -41,14 +49,6 @@ case "$MODEL" in
     exit 2
     ;;
 esac
-
-if [ -z "$AUDIO" ]; then
-  printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
-  printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}" >&2
-  exit 2
-fi
 
 if [ ! -f "$AUDIO" ]; then
   terminal_print_value "${RED}Error: audio file not found: " "$AUDIO" "${NC}" >&2
