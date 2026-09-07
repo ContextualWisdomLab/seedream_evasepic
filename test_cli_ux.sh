@@ -162,11 +162,23 @@ echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
 echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument(s)."; then
-  echo "FAIL: download-reference.sh did not print explicit error message" >&2
+if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument: <url>"; then
+  echo "FAIL: download-reference.sh did not print explicit error message for missing url" >&2
+  exit 1
+fi
+if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" 2>&1 | grep -q "Error: Missing required argument: <output_path>"; then
+  echo "FAIL: download-reference.sh did not print explicit error message for missing output_path" >&2
   exit 1
 fi
 echo "PASS: download-reference.sh prints explicit error message"
+echo "====================================="
+
+echo "=== Testing validation precedence in transcribe.sh ==="
+if ! bash "$SCRIPT_DIR/transcribe.sh" "" "invalid_model" 2>&1 | grep -q "Error: Missing required argument: <audio_path>"; then
+  echo "FAIL: transcribe.sh did not report missing <audio_path> before invalid model" >&2
+  exit 1
+fi
+echo "PASS: transcribe.sh validates missing arguments before invalid options"
 echo "====================================="
 
 echo "=== Testing usage block for invalid arguments ==="
