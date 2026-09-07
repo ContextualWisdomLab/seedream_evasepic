@@ -43,7 +43,7 @@ case "$MODEL" in
 esac
 
 if [ -z "$AUDIO" ]; then
-  printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
+  printf "%b\n" "${RED}Error: Missing required argument: <audio_path>${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
   printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}" >&2
