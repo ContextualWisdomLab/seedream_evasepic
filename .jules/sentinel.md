@@ -40,3 +40,7 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+## 2026-09-08 - 🛡️ Sentinel: [HIGH] 심볼릭 링크를 통한 임의 파일 덮어쓰기 취약점 수정
+**Vulnerability:** 출력 파일 경로에 대한 심볼릭 링크 검증 누락으로 인한 TOCTOU 및 임의 파일 덮어쓰기 취약점.
+**Learning:** 파일 캐시 조건을 평가할 때 `[ -f "$FILE" ]`는 심볼릭 링크를 일반 파일로 처리하거나 존재하지 않는 것으로 처리할 수 있어, 악의적인 심볼릭 링크를 통한 파일 덮어쓰기 공격이 가능함.
+**Prevention:** 출력 대상 경로에 대해 캐시나 존재 여부를 확인하기 전에 항상 `[ -L "$FILE" ]`을 통해 심볼릭 링크 여부를 가장 먼저 검증하고 즉시 중지하도록 구현.
