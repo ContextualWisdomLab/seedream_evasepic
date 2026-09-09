@@ -81,6 +81,8 @@ EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
 CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
 mkdir -p -- "$CACHE_HIT_PATH"
 ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
+ln -s -- "$(command -v awk)" "$CACHE_HIT_PATH/awk"
+ln -s -- "$(command -v wc)" "$CACHE_HIT_PATH/wc"
 printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
 cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
 
@@ -262,6 +264,14 @@ if grep -n -F 'tr -d' "$SCRIPT_DIR/download-reference.sh"; then
   exit 1
 fi
 echo "PASS: download-reference.sh uses native bash parameter expansion"
+echo "====================================="
+
+echo "=== Testing human-readable file size formatting ==="
+if ! grep -q 'awk -v size="$FILE_SIZE_BYTES"' "$SCRIPT_DIR/download-reference.sh"; then
+  echo "FAIL: download-reference.sh must format file size using awk" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh uses awk for human-readable file size"
 echo "====================================="
 
 echo "=== Testing actual terminal control neutralization ==="
