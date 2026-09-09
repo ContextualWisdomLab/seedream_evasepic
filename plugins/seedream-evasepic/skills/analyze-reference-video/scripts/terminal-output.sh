@@ -12,6 +12,7 @@ terminal_safe_text() {
 
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+  # Unrolled loop to avoid printf overhead in Bash.
   value=${value//$'\001'/\\x01}
   value=${value//$'\002'/\\x02}
   value=${value//$'\003'/\\x03}
