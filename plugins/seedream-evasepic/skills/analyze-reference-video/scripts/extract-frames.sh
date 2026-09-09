@@ -130,6 +130,7 @@ printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RES
 # Keep the awk program literal fixed; pass dynamic values via -v so data cannot become awk code.
 if ! FRAME_TIMING=$(awk -v nf="$NUM_FRAMES" -v dur="$DURATION" 'BEGIN { if (dur <= 0) exit 1; printf "%.6f %.1f\n", nf / dur, dur / nf }'); then
   printf "%b\n" "${RED}Error: video duration must be a positive number.${NC}" >&2
+  printf "%b\n" "${CYAN}Please provide a valid video file with a measurable duration.${NC}" >&2
   exit 1
 fi
 read -r FPS_FILTER _ <<< "$FRAME_TIMING"
