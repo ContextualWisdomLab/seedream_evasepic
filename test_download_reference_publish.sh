@@ -26,12 +26,16 @@ if [ -z "$output" ]; then
   exit 2
 fi
 
+mkdir -p -- "$(dirname -- "$output")"
+if [ "${YT_DLP_EMPTY_RESULT:-0}" = "1" ]; then
+  : > "$output"
+  exit 0
+fi
+
 # Simulate an attacker replacing the caller-visible final path after the
 # script's preflight check but while the download is in progress.
 rm -f -- "${YT_DLP_ATTACK_OUTPUT:?}"
 ln -s -- "${YT_DLP_ATTACK_TARGET:?}" "${YT_DLP_ATTACK_OUTPUT:?}"
-
-mkdir -p -- "$(dirname -- "$output")"
 printf 'downloaded-video\n' > "$output"
 EOF
 chmod +x "$TMP_DIR/yt-dlp"
@@ -62,3 +66,16 @@ if ! grep -q -F 'downloaded-video' "$OUTPUT"; then
 fi
 
 echo "PASS: final publication replaces a raced symlink without following its target"
+
+ZERO_OUTPUT="$TMP_DIR/zero-byte-reference.mp4"
+PATH="$TMP_DIR:$PATH" \
+YT_DLP_EMPTY_RESULT=1 \
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/zero-byte-video" "$ZERO_OUTPUT" >/dev/null
+
+if [ ! -f "$ZERO_OUTPUT" ] || [ -L "$ZERO_OUTPUT" ] || [ -s "$ZERO_OUTPUT" ]; then
+  echo "FAIL: a successful zero-byte regular yt-dlp artifact must retain the pre-repair publication contract" >&2
+  exit 1
+fi
+
+echo "PASS: security staging does not redefine successful zero-byte artifact validity"
