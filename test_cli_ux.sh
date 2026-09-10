@@ -42,7 +42,7 @@ done
 
 if [ -n "$output" ]; then
   mkdir -p -- "$(dirname -- "$output")"
-  : > "$output"
+  echo "dummy content" > "$output"
 fi
 EOF
 chmod +x "$TMP_DIR/yt-dlp"
