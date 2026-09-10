@@ -127,6 +127,12 @@ if [ -L "$STAGED_OUTPUT" ] || [ ! -f "$STAGED_OUTPUT" ]; then
   exit 1
 fi
 
+# Derive metadata while the artifact still has a private, trusted pathname.
+# After publication, OUTPUT may be mutable by the caller, so do not re-open it
+# merely to report properties of the artifact that was just downloaded.
+FILE_SIZE_BYTES="$(wc -c < "$STAGED_OUTPUT")"
+FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
+
 # A late symlink swap at the final component must never become yt-dlp's write
 # target. `mv` renames the completed regular artifact over that directory entry
 # on the same filesystem, replacing the symlink itself rather than following it.
@@ -144,8 +150,5 @@ rmdir -- "$STAGE_DIR" 2>/dev/null || true
 STAGE_DIR=""
 
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-# Optimization: Use native bash parameter expansion instead of spawning a tr process
-FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
-FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
 terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
 
