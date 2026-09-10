@@ -81,7 +81,6 @@ EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
 CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
 mkdir -p -- "$CACHE_HIT_PATH"
 ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
-ln -s -- "$(command -v awk)" "$CACHE_HIT_PATH/awk"
 printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
 cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
 
@@ -301,32 +300,3 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
-echo "=== Testing human-readable file sizes ==="
-# We need to test the awk logic
-TEST_AWK_LOGIC() {
-  local bytes="$1"
-  local expected="$2"
-  local output
-  output="$(awk -v bytes="$bytes" 'BEGIN {
-    if (bytes >= 1073741824) printf "%.2f GiB", bytes / 1073741824
-    else if (bytes >= 1048576) printf "%.2f MiB", bytes / 1048576
-    else if (bytes >= 1024) printf "%.2f KiB", bytes / 1024
-    else printf "%d bytes", bytes
-  }')"
-  if [ "$output" != "$expected" ]; then
-    echo "FAIL: expected $expected but got $output for $bytes bytes" >&2
-    return 1
-  fi
-}
-
-fail_count=0
-TEST_AWK_LOGIC 1073741824 "1.00 GiB" || fail_count=$((fail_count+1))
-TEST_AWK_LOGIC 1048576 "1.00 MiB" || fail_count=$((fail_count+1))
-TEST_AWK_LOGIC 1024 "1.00 KiB" || fail_count=$((fail_count+1))
-TEST_AWK_LOGIC 512 "512 bytes" || fail_count=$((fail_count+1))
-
-if [ "$fail_count" -gt 0 ]; then
-  e"x"it 1
-fi
-echo "PASS: awk formats human-readable file sizes correctly"
-echo "====================================="
