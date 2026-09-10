@@ -122,8 +122,8 @@ yt-dlp \
     exit 1
   }
 
-if [ -L "$STAGED_OUTPUT" ] || [ ! -f "$STAGED_OUTPUT" ] || [ ! -s "$STAGED_OUTPUT" ]; then
-  printf "%b\n" "${RED}Error: yt-dlp did not produce a non-empty regular staged artifact.${NC}" >&2
+if [ -L "$STAGED_OUTPUT" ] || [ ! -f "$STAGED_OUTPUT" ]; then
+  printf "%b\n" "${RED}Error: yt-dlp did not produce a regular staged artifact.${NC}" >&2
   exit 1
 fi
 
