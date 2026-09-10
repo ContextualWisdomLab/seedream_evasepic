@@ -42,7 +42,7 @@ done
 
 if [ -n "$output" ]; then
   mkdir -p -- "$(dirname -- "$output")"
-  : > "$output"
+  echo "dummy content" > "$output"
 fi
 EOF
 chmod +x "$TMP_DIR/yt-dlp"
@@ -91,15 +91,16 @@ for forbidden_command in yt-dlp brew pip3 pip; do
   fi
 done
 
-set +e
-cached_output="$(
+if cached_output="$(
   PATH="$CACHE_HIT_PATH" \
   YT_DLP_ARGS_FILE="$CACHED_ARGS_FILE" \
     /bin/bash "$SCRIPT_DIR/download-reference.sh" \
       "https://example.invalid/cached-video" "$CACHED_OUTPUT" 2>&1
-)"
-cached_status=$?
-set -e
+)"; then
+  cached_status=0
+else
+  cached_status=$?
+fi
 
 if [ "$cached_status" -ne 0 ]; then
   echo "FAIL: non-empty cached output must return success" >&2
@@ -145,6 +146,30 @@ if ! grep -q -F -- "https://example.invalid/empty-video" "$EMPTY_ARGS_FILE"; the
 fi
 
 echo "PASS: zero-byte regular file remains a cache miss"
+echo "====================================="
+
+echo "=== Testing symlink rejection for output path ==="
+SYMLINK_OUTPUT="$TMP_DIR/symlink-reference.mp4"
+TARGET_OUTPUT="$TMP_DIR/symlink-target.mp4"
+: > "$TARGET_OUTPUT"
+ln -s -- "$TARGET_OUTPUT" "$SYMLINK_OUTPUT"
+
+if symlink_output="$(
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/symlink-video" "$SYMLINK_OUTPUT" 2>&1
+)"; then
+  symlink_status=0
+else
+  symlink_status=$?
+fi
+
+if [ "$symlink_status" -ne 1 ] || ! grep -q -F "Output path cannot be a symlink" <<< "$symlink_output"; then
+  echo "FAIL: download-reference.sh must reject symlink output paths" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
+
+echo "PASS: download-reference.sh rejects symlink output paths"
 echo "====================================="
 
 echo "=== Testing awk fallback variable binding ==="
@@ -236,14 +261,15 @@ echo "====================================="
 echo "=== Testing ffprobe dependency preflight ==="
 DUMMY_VIDEO="$TMP_DIR/ffprobe-preflight.mp4"
 : > "$DUMMY_VIDEO"
-set +e
-ffprobe_output="$(
+if ffprobe_output="$(
   FFMPEG="/bin/true" \
   FFPROBE="$TMP_DIR/missing-ffprobe" \
     bash "$SCRIPT_DIR/extract-frames.sh" "$DUMMY_VIDEO" "$TMP_DIR/ffprobe-output" 12 2>&1
-)"
-ffprobe_status=$?
-set -e
+)"; then
+  ffprobe_status=0
+else
+  ffprobe_status=$?
+fi
 if [ "$ffprobe_status" -ne 1 ] || ! grep -q -F "Error: ffprobe not found." <<< "$ffprobe_output"; then
   echo "FAIL: extract-frames.sh must fail before probing when ffprobe is unavailable" >&2
   printf '%s\n' "$ffprobe_output" >&2

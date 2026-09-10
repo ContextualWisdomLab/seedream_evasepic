@@ -39,9 +39,17 @@ fi
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.
+if [ -L "$OUTPUT" ]; then
+  terminal_print_value "${RED}Error: Output path cannot be a symlink: " "$OUTPUT" "${NC}" >&2
+  exit 1
+fi
 if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
   terminal_print_value "${GREEN}File already exists, skipping download: " "$OUTPUT" "${NC}"
   exit 0
+fi
+if [ -e "$OUTPUT" ] && [ ! -f "$OUTPUT" ]; then
+  terminal_print_value "${RED}Error: Output path must be a regular file path: " "$OUTPUT" "${NC}" >&2
+  exit 1
 fi
 
 # Check for yt-dlp
@@ -67,11 +75,26 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
   fi
 fi
 
-# Ensure output directory exists
+# Keep untrusted network output away from the caller-visible destination until
+# the download is complete. The staging directory lives beside OUTPUT, so the
+# final mv is a same-filesystem rename instead of a copy-and-delete fallback.
 OUT_DIR="${OUTPUT%/*}"
 [ "$OUT_DIR" = "$OUTPUT" ] && OUT_DIR="."
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
+
+STAGE_DIR="$(mktemp -d "${OUT_DIR%/}/.seedream-download.XXXXXX")" || {
+  terminal_print_value "${RED}Error: Could not create a private download staging directory beside: " "$OUTPUT" "${NC}" >&2
+  exit 1
+}
+chmod 700 -- "$STAGE_DIR"
+cleanup_download_stage() {
+  if [ -n "${STAGE_DIR:-}" ] && [ -d "$STAGE_DIR" ]; then
+    rm -rf -- "$STAGE_DIR"
+  fi
+}
+trap cleanup_download_stage EXIT
+STAGED_OUTPUT="$STAGE_DIR/reference.mp4"
 
 terminal_print_value "${CYAN}Downloading from: " "$URL" "${NC}"
 terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
@@ -81,7 +104,7 @@ terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
 yt-dlp \
   -f "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best" \
   --merge-output-format mp4 \
-  -o "$OUTPUT" \
+  -o "$STAGED_OUTPUT" \
   --no-playlist \
   --quiet --progress \
   --concurrent-fragments 4 \
@@ -99,9 +122,33 @@ yt-dlp \
     exit 1
   }
 
-terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-# Optimization: Use native bash parameter expansion instead of spawning a tr process
-FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
+if [ -L "$STAGED_OUTPUT" ] || [ ! -f "$STAGED_OUTPUT" ]; then
+  printf "%b\n" "${RED}Error: yt-dlp did not produce a regular staged artifact.${NC}" >&2
+  exit 1
+fi
+
+# Derive metadata while the artifact still has a private, trusted pathname.
+# After publication, OUTPUT may be mutable by the caller, so do not re-open it
+# merely to report properties of the artifact that was just downloaded.
+FILE_SIZE_BYTES="$(wc -c < "$STAGED_OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
+
+# A late symlink swap at the final component must never become yt-dlp's write
+# target. `mv` renames the completed regular artifact over that directory entry
+# on the same filesystem, replacing the symlink itself rather than following it.
+# Parent-directory replacement by an untrusted principal is a separate trust
+# boundary and is not claimed to be solved by this shell-level control.
+if [ -d "$OUTPUT" ]; then
+  terminal_print_value "${RED}Error: Output path became a directory before publication: " "$OUTPUT" "${NC}" >&2
+  exit 1
+fi
+if ! mv -f -- "$STAGED_OUTPUT" "$OUTPUT"; then
+  terminal_print_value "${RED}Error: Could not publish the completed download to: " "$OUTPUT" "${NC}" >&2
+  exit 1
+fi
+rmdir -- "$STAGE_DIR" 2>/dev/null || true
+STAGE_DIR=""
+
+terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
 
