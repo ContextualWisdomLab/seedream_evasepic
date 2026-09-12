@@ -39,6 +39,10 @@ fi
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.
+if [ -L "$OUTPUT" ]; then
+  printf "%b\n" "${RED}Error: Symlink detected at target path. Aborting for security.${NC}" >&2
+  exit 1
+fi
 if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
   terminal_print_value "${GREEN}File already exists, skipping download: " "$OUTPUT" "${NC}"
   exit 0
@@ -73,6 +77,16 @@ OUT_DIR="${OUTPUT%/*}"
 [ -z "$OUT_DIR" ] && OUT_DIR="/"
 mkdir -p -- "$OUT_DIR"
 
+# A preflight symlink check cannot close the check/use race. Download into a
+# private directory on the output filesystem and publish with one rename so a
+# replacement symlink is replaced as a directory entry, never opened for write.
+DOWNLOAD_STAGE_DIRECTORY="$(mktemp -d "${OUT_DIR%/}/.download-reference.XXXXXX")"
+DOWNLOAD_STAGE_OUTPUT="$DOWNLOAD_STAGE_DIRECTORY/reference.mp4"
+cleanup_download_stage() {
+  rm -rf -- "$DOWNLOAD_STAGE_DIRECTORY"
+}
+trap cleanup_download_stage EXIT
+
 terminal_print_value "${CYAN}Downloading from: " "$URL" "${NC}"
 terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
 
@@ -81,7 +95,7 @@ terminal_print_value "${CYAN}Target: " "$OUTPUT" "${NC}"
 yt-dlp \
   -f "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best" \
   --merge-output-format mp4 \
-  -o "$OUTPUT" \
+  -o "$DOWNLOAD_STAGE_OUTPUT" \
   --no-playlist \
   --quiet --progress \
   --concurrent-fragments 4 \
@@ -98,6 +112,10 @@ yt-dlp \
     printf "%b\n" "  3. Use a screen recording if all else fails" >&2
     exit 1
   }
+
+mv -f -- "$DOWNLOAD_STAGE_OUTPUT" "$OUTPUT"
+cleanup_download_stage
+trap - EXIT
 
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 # Optimization: Use native bash parameter expansion instead of spawning a tr process
