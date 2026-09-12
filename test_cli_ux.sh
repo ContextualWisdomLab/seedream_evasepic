@@ -178,11 +178,12 @@ printf 'downloaded-video\n' > "$download_target"
 EOF
 chmod +x "$RACE_BIN_DIRECTORY/yt-dlp"
 
+RACE_DOWNLOAD_OUTPUT="$RACE_OUTPUT_PATH"
 PATH="$RACE_BIN_DIRECTORY:$PATH" \
 RACE_OUTPUT_PATH="$RACE_OUTPUT_PATH" \
 RACE_VICTIM_PATH="$RACE_VICTIM_PATH" \
   bash "$SCRIPT_DIR/download-reference.sh" \
-    "https://example.invalid/race-video" "$RACE_OUTPUT_PATH" >/dev/null
+    "https://example.invalid/race-video" "$RACE_DOWNLOAD_OUTPUT" >/dev/null
 
 if ! cmp -s -- "$RACE_EXPECTED_PATH" "$RACE_VICTIM_PATH"; then
   echo "FAIL: a symlink swap during download must not overwrite its referent" >&2
