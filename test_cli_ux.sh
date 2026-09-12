@@ -147,6 +147,55 @@ fi
 echo "PASS: zero-byte regular file remains a cache miss"
 echo "====================================="
 
+echo "=== Testing output symlink swap during download ==="
+RACE_BIN_DIRECTORY="$TMP_DIR/race-bin"
+RACE_OUTPUT_PATH="$TMP_DIR/race-reference.mp4"
+RACE_VICTIM_PATH="$TMP_DIR/race-victim.txt"
+RACE_EXPECTED_PATH="$TMP_DIR/race-victim.expected"
+mkdir -p -- "$RACE_BIN_DIRECTORY"
+printf 'protected-victim\n' > "$RACE_VICTIM_PATH"
+cp -- "$RACE_VICTIM_PATH" "$RACE_EXPECTED_PATH"
+
+cat > "$RACE_BIN_DIRECTORY/yt-dlp" <<'EOF'
+#!/bin/bash
+set -eu
+
+download_target=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    download_target="${1:-}"
+    break
+  fi
+  shift
+done
+
+[ -n "$download_target" ] || exit 1
+rm -f -- "${RACE_OUTPUT_PATH:?}"
+ln -s -- "${RACE_VICTIM_PATH:?}" "$RACE_OUTPUT_PATH"
+mkdir -p -- "$(dirname -- "$download_target")"
+printf 'downloaded-video\n' > "$download_target"
+EOF
+chmod +x "$RACE_BIN_DIRECTORY/yt-dlp"
+
+PATH="$RACE_BIN_DIRECTORY:$PATH" \
+RACE_OUTPUT_PATH="$RACE_OUTPUT_PATH" \
+RACE_VICTIM_PATH="$RACE_VICTIM_PATH" \
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/race-video" "$RACE_OUTPUT_PATH" >/dev/null
+
+if ! cmp -s -- "$RACE_EXPECTED_PATH" "$RACE_VICTIM_PATH"; then
+  echo "FAIL: a symlink swap during download must not overwrite its referent" >&2
+  exit 1
+fi
+if [ -L "$RACE_OUTPUT_PATH" ] || ! grep -q -F "downloaded-video" "$RACE_OUTPUT_PATH"; then
+  echo "FAIL: the completed download must atomically replace the target entry" >&2
+  exit 1
+fi
+
+echo "PASS: a symlink swap cannot redirect the completed download"
+echo "====================================="
+
 echo "=== Testing awk fallback variable binding ==="
 if grep -n -F 'awk "BEGIN' "$SCRIPT_DIR/extract-frames.sh"; then
   echo "FAIL: extract-frames.sh must not interpolate shell variables into an awk program string" >&2
