@@ -31,6 +31,6 @@
 ## 2024-07-25 - [Bash 성능 개선] yt-dlp DASH/HLS 스트림 다운로드 병렬화 최적화
 **Learning:** yt-dlp를 사용하여 DASH/HLS 스트림 비디오를 다운로드할 때 기본적으로 단일 스레드로 진행하여 네트워크 I/O 병목이 발생할 수 있습니다.
 **Action:** yt-dlp 호출 시 `--concurrent-fragments N` (예: `--concurrent-fragments 4`) 플래그를 추가하여 프래그먼트들을 병렬로 다운로드하도록 최적화함으로써 다운로드 속도를 크게 향상시킵니다.
-## 2024-09-14 - Bash Performance Overhead from Built-ins in Loops
-**Learning:** Repetitive string manipulations across a known set of characters (like C0 controls) using a `for` loop with `printf -v` inside Bash incurs significant execution overhead due to the repeated built-in invocations.
+## 2026-09-14 - Bash Performance Overhead from Built-ins in Loops
+**Learning:** Repetitive string manipulations across a known set of characters (like C0 controls) using a `for` loop with `printf -v` inside Bash computes parameter expansions iteratively per item, which causes execution overhead due to repeated built-in invocations.
 **Action:** Unroll loops into direct parameter expansions (e.g., `${var//pattern/replacement}`) when the domain of values is fixed and small to conceptually eliminate execution overhead (forking built-ins) during string neutralization, without relying on non-reproducible raw timings.
