@@ -36,6 +36,7 @@ NUM_FRAMES="${3:-12}"
 
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
+  printf "\n" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
   printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
@@ -45,6 +46,7 @@ fi
 case "$NUM_FRAMES" in
   ''|*[!0-9]*|0*)
     printf "%b\n" "${RED}Error: num_frames must be a positive integer.${NC}" >&2
+    printf "\n" >&2
     printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
     printf "%b\n" "  num_frames defaults to 12" >&2
     printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
@@ -70,6 +72,7 @@ fi
 
 if [ ! -f "$VIDEO" ]; then
   terminal_print_value "${RED}Error: video not found: " "$VIDEO" "${NC}" >&2
+  printf "\n" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
   printf "%b\n" "  num_frames defaults to 12" >&2
   printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/video.mp4 /tmp/frames 24${NC}" >&2
