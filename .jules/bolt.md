@@ -33,4 +33,4 @@
 **Action:** yt-dlp 호출 시 `--concurrent-fragments N` (예: `--concurrent-fragments 4`) 플래그를 추가하여 프래그먼트들을 병렬로 다운로드하도록 최적화함으로써 다운로드 속도를 크게 향상시킵니다.
 ## 2024-09-14 - Bash Performance Overhead from Built-ins in Loops
 **Learning:** Repetitive string manipulations across a known set of characters (like C0 controls) using a `for` loop with `printf -v` inside Bash incurs significant execution overhead due to the repeated built-in invocations.
-**Action:** Unroll loops into direct parameter expansions (e.g., `${var//pattern/replacement}`) when the domain of values is fixed and small to eliminate loop overhead and speed up string neutralization.
+**Action:** Unroll loops into direct parameter expansions (e.g., `${var//pattern/replacement}`) when the domain of values is fixed and small to conceptually eliminate execution overhead (forking built-ins) during string neutralization, without relying on non-reproducible raw timings.
