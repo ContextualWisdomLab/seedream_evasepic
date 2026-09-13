@@ -41,7 +41,7 @@
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
 
-## 2026-08-06 - [CRITICAL] 터미널 제어 문자 삽입 취약점 수정 (ffprobe 메타데이터)
-**Vulnerability:** `extract-frames.sh` 스크립트에서 `ffprobe`로 추출한 메타데이터(`$DURATION`, `$RESOLUTION`, `$FPS`)를 `printf "%b"`로 직접 터미널에 출력하여 제어 문자 삽입(Terminal Escape Injection) 취약점이 존재했습니다. 이로 인해 임의의 명령어 실행으로 이어질 가능성은 적지만, 사용자가 악의적인 메타데이터가 포함된 비디오 파일을 제공할 경우 터미널 출력 변조 및 사회공학적 기법에 활용될 수 있습니다.
-**Learning:** 비디오 파일의 메타데이터와 같이 사용자가 제어 가능한 파일에서 추출된 시스템 명령어의 출력 결과는 신뢰할 수 없는 외부 입력으로 간주하고 검증해야 합니다.
-**Prevention:** 터미널 출력에 사용되는 모든 신뢰할 수 없는 변수(`$DURATION`, `$RESOLUTION`, `$FPS` 등)는 `terminal_safe_text` 함수로 제어 문자를 중화한 후 `%s` 포맷으로 출력하도록 수정해야 합니다. 또한 정적 분석 테스트에 이러한 변수들을 추가하여 출력 안전성을 보장해야 합니다.
+## 2026-09-14 - ffprobe 메타데이터 신뢰 경계(Trust Boundary) 검증
+**Vulnerability:** `extract-frames.sh`가 `ffprobe`에서 추출된 duration, resolution, FPS 값을 터미널에 출력하기 전에 중화(neutralize)하긴 했지만, `ffprobe`에서 예상되는 구조적(contract) 검증 없이 그대로 수용 및 저장하고 있었습니다. 해당 필드들은 숫자 또는 유리수 형식의 메타데이터여야 하며, 외부 도구의 출력이 무조건 `metadata.txt` 데이터나 하위 연산에 도달하게 두어서는 안 됩니다. 기존의 `[CRITICAL]` 표현은 일반 미디어를 통한 악용 경로가 입증되지 않은 상태이므로 그 위험성을 과대평가한 것이었습니다.
+**Learning:** 터미널 출력 중화와 입력값 검증은 서로 다른 문제입니다. 출력 인코딩(중화)은 제어 문자가 터미널에서 작동하지 않도록 방지하는 반면, 구조적 검증은 애초에 잘못 형성된 외부 명령어의 출력이 애플리케이션 상태로 진입하는 것을 막습니다.
+**Prevention:** duration은 음수가 아닌 실수(decimal), width/height는 존재 시 양의 정수, FPS는 분모가 양수인 양의 유리수 구조를 띠는지 지속/출력 전에 반드시 검증해야 합니다. 터미널 중화는 심층 방어(defense in depth) 기법으로 유지하되, 잘못된 제어 문자가 포함된 메타데이터를 반환하는 `ffprobe` 스텁(stub) 환경에서 경계 테스트를 수행하여 안전성을 확보합니다.

@@ -106,6 +106,39 @@ bash "$SCRIPT_DIRECTORY/transcribe.sh" \
 assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path error'
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
+printf '=== Testing ffprobe metadata structural validation ===\n'
+cat >"$temporary_directory/ffprobe-malformed" <<'STUB'
+#!/bin/bash
+printf 'duration=1.000000\nwidth=1920\nheight=1080\nr_frame_rate=30/1\033[31mPWNED\ncodec_type=video\n'
+STUB
+chmod +x "$temporary_directory/ffprobe-malformed"
+probe_video="$temporary_directory/probe-input.mp4"
+probe_output_dir="$temporary_directory/probe-output"
+probe_output="$temporary_directory/probe.out"
+: >"$probe_video"
+set +e
+FFMPEG=/bin/true \
+FFPROBE="$temporary_directory/ffprobe-malformed" \
+  bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
+    "$probe_video" "$probe_output_dir" 1 >"$probe_output" 2>&1
+probe_status=$?
+set -e
+if [ "$probe_status" -eq 0 ]; then
+  fail 'extract-frames.sh accepted malformed ffprobe FPS metadata'
+fi
+if [ -e "$probe_output_dir/metadata.txt" ]; then
+  fail 'malformed ffprobe metadata was persisted before validation'
+fi
+if LC_ALL=C grep -Fq -- $'\033[31mPWNED' "$probe_output"; then
+  fail 'malformed ffprobe metadata reached the terminal as a live control sequence'
+fi
+if ! grep -Fq -- 'Error: ffprobe returned malformed FPS metadata.' "$probe_output"; then
+  printf 'ffprobe validation output was:\n' >&2
+  cat "$probe_output" >&2
+  fail 'extract-frames.sh did not report the malformed FPS field'
+fi
+printf 'PASS: malformed ffprobe metadata is rejected before persistence or rendering\n'
+
 printf '=== Testing static terminal-output contract ===\n'
 if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO|\$DURATION|\$RESOLUTION|\$FPS)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \

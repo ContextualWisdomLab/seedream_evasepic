@@ -107,6 +107,23 @@ while IFS='=' read -r key val; do
 done <<< "$PROBE_OUTPUT"
 DURATION=${DURATION:-0}
 
+if ! [[ "$DURATION" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  printf "%b\n" "${RED}Error: ffprobe returned malformed duration metadata.${NC}" >&2
+  exit 1
+fi
+if [ -n "$WIDTH" ] && ! [[ "$WIDTH" =~ ^[1-9][0-9]*$ ]]; then
+  printf "%b\n" "${RED}Error: ffprobe returned malformed width metadata.${NC}" >&2
+  exit 1
+fi
+if [ -n "$HEIGHT" ] && ! [[ "$HEIGHT" =~ ^[1-9][0-9]*$ ]]; then
+  printf "%b\n" "${RED}Error: ffprobe returned malformed height metadata.${NC}" >&2
+  exit 1
+fi
+if [ "$FPS" != "unknown" ] && ! [[ "$FPS" =~ ^[0-9]+/[1-9][0-9]*$ ]]; then
+  printf "%b\n" "${RED}Error: ffprobe returned malformed FPS metadata.${NC}" >&2
+  exit 1
+fi
+
 if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
   RESOLUTION="${WIDTH}x${HEIGHT}"
 else
