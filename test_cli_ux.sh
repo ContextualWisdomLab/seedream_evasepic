@@ -300,3 +300,11 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing file size formatting in download-reference.sh ==="
+if ! grep -q -F 'if ! FORMATTED_SIZE=$(awk -v size="$FILE_SIZE_BYTES"' "$SCRIPT_DIR/download-reference.sh"; then
+  echo "FAIL: download-reference.sh does not format file size" >&2
+  echo 'TEST FAILED'
+fi
+echo "PASS: download-reference.sh formats file size"
+echo "====================================="
