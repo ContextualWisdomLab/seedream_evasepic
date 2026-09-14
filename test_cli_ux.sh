@@ -300,3 +300,33 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing Visual Margin in Error Messages ==="
+assert_empty_line_before_usage() {
+  local output="$1"
+  local label="$2"
+  if ! echo "$output" | grep -B1 "Usage:" | grep -q "^$"; then
+    echo "FAIL: $label Error message and usage block must be separated by an empty line" >&2
+    printf '%s\n' "$output" >&2
+    exit 1
+  fi
+}
+
+extract_empty_line_output="$(bash "$SCRIPT_DIR/extract-frames.sh" "dummy" "dummy" "invalid" 2>&1 || true)"
+assert_empty_line_before_usage "$extract_empty_line_output" "extract-frames.sh invalid num_frames"
+extract_missing_args_output="$(bash "$SCRIPT_DIR/extract-frames.sh" 2>&1 || true)"
+assert_empty_line_before_usage "$extract_missing_args_output" "extract-frames.sh missing args"
+extract_file_not_found_output="$(FFMPEG="/bin/true" FFPROBE="/bin/true" bash "$SCRIPT_DIR/extract-frames.sh" "dummy_nonexistent.mp4" "dummy_dir" 2>&1 || true)"
+assert_empty_line_before_usage "$extract_file_not_found_output" "extract-frames.sh file not found"
+
+download_missing_args_output="$(bash "$SCRIPT_DIR/download-reference.sh" 2>&1 || true)"
+assert_empty_line_before_usage "$download_missing_args_output" "download-reference.sh missing args"
+
+transcribe_invalid_model_output="$(bash "$SCRIPT_DIR/transcribe.sh" "dummy" "invalid" 2>&1 || true)"
+assert_empty_line_before_usage "$transcribe_invalid_model_output" "transcribe.sh invalid model"
+transcribe_missing_args_output="$(bash "$SCRIPT_DIR/transcribe.sh" 2>&1 || true)"
+assert_empty_line_before_usage "$transcribe_missing_args_output" "transcribe.sh missing args"
+transcribe_file_not_found_output="$(bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.wav" "base" 2>&1 || true)"
+assert_empty_line_before_usage "$transcribe_file_not_found_output" "transcribe.sh file not found"
+
+echo "PASS: all scripts include a visual margin before usage block in error scenarios"
+echo "====================================="
