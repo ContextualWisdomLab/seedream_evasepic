@@ -107,6 +107,23 @@ while IFS='=' read -r key val; do
 done <<< "$PROBE_OUTPUT"
 DURATION=${DURATION:-0}
 
+if ! [[ "$DURATION" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  printf "%b\n" "${RED}Error: ffprobe returned malformed duration metadata.${NC}" >&2
+  exit 1
+fi
+if [ -n "$WIDTH" ] && ! [[ "$WIDTH" =~ ^[1-9][0-9]*$ ]]; then
+  printf "%b\n" "${RED}Error: ffprobe returned malformed width metadata.${NC}" >&2
+  exit 1
+fi
+if [ -n "$HEIGHT" ] && ! [[ "$HEIGHT" =~ ^[1-9][0-9]*$ ]]; then
+  printf "%b\n" "${RED}Error: ffprobe returned malformed height metadata.${NC}" >&2
+  exit 1
+fi
+if [ "$FPS" != "unknown" ] && ! [[ "$FPS" =~ ^[0-9]+/[1-9][0-9]*$ ]]; then
+  printf "%b\n" "${RED}Error: ffprobe returned malformed FPS metadata.${NC}" >&2
+  exit 1
+fi
+
 if [ -n "$WIDTH" ] && [ -n "$HEIGHT" ]; then
   RESOLUTION="${WIDTH}x${HEIGHT}"
 else
@@ -124,7 +141,10 @@ FPS=${FPS:-unknown}
 } > "$OUT_DIR/metadata.txt"
 
 terminal_print_value "${CYAN}Video: " "${VIDEO##*/}" "${NC}"
-printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
+SAFE_DURATION="$(terminal_safe_text "$DURATION")"
+SAFE_RESOLUTION="$(terminal_safe_text "$RESOLUTION")"
+SAFE_FPS="$(terminal_safe_text "$FPS")"
+printf "%b%s%b%s%b%s\n" "${CYAN}Duration: ${NC}" "${SAFE_DURATION}s" " | ${CYAN}Resolution: ${NC}" "$SAFE_RESOLUTION" " | ${CYAN}FPS: ${NC}" "$SAFE_FPS"
 
 # Extract evenly-spaced frames across the full duration.
 # Keep the awk program literal fixed; pass dynamic values via -v so data cannot become awk code.
@@ -161,4 +181,3 @@ else
 fi
 
 terminal_print_value "${GREEN}Done. Output in: " "$OUT_DIR" "${NC}"
-
