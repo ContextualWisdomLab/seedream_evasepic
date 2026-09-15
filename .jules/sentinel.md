@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2026-08-05 - ffmpeg 인자 주입(Argument Injection) 취약점 수정
+**Vulnerability:** `ffmpeg` 호출 시 `-i` 옵션 앞에 `--`를 사용하면, `ffmpeg`는 이를 옵션 종료 문자가 아닌 입력 파일명으로 잘못 인식합니다. 이에 따라 뒤따르는 사용자 제공 변수(예: 파일 경로)가 옵션이나 출력 대상으로 파싱될 수 있어 인자 주입 취약점이 발생합니다.
+**Learning:** `ffmpeg`는 GNU 스타일의 `--` 옵션 구분자를 이 위치에서 지원하지 않습니다. 파일명이 하이픈(`-`)으로 시작할 때 옵션으로 인식되는 것을 막기 위해서는 절대 경로나 `./` 접두사를 사용해야 합니다.
+**Prevention:** `ffmpeg -i`에 전달되는 사용자 제공 파일 경로가 하이픈으로 시작하고 절대 경로가 아닌 경우, 스크립트 내부에서 `./` 접두사를 명시적으로 추가한 뒤 `--` 없이 넘기도록 수정해야 합니다.
