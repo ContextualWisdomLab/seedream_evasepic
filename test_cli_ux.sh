@@ -306,7 +306,8 @@ DUMMY_2MIB="$TMP_DIR/dummy-2mib.mp4"
 # Using dd to create exactly a 2 MiB file
 dd if=/dev/zero of="$DUMMY_2MIB" bs=1048576 count=2 status=none
 rm -f "$DUMMY_2MIB"
-export PATH="$(dirname "$(mktemp -d)"):$PATH"
+MOCK_PATH="$(dirname "$(mktemp -d)")"
+export PATH="$MOCK_PATH:$PATH"
 cat << 'MOCK_YTDLP' > "$TMP_DIR/yt-dlp"
 #!/bin/bash
 while [ "$#" -gt 0 ]; do
@@ -325,7 +326,7 @@ OUTPUT_LOG="$(PATH="$TMP_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "du
 if ! grep -q -F "Size: 2.00 MiB" <<< "$OUTPUT_LOG"; then
   echo "FAIL: Expected 'Size: 2.00 MiB', but got:" >&2
   printf '%s\n' "$OUTPUT_LOG" >&2
-  echo 'TEST FAILED'
+  exit 1
 fi
 echo "PASS: File size formatting uses IEC units correctly"
 echo "====================================="

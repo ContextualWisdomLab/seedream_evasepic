@@ -19,4 +19,4 @@
 
 ## 2026-08-11 - [CLI UX Enhancement] Human-readable file sizes
 **Learning:** Displaying raw byte counts for downloaded files (e.g., video files which are often large) creates unnecessary cognitive load for users trying to verify download success or disk usage.
-**Action:** Always format large file sizes into human-readable units (KB, MB) to provide immediate, intuitive feedback to the user.
+**Action:** Always format large file sizes into human-readable units (KiB, MiB, GiB) to provide immediate, intuitive feedback to the user.
