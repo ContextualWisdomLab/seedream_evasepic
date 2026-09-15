@@ -300,3 +300,33 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing IEC file size format ==="
+DUMMY_2MIB="$TMP_DIR/dummy-2mib.mp4"
+# Using dd to create exactly a 2 MiB file
+dd if=/dev/zero of="$DUMMY_2MIB" bs=1048576 count=2 status=none
+rm -f "$DUMMY_2MIB"
+MOCK_PATH="$(dirname "$(mktemp -d)")"
+export PATH="$MOCK_PATH:$PATH"
+cat << 'MOCK_YTDLP' > "$TMP_DIR/yt-dlp"
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    output="$1"
+    dd if=/dev/zero of="$output" bs=1048576 count=2 status=none
+    break
+  fi
+  shift
+done
+MOCK_YTDLP
+chmod +x "$TMP_DIR/yt-dlp"
+OUTPUT_LOG="$(PATH="$TMP_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$DUMMY_2MIB" 2>&1 || true)"
+
+if ! grep -q -F "Size: 2.00 MiB" <<< "$OUTPUT_LOG"; then
+  echo "FAIL: Expected 'Size: 2.00 MiB', but got:" >&2
+  printf '%s\n' "$OUTPUT_LOG" >&2
+  exit 1
+fi
+echo "PASS: File size formatting uses IEC units correctly"
+echo "====================================="
