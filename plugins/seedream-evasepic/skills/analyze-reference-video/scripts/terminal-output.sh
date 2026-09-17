@@ -6,28 +6,41 @@
 # bidirectional/invisible format control is rendered as visible text before the
 # value is mixed with trusted ANSI styling.
 
-# Return a terminal-safe representation of one untrusted value.
-terminal_safe_text() {
-  local value="${1-}"
-  local code octal control replacement
+_SAFE_TEXT_CONTROLS=()
+_SAFE_TEXT_REPLACEMENTS=()
 
-  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+_init_safe_text_arrays() {
+  local code octal control replacement
   for code in {1..31}; do
     printf -v octal '%03o' "$code"
     printf -v control '%b' "\\${octal}"
     printf -v replacement '\\x%02X' "$code"
-    value=${value//"$control"/"$replacement"}
+    _SAFE_TEXT_CONTROLS+=("$control")
+    _SAFE_TEXT_REPLACEMENTS+=("$replacement")
   done
-  value=${value//$'\177'/\\x7F}
-
-  # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
-  # the C1 control characters defined alongside ECMA-48 control functions.
   for code in {128..159}; do
     printf -v octal '%03o' "$code"
     printf -v control '%b' "\\302\\${octal}"
     printf -v replacement '\\u%04X' "$code"
-    value=${value//"$control"/"$replacement"}
+    _SAFE_TEXT_CONTROLS+=("$control")
+    _SAFE_TEXT_REPLACEMENTS+=("$replacement")
   done
+}
+_init_safe_text_arrays
+unset -f _init_safe_text_arrays
+
+# Return a terminal-safe representation of one untrusted value.
+terminal_safe_text() {
+  local value="${1-}"
+  local i
+
+  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+  # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
+  # the C1 control characters defined alongside ECMA-48 control functions.
+  for ((i=0; i<${#_SAFE_TEXT_CONTROLS[@]}; i++)); do
+    value=${value//"${_SAFE_TEXT_CONTROLS[i]}"/"${_SAFE_TEXT_REPLACEMENTS[i]}"}
+  done
+  value=${value//$'\177'/\\x7F}
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
   # from changing terminal line structure or the visual ordering of a path/URL.
