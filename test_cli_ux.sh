@@ -268,6 +268,41 @@ echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
 
+echo "=== Testing human-readable file sizes in download-reference.sh ==="
+if ! grep -q 'FILE_SIZE_HR=$(awk -v size="$FILE_SIZE_BYTES" '\''BEGIN {' plugins/seedream-evasepic/skills/analyze-reference-video/scripts/download-reference.sh; then
+  echo "FAIL: download-reference.sh must convert file size using awk" >&2
+  exit 1
+fi
+
+HR_TEST_DIR="$(mktemp -d)"
+HR_TEST_FILE="$HR_TEST_DIR/ref.mp4"
+# Ensure file does NOT exist before we run the script so it skips cache hit
+rm -f "$HR_TEST_FILE"
+
+mkdir -p "$HR_TEST_DIR/bin"
+cat > "$HR_TEST_DIR/bin/yt-dlp" <<'MOCK'
+#!/bin/bash
+# Find output arg and mock it
+for i in "$@"; do
+  if [[ "$i" == /* ]]; then
+    # create a 2 MiB file
+    dd if=/dev/zero of="$i" bs=1048576 count=2 2>/dev/null
+  fi
+done
+MOCK
+chmod +x "$HR_TEST_DIR/bin/yt-dlp"
+
+PATH="$HR_TEST_DIR/bin:/usr/bin:/bin" bash plugins/seedream-evasepic/skills/analyze-reference-video/scripts/download-reference.sh "https://example.invalid" "$HR_TEST_FILE" > "$HR_TEST_DIR/output.log" 2>&1 || true
+if ! grep -q 'Size: 2.00 MiB' "$HR_TEST_DIR/output.log"; then
+  echo "FAIL: download-reference.sh did not print correct human readable size" >&2
+  cat "$HR_TEST_DIR/output.log" >&2
+  rm -rf -- "$HR_TEST_DIR"
+  exit 1
+fi
+rm -rf -- "$HR_TEST_DIR"
+echo "PASS: download-reference.sh prints human readable sizes correctly"
+echo "====================================="
+
 echo "=== Testing Examples in CLI Output Should Be Actionable and Noticeable ==="
 assert_colored_example() {
   local output="$1"
