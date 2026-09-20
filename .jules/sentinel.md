@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2024-09-20 - [ffmpeg/ffprobe 파일 경로 인수 주입 취약점]
+**Vulnerability:** ffmpeg와 ffprobe는 입력 파일 경로 지정 시 `--` 옵션 구분자를 지원하지 않아, 사용자가 제어하는 파일 경로가 하이픈(`-`)으로 시작할 경우 악의적인 옵션이나 출력 대상으로 해석되는 인수 주입 취약점이 발생할 수 있습니다.
+**Learning:** `--` 구분자를 사용하는 것은 표준적인 방법이지만, ffmpeg와 같은 일부 도구는 이를 파일로 잘못 인식하므로 사용할 수 없다는 점을 배웠습니다.
+**Prevention:** 도구가 `--`를 지원하지 않는 경우, 사용자가 입력한 파일 경로를 검증하고 하이픈으로 시작하는 상대 경로일 때는 강제로 `./`를 접두사로 붙여(예: `[[ "$FILE" != /* ]] && [[ "$FILE" == -* ]] && FILE="./$FILE"`) 인수로 평가되지 않도록 방지해야 합니다.
