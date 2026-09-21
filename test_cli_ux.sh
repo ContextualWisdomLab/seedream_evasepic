@@ -81,6 +81,7 @@ EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
 CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
 mkdir -p -- "$CACHE_HIT_PATH"
 ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
+ln -s -- "$(command -v awk)" "$CACHE_HIT_PATH/awk"
 printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
 cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
 
