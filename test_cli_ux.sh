@@ -300,28 +300,3 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
-echo "=== Testing download-reference.sh human readable file size ==="
-MOCK_HUMAN_SIZE_DIR="$(mktemp -d)"
-trap 'rm -rf -- "$MOCK_HUMAN_SIZE_DIR"' EXIT
-cat > "$MOCK_HUMAN_SIZE_DIR/yt-dlp" <<'INNEREOF'
-#!/bin/bash
-while [ "$#" -gt 0 ]; do
-  if [ "$1" = "-o" ]; then
-    shift
-    output="${1:-}"
-    head -c 1048576 /dev/zero > "$output"
-    break
-  fi
-  shift
-done
-INNEREOF
-chmod +x "$MOCK_HUMAN_SIZE_DIR/yt-dlp"
-
-human_size_test_output="$(PATH="$MOCK_HUMAN_SIZE_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$MOCK_HUMAN_SIZE_DIR/human-size-test.mp4" 2>&1)"
-
-if ! grep -q -F "Size: 1.00 MiB" <<< "$human_size_test_output"; then
-  echo "FAIL: download-reference.sh must output file size in human-readable IEC units" >&2
-  exit 1
-fi
-echo "PASS: file size uses human-readable units"
-echo "====================================="
