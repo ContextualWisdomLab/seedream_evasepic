@@ -11,12 +11,6 @@ terminal_safe_text() {
   local value="${1-}"
   local code octal control replacement
 
-  # Fast path for common case: purely printable ASCII (or empty)
-  if [[ "$value" != *[!$'\x20'-$'\x7E']* ]]; then
-    printf '%s' "$value"
-    return
-  fi
-
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
   for code in {1..31}; do
     printf -v octal '%03o' "$code"
