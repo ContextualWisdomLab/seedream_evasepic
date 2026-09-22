@@ -6,27 +6,42 @@
 # bidirectional/invisible format control is rendered as visible text before the
 # value is mixed with trusted ANSI styling.
 
+# Precompute C0 and C1 control arrays at script load time to avoid invoking
+# 'printf -v' 63 times per function call, significantly reducing overhead.
+declare -a _TERMINAL_SAFE_C0_CONTROLS _TERMINAL_SAFE_C0_REPLACEMENTS
+declare -a _TERMINAL_SAFE_C1_CONTROLS _TERMINAL_SAFE_C1_REPLACEMENTS
+
+for _terminal_safe_code in {1..31}; do
+  printf -v _terminal_safe_octal '%03o' "$_terminal_safe_code"
+  printf -v _terminal_safe_control '%b' "\\${_terminal_safe_octal}"
+  printf -v _terminal_safe_replacement '\\x%02X' "$_terminal_safe_code"
+  _TERMINAL_SAFE_C0_CONTROLS[$_terminal_safe_code]="$_terminal_safe_control"
+  _TERMINAL_SAFE_C0_REPLACEMENTS[$_terminal_safe_code]="$_terminal_safe_replacement"
+done
+for _terminal_safe_code in {128..159}; do
+  printf -v _terminal_safe_octal '%03o' "$_terminal_safe_code"
+  printf -v _terminal_safe_control '%b' "\\302\\${_terminal_safe_octal}"
+  printf -v _terminal_safe_replacement '\\u%04X' "$_terminal_safe_code"
+  _TERMINAL_SAFE_C1_CONTROLS[$_terminal_safe_code]="$_terminal_safe_control"
+  _TERMINAL_SAFE_C1_REPLACEMENTS[$_terminal_safe_code]="$_terminal_safe_replacement"
+done
+unset _terminal_safe_code _terminal_safe_octal _terminal_safe_control _terminal_safe_replacement
+
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
   local value="${1-}"
-  local code octal control replacement
+  local code
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
   for code in {1..31}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\${octal}"
-    printf -v replacement '\\x%02X' "$code"
-    value=${value//"$control"/"$replacement"}
+    value=${value//"${_TERMINAL_SAFE_C0_CONTROLS[$code]}"/"${_TERMINAL_SAFE_C0_REPLACEMENTS[$code]}"}
   done
   value=${value//$'\177'/\\x7F}
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
   for code in {128..159}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\302\\${octal}"
-    printf -v replacement '\\u%04X' "$code"
-    value=${value//"$control"/"$replacement"}
+    value=${value//"${_TERMINAL_SAFE_C1_CONTROLS[$code]}"/"${_TERMINAL_SAFE_C1_REPLACEMENTS[$code]}"}
   done
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
