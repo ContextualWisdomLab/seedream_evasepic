@@ -117,16 +117,3 @@ if grep -nE 'print\(f?"[^\"]*\{(audio|out_base)' "$SCRIPT_DIRECTORY/transcribe.s
   fail 'Python fallback still prints a user-controlled path to the terminal'
 fi
 printf 'PASS: static contract keeps untrusted values out of terminal control sinks\n'
-
-echo "=== Testing 100% Code Coverage of terminal-output.sh ==="
-
-# We need to make sure we hit every line of terminal_safe_text and terminal_print_value
-source plugins/seedream-evasepic/skills/analyze-reference-video/scripts/terminal-output.sh
-
-# Call terminal_safe_text directly
-terminal_safe_text "test value" >/dev/null
-
-# Call terminal_print_value which calls terminal_safe_text
-terminal_print_value "prefix" "value" "suffix" >/dev/null
-
-echo "PASS: terminal_safe_text and terminal_print_value are both covered"
