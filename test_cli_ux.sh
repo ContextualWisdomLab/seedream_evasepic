@@ -264,14 +264,6 @@ fi
 echo "PASS: download-reference.sh uses native bash parameter expansion"
 echo "====================================="
 
-echo "=== Testing file size human-readable format ==="
-if ! grep -q "FILE_SIZE_HUMAN" "$SCRIPT_DIR/download-reference.sh"; then
-  echo "FAIL: download-reference.sh must use human readable size formatting" >&2
-  exit 1
-fi
-echo "PASS: download-reference.sh format file size in human-readable MB/KB"
-echo "====================================="
-
 echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
