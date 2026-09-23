@@ -207,6 +207,7 @@ cp "$PATH_TEST_DIR/bin/pip" "$PATH_TEST_DIR/bin/pip3"
 chmod +x "$PATH_TEST_DIR/bin/pip" "$PATH_TEST_DIR/bin/pip3"
 
 PATH_TEST_STATUS=0
+ln -s -- "$(command -v awk)" "$PATH_TEST_DIR/bin/awk"
 PATH_TEST_OUTPUT="$(PATH="$PATH_TEST_DIR/bin:/usr/bin:/bin" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "dummy_path" 2>&1)" || PATH_TEST_STATUS=$?
 if [ "$PATH_TEST_STATUS" -ne 1 ] || ! grep -Fq 'yt-dlp was installed but cannot be found in $PATH' <<< "$PATH_TEST_OUTPUT"; then
   echo "FAIL: download-reference.sh did not fail after mock install left yt-dlp outside PATH" >&2
