@@ -44,6 +44,8 @@ if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   exit 2
 fi
 
+[[ "$OUT_DIR" != /* ]] && [[ "$OUT_DIR" == -* ]] && OUT_DIR="./$OUT_DIR"
+
 case "$NUM_FRAMES" in
   ''|*[!0-9]*|0*)
     printf "%b\n" "${RED}Error: num_frames must be a positive integer.${NC}" >&2
@@ -156,11 +158,10 @@ FRAME_COUNT="${#frames[@]}"
 terminal_print_value "${GREEN}Extracted $FRAME_COUNT frames to " "$OUT_DIR" "${NC}"
 
 if [ -f "$OUT_DIR/audio.wav" ]; then
-  terminal_print_value "${GREEN}Audio saved: " "$OUT_DIR/audio.wav" "${NC}"
+  terminal_print_value "${GREEN}Audio saved: " "$OUT_DIR/audio.wav" "${NC}" 
 else
   printf "%b\n" "${YELLOW}No audio stream (silent video) — audio.wav not created${NC}"
   echo "audio=silent" >> "$OUT_DIR/metadata.txt"
 fi
 
 terminal_print_value "${GREEN}Done. Output in: " "$OUT_DIR" "${NC}"
-
