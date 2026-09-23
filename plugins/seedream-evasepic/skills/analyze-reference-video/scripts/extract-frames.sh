@@ -158,10 +158,11 @@ FRAME_COUNT="${#frames[@]}"
 terminal_print_value "${GREEN}Extracted $FRAME_COUNT frames to " "$OUT_DIR" "${NC}"
 
 if [ -f "$OUT_DIR/audio.wav" ]; then
-  terminal_print_value "${GREEN}Audio saved: " "$OUT_DIR/audio.wav" "${NC}" 
+  terminal_print_value "${GREEN}Audio saved: " "$OUT_DIR/audio.wav" "${NC}"
 else
   printf "%b\n" "${YELLOW}No audio stream (silent video) — audio.wav not created${NC}"
   echo "audio=silent" >> "$OUT_DIR/metadata.txt"
 fi
 
 terminal_print_value "${GREEN}Done. Output in: " "$OUT_DIR" "${NC}"
+
