@@ -81,7 +81,6 @@ chmod +x "$temporary_directory/yt-dlp"
 
 script_value=$'safe\033[31mPWNED\033[0m\nFORGED\rLINE'
 download_output="$temporary_directory/download.out"
-ln -s -- "$(command -v awk)" "$temporary_directory/awk"
 PATH="$temporary_directory:$PATH" \
   bash "$SCRIPT_DIRECTORY/download-reference.sh" \
     "https://example.invalid/$script_value" \
