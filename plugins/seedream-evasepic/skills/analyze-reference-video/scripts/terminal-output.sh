@@ -8,8 +8,8 @@
 
 # Precompute C0 and C1 control arrays at script load time to avoid invoking
 # 'printf -v' 63 times per function call, significantly reducing overhead.
-declare -a _TERMINAL_SAFE_C0_CONTROLS _TERMINAL_SAFE_C0_REPLACEMENTS
-declare -a _TERMINAL_SAFE_C1_CONTROLS _TERMINAL_SAFE_C1_REPLACEMENTS
+declare -g -a _TERMINAL_SAFE_C0_CONTROLS _TERMINAL_SAFE_C0_REPLACEMENTS
+declare -g -a _TERMINAL_SAFE_C1_CONTROLS _TERMINAL_SAFE_C1_REPLACEMENTS
 
 for _terminal_safe_code in {1..31}; do
   printf -v _terminal_safe_octal '%03o' "$_terminal_safe_code"
