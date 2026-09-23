@@ -3,12 +3,14 @@
 set -euo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-SCRIPT="$ROOT/plugins/seedream-evasepic/skills/analyze-reference-video/scripts/extract-frames.sh"
+EXTRACT_SCRIPT="$ROOT/plugins/seedream-evasepic/skills/analyze-reference-video/scripts/extract-frames.sh"
+TRANSCRIBE_SCRIPT="$ROOT/plugins/seedream-evasepic/skills/analyze-reference-video/scripts/transcribe.sh"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf -- "$TMP_DIR"' EXIT
 WORK_DIR="$TMP_DIR/work"
 mkdir -p -- "$WORK_DIR"
 : > "$WORK_DIR/-input.mp4"
+: > "$WORK_DIR/-audio.wav"
 
 cat > "$TMP_DIR/ffprobe" <<'EOF'
 #!/bin/bash
@@ -61,7 +63,26 @@ chmod +x "$TMP_DIR/ffmpeg"
   cd -- "$WORK_DIR"
   FFMPEG="$TMP_DIR/ffmpeg" \
   FFPROBE="$TMP_DIR/ffprobe" \
-    bash "$SCRIPT" '-input.mp4' '-output' 1 >/dev/null
+    bash "$EXTRACT_SCRIPT" '-input.mp4' '-output' 1 >/dev/null
 )
 
-printf '%s\n' 'PASS: leading-dash media input and output paths are passed as operands'
+cat > "$TMP_DIR/whisper" <<'EOF'
+#!/bin/bash
+set -eu
+last=''
+for arg in "$@"; do
+  last="$arg"
+done
+[ "$last" = './-audio.wav' ] || {
+  printf 'unsafe whisper input operand: %s\n' "$last" >&2
+  exit 69
+}
+EOF
+chmod +x "$TMP_DIR/whisper"
+
+(
+  cd -- "$WORK_DIR"
+  PATH="$TMP_DIR:$PATH" bash "$TRANSCRIBE_SCRIPT" '-audio.wav' base >/dev/null
+)
+
+printf '%s\n' 'PASS: leading-dash media paths are passed as operands'
