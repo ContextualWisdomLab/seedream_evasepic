@@ -29,7 +29,6 @@ for arg in "$@"; do
 done
 
 AUDIO="${1:-}"
-[[ "$AUDIO" != /* ]] && [[ "$AUDIO" == -* ]] && AUDIO="./$AUDIO"
 MODEL="${2:-base}"
 
 case "$MODEL" in
@@ -71,7 +70,7 @@ if command -v whisper >/dev/null 2>&1; then
     --output_format json \
     --output_dir "$OUT_DIR" \
     --verbose False \
-    "$AUDIO"
+    -- "$AUDIO"
   AUDIO_BASE="${AUDIO%.*}"
   terminal_print_value "${GREEN}Transcript saved to " "$OUT_DIR/${AUDIO_BASE##*/}.txt" "${NC}"
   exit 0
