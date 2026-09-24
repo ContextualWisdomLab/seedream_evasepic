@@ -17,6 +17,33 @@ SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=terminal-output.sh
 . "$SCRIPT_DIRECTORY/terminal-output.sh"
 
+human_file_size() {
+  local bytes="$1"
+  local unit_index=0
+  local divisor=1
+  local whole remainder tenth
+  local units=(B KiB MiB GiB TiB)
+
+  while (( unit_index < 4 && bytes >= divisor * 1024 )); do
+    divisor=$((divisor * 1024))
+    unit_index=$((unit_index + 1))
+  done
+
+  if (( unit_index == 0 )); then
+    printf '%d %s' "$bytes" "${units[$unit_index]}"
+    return
+  fi
+
+  whole=$((bytes / divisor))
+  remainder=$((bytes % divisor))
+  tenth=$(((remainder * 10 + divisor / 2) / divisor))
+  if (( tenth == 10 )); then
+    whole=$((whole + 1))
+    tenth=0
+  fi
+  printf '%d.%d %s' "$whole" "$tenth" "${units[$unit_index]}"
+}
+
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
@@ -100,9 +127,9 @@ yt-dlp \
   }
 
 terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
-# Optimization: Use native bash parameter expansion instead of spawning a tr process
+# Keep size formatting shell-native so a successful download does not gain a new awk dependency.
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-FILE_SIZE_HUMAN=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN { split("B KiB MiB GiB TiB", units, " "); u = 1; while (bytes >= 1024 && u < 5) { bytes /= 1024; u++ }; if (u == 1) printf "%d %s", bytes, units[u]; else printf "%.1f %s", bytes, units[u] }')
+FILE_SIZE_HUMAN="$(human_file_size "$FILE_SIZE_BYTES")"
 terminal_print_value "${CYAN}Size: " "$FILE_SIZE_HUMAN" "${NC}"
 
