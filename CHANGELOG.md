@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## [Unreleased]
+### Security
+- Fixed an Option Injection vulnerability where user-provided video paths starting with `-` were incorrectly parsed as options by `ffmpeg` and `ffprobe` in `extract-frames.sh`.
 
 ### 사용자 경험 개선 (UX)
 - 참조 영상 다운로드 대상이 이미 존재하는 0바이트 초과 일반 파일이면 `yt-dlp` 설치 확인과 네트워크 호출 전에 안전하게 종료하여 기존 아티팩트를 보존합니다. 0바이트 파일과 누락 경로는 계속 다운로드하며, 캐시 적중·미스 분기를 실행 가능한 CLI 테스트로 검증합니다.
