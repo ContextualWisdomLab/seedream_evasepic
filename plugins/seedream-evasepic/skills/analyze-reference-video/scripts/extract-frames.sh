@@ -76,6 +76,10 @@ if [ ! -f "$VIDEO" ]; then
   exit 1
 fi
 
+if [[ "$VIDEO" == -* ]]; then
+  VIDEO="./$VIDEO"
+fi
+
 mkdir -p -- "$OUT_DIR"
 
 # Probe video metadata in a single call to reduce process overhead
