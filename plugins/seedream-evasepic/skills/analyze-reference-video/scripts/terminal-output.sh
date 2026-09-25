@@ -17,16 +17,20 @@ declare -a _TERMINAL_C1_REPLACEMENTS
 
 for _code in {1..31}; do
   printf -v _octal '%03o' "$_code"
-  printf -v _TERMINAL_C0_CONTROLS[$_code] '%b' "\\${_octal}"
-  printf -v _TERMINAL_C0_REPLACEMENTS[$_code] '\\x%02X' "$_code"
+  printf -v _tmp_c0_c '%b' "\\${_octal}"
+  printf -v _tmp_c0_r '\\x%02X' "$_code"
+  _TERMINAL_C0_CONTROLS[$_code]="$_tmp_c0_c"
+  _TERMINAL_C0_REPLACEMENTS[$_code]="$_tmp_c0_r"
 done
 
 for _code in {128..159}; do
   printf -v _octal '%03o' "$_code"
-  printf -v _TERMINAL_C1_CONTROLS[$_code] '%b' "\\302\\${_octal}"
-  printf -v _TERMINAL_C1_REPLACEMENTS[$_code] '\\u%04X' "$_code"
+  printf -v _tmp_c1_c '%b' "\\302\\${_octal}"
+  printf -v _tmp_c1_r '\\u%04X' "$_code"
+  _TERMINAL_C1_CONTROLS[$_code]="$_tmp_c1_c"
+  _TERMINAL_C1_REPLACEMENTS[$_code]="$_tmp_c1_r"
 done
-unset _code _octal
+unset _code _octal _tmp_c0_c _tmp_c0_r _tmp_c1_c _tmp_c1_r
 
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
