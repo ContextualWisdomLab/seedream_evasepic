@@ -31,6 +31,8 @@ done
 AUDIO="${1:-}"
 MODEL="${2:-base}"
 
+[[ "$AUDIO" != /* ]] && [[ "$AUDIO" == -* ]] && AUDIO="./$AUDIO"
+
 case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
@@ -70,7 +72,7 @@ if command -v whisper >/dev/null 2>&1; then
     --output_format json \
     --output_dir "$OUT_DIR" \
     --verbose False \
-    -- "$AUDIO"
+    "$AUDIO"
   AUDIO_BASE="${AUDIO%.*}"
   terminal_print_value "${GREEN}Transcript saved to " "$OUT_DIR/${AUDIO_BASE##*/}.txt" "${NC}"
   exit 0
