@@ -162,26 +162,51 @@ echo "PASS: awk fallback keeps dynamic values out of the awk program string"
 echo "====================================="
 
 echo "=== Testing error message clarity for missing arguments ==="
-if ! bash "$SCRIPT_DIR/download-reference.sh" 2>&1 | grep -q "Error: Missing required argument: <url>"; then
-  echo "FAIL: download-reference.sh did not print explicit error message for missing <url>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" 2>&1 | grep -q "Error: Missing required argument: <output_path>"; then
-  echo "FAIL: download-reference.sh did not print explicit error message for missing <output_path>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/extract-frames.sh" 2>&1 | grep -q "Error: Missing required argument: <video_path>"; then
-  echo "FAIL: extract-frames.sh did not print explicit error message for missing <video_path>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/extract-frames.sh" "dummy_video" 2>&1 | grep -q "Error: Missing required argument: <output_dir>"; then
-  echo "FAIL: extract-frames.sh did not print explicit error message for missing <output_dir>" >&2
-  exit 1
-fi
-if ! bash "$SCRIPT_DIR/transcribe.sh" 2>&1 | grep -q "Error: Missing required argument: <audio_path>"; then
-  echo "FAIL: transcribe.sh did not print explicit error message for missing <audio_path>" >&2
-  exit 1
-fi
+assert_stderr_exit_2() {
+  local label="$1"
+  local expected_message="$2"
+  shift 2
+  local stdout_file="$TMP_DIR/$label.stdout"
+  local stderr_file="$TMP_DIR/$label.stderr"
+  local status
+
+  set +e
+  "$@" >"$stdout_file" 2>"$stderr_file"
+  status=$?
+  set -e
+
+  if [ "$status" -ne 2 ]; then
+    echo "FAIL: $label exited $status instead of 2" >&2
+    cat "$stderr_file" >&2
+    exit 1
+  fi
+  if [ -s "$stdout_file" ]; then
+    echo "FAIL: $label wrote its argument error to stdout" >&2
+    cat "$stdout_file" >&2
+    exit 1
+  fi
+  if ! grep -q -F -- "$expected_message" "$stderr_file"; then
+    echo "FAIL: $label did not print the expected stderr message" >&2
+    cat "$stderr_file" >&2
+    exit 1
+  fi
+}
+
+assert_stderr_exit_2 download_missing_url \
+  "Error: Missing required argument: <url>" \
+  bash "$SCRIPT_DIR/download-reference.sh"
+assert_stderr_exit_2 download_missing_output \
+  "Error: Missing required argument: <output_path>" \
+  bash "$SCRIPT_DIR/download-reference.sh" "dummy_url"
+assert_stderr_exit_2 extract_missing_video \
+  "Error: Missing required argument: <video_path>" \
+  bash "$SCRIPT_DIR/extract-frames.sh"
+assert_stderr_exit_2 extract_missing_output \
+  "Error: Missing required argument: <output_dir>" \
+  bash "$SCRIPT_DIR/extract-frames.sh" "dummy_video"
+assert_stderr_exit_2 transcribe_missing_audio \
+  "Error: Missing required argument: <audio_path>" \
+  bash "$SCRIPT_DIR/transcribe.sh"
 echo "PASS: all scripts print explicit error messages for missing arguments"
 echo "====================================="
 
