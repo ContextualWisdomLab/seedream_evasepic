@@ -1,0 +1,3 @@
+## 2026-08-26 - [Strix CI Failure Required RCA]
+**Learning:** If the `strix` vulnerability scan CI job fails with a message indicating 'Strix could not complete authoritative vulnerability analysis because its provider/backend was unavailable' or 'LLM CONNECTION FAILED (404 page not found)' or 'RateLimitError' or 'credit_balance_exhausted', it requires exact-job-log RCA, fail-closed admission, and canonical-owner repair. The orchestrator/free gateway-only contract has no provider/model/group/paid fallback or bypass.
+**Action:** Do not just ignore and resubmit. Draft/Proposed while evidence is missing. Perform exact-job-log RCA and follow the failure protocol.
