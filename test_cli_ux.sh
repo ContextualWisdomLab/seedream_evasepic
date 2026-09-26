@@ -300,3 +300,39 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing Human-Readable File Sizes ==="
+MOCK_DIR="$(mktemp -d)"
+mkdir -p "$MOCK_DIR/bin"
+cat > "$MOCK_DIR/bin/yt-dlp" <<'EOF'
+#!/bin/bash
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "-o" ]]; then
+    dd if=/dev/zero of="$2" bs=1024 count=1024 2>/dev/null
+    exit 0
+  fi
+  shift
+done
+EOF
+chmod +x "$MOCK_DIR/bin/yt-dlp"
+MOCK_OUTPUT="$TMP_DIR/human-readable.mp4"
+
+set +e
+SIZE_OUTPUT="$(PATH="$MOCK_DIR/bin:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$MOCK_OUTPUT" 2>&1)"
+SIZE_STATUS=$?
+set -e
+
+if [ "$SIZE_STATUS" -ne 0 ]; then
+  echo "FAIL: download-reference.sh failed with mock yt-dlp" >&2
+  printf '%s\n' "$SIZE_OUTPUT" >&2
+  exit 1
+fi
+
+if ! grep -q -F "Size: 1.0 MiB" <<< "$SIZE_OUTPUT"; then
+  echo "FAIL: expected 'Size: 1.0 MiB' but got:" >&2
+  printf '%s\n' "$SIZE_OUTPUT" >&2
+  exit 1
+fi
+
+rm -rf "$MOCK_DIR"
+echo "PASS: download-reference.sh outputs human-readable file sizes"
+echo "====================================="
