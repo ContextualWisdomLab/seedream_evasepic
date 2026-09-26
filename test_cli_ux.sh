@@ -300,3 +300,28 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing Argument Injection Prevention ==="
+test_inject_out="$(bash "$SCRIPT_DIR/extract-frames.sh" "-v" "-o" 12 2>&1)" || true
+if ! echo "$test_inject_out" | grep -q 'Error: video not found: ./-v'; then
+  echo "FAIL: extract-frames.sh did not prevent argument injection on VIDEO path" >&2
+  echo "$test_inject_out" >&2
+  exit 1
+fi
+
+test_inject_out="$(bash "$SCRIPT_DIR/transcribe.sh" "-v" "base" 2>&1)" || true
+if ! echo "$test_inject_out" | grep -q 'Error: audio file not found: ./-v'; then
+  echo "FAIL: transcribe.sh did not prevent argument injection on AUDIO path" >&2
+  echo "$test_inject_out" >&2
+  exit 1
+fi
+
+# download-reference.sh does not check if the file exists when it's just the output, but it makes a directory. We can mock yt-dlp to see what it receives.
+test_inject_out="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy" "-o" 2>&1)" || true
+if ! echo "$test_inject_out" | grep -q 'Target: ./-o'; then
+  echo "FAIL: download-reference.sh did not prevent argument injection on OUTPUT path" >&2
+  echo "$test_inject_out" >&2
+  exit 1
+fi
+
+echo "PASS: Argument injection prevention verified."
+echo "====================================="
