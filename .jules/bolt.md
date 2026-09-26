@@ -34,3 +34,7 @@
 ## 2024-09-20 - [루프 내에서 반복적인 printf -v 실행 제거로 성능 최적화]
 **Learning:** Bash 스크립트에서 루프 내부에 내장 명령어인 `printf -v`를 반복적으로 실행하면 성능 저하(오버헤드)가 크게 발생합니다. 특히 C0 및 C1 컨트롤 문자 치환과 같이 자주 호출되는 함수 내부에서는 그 영향이 누적됩니다.
 **Action:** 루프 내부에서 동적으로 문자열을 포맷팅하는 대신, 스크립트 로드 시점에 전역 배열로 결과를 미리 계산(Precompute)해두면 실행 속도를 눈에 띄게 개선할 수 있습니다.
+
+## 2024-05-30 - [Precomputing Control Replacements in Bash without global leakage]
+**Learning:** Python's `re.sub()` consumes backslashes in the replacement string, which completely breaks Bash string literals (e.g. `\\x%02X` becomes `\x%02X`), leading to runtime syntax errors like `printf: missing hex digit for \x`. Additionally, when using IIFE in Bash to precompute values, removing `declare -a` allows the inner arrays to be available globally without causing issues in strict sourcing environments.
+**Action:** Always use `.replace()` instead of `re.sub()` when injecting literal bash code containing escapes. Use IIFEs for bash initialization when modifying variables to avoid leaking loop variables, and omit `declare` to safely export the array mappings globally for function use later.

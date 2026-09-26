@@ -7,42 +7,49 @@
 # value is mixed with trusted ANSI styling.
 
 # Precompute C0 and C1 control characters and their replacements
-declare -a _TERMINAL_SAFE_C0_CONTROLS _TERMINAL_SAFE_C0_REPLACEMENTS
-declare -a _TERMINAL_SAFE_C1_CONTROLS _TERMINAL_SAFE_C1_REPLACEMENTS
+# Wrapped in an ephemeral initialization function to protect the global scope
+# when this script is sourced.
+_init_terminal_output() {
+  local code octal control replacement
 
-for _code in {1..31}; do
-  printf -v _octal '%03o' "$_code"
-  printf -v _control '%b' "\\${_octal}"
-  printf -v _replacement '\\x%02X' "$_code"
-  _TERMINAL_SAFE_C0_CONTROLS[$_code]="$_control"
-  _TERMINAL_SAFE_C0_REPLACEMENTS[$_code]="$_replacement"
-done
+  for code in {1..31}; do
+    printf -v octal '%03o' "$code"
+    printf -v control '%b' "\\${octal}"
+    printf -v replacement '\\x%02X' "$code"
+    _TERMINAL_SAFE_C0_CONTROLS[$code]="$control"
+    _TERMINAL_SAFE_C0_REPLACEMENTS[$code]="$replacement"
+  done
 
-for _code in {128..159}; do
-  printf -v _octal '%03o' "$_code"
-  printf -v _control '%b' "\\302\\${_octal}"
-  printf -v _replacement '\\u%04X' "$_code"
-  _TERMINAL_SAFE_C1_CONTROLS[$_code]="$_control"
-  _TERMINAL_SAFE_C1_REPLACEMENTS[$_code]="$_replacement"
-done
-
-unset _code _octal _control _replacement
+  for code in {128..159}; do
+    printf -v octal '%03o' "$code"
+    printf -v control '%b' "\\302\\${octal}"
+    printf -v replacement '\\u%04X' "$code"
+    _TERMINAL_SAFE_C1_CONTROLS[$code]="$control"
+    _TERMINAL_SAFE_C1_REPLACEMENTS[$code]="$replacement"
+  done
+}
+_init_terminal_output
+unset -f _init_terminal_output
 
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
   local value="${1-}"
-  local code
+  local code control replacement
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
   for code in {1..31}; do
-    value=${value//"${_TERMINAL_SAFE_C0_CONTROLS[$code]}"/"${_TERMINAL_SAFE_C0_REPLACEMENTS[$code]}"}
+    control="${_TERMINAL_SAFE_C0_CONTROLS[$code]}"
+    replacement="${_TERMINAL_SAFE_C0_REPLACEMENTS[$code]}"
+    value=${value//"$control"/"$replacement"}
   done
   value=${value//$'\177'/\\x7F}
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
   for code in {128..159}; do
-    value=${value//"${_TERMINAL_SAFE_C1_CONTROLS[$code]}"/"${_TERMINAL_SAFE_C1_REPLACEMENTS[$code]}"}
+    control="${_TERMINAL_SAFE_C1_CONTROLS[$code]}"
+    replacement="${_TERMINAL_SAFE_C1_REPLACEMENTS[$code]}"
+    value=${value//"$control"/"$replacement"}
   done
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
