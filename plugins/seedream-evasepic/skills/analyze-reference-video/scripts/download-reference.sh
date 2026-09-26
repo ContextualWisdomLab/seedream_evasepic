@@ -103,14 +103,28 @@ terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 # Optimization: Use native bash parameter expansion instead of spawning a tr process
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-if [ "$FILE_SIZE_BYTES" -ge 1073741824 ]; then
-  FILE_SIZE_HUMAN=$(awk -v b="$FILE_SIZE_BYTES" 'BEGIN { printf "%.2f GB", b/1073741824 }')
-elif [ "$FILE_SIZE_BYTES" -ge 1048576 ]; then
-  FILE_SIZE_HUMAN=$(awk -v b="$FILE_SIZE_BYTES" 'BEGIN { printf "%.2f MB", b/1048576 }')
-elif [ "$FILE_SIZE_BYTES" -ge 1024 ]; then
-  FILE_SIZE_HUMAN=$(awk -v b="$FILE_SIZE_BYTES" 'BEGIN { printf "%.2f KB", b/1024 }')
-else
-  FILE_SIZE_HUMAN="${FILE_SIZE_BYTES} B"
-fi
+FILE_SIZE_HUMAN=$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {
+  if (bytes < 1024) {
+    printf "%d B", bytes
+    exit
+  }
+
+  split("B KB MB GB", units, " ")
+  value = bytes
+  unit = 1
+  while (value >= 1024 && unit < 4) {
+    value /= 1024
+    unit++
+  }
+
+  # Select the unit after two-decimal rounding so a boundary value is never
+  # rendered as the misleading "1024.00" of the smaller unit.
+  rounded = int(value * 100 + 0.5) / 100
+  if (rounded >= 1024 && unit < 4) {
+    value /= 1024
+    unit++
+  }
+  printf "%.2f %s", value, units[unit]
+}')
 terminal_print_value "${CYAN}Size: " "${FILE_SIZE_HUMAN}" "${NC}"
 
