@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2026-09-14 - [CRITICAL] ffprobe 메타데이터를 통한 ANSI 이스케이프 시퀀스 인젝션 취약점 수정
+**Vulnerability:** `extract-frames.sh`에서 사용자 제어 비디오 메타데이터(`$DURATION`, `$RESOLUTION`, `$FPS`)를 출력할 때 변수를 `printf "%b"`의 인수로 사용하여 터미널 제어 문자가 실행될 수 있는 취약점이 존재했습니다. 공격자가 ANSI 이스케이프 시퀀스가 포함된 메타데이터를 가진 비디오 파일을 제공하면, `%b`를 통해 평가되어 터미널 출력이 변조될 수 있습니다.
+**Learning:** 사용자가 제공한 파일에서 추출된 메타데이터(표준 미디어 파일 포함)는 항상 신뢰할 수 없는 외부 입력으로 취급해야 합니다. 이를 `%b` 포맷 스트링 인자로 전달하면 포함된 이스케이프 시퀀스가 실행됩니다.
+**Prevention:** 추출된 메타데이터 변수들을 출력하기 전에 `terminal_safe_text`를 통과시켜 무력화하고, `%b`는 신뢰할 수 있는 터미널 색상 상수 출력용으로만 사용하며, 검증되지 않은 값은 반드시 `%s`를 사용하여 출력해야 합니다.
