@@ -268,6 +268,44 @@ echo "=== Testing actual terminal control neutralization ==="
 bash ./test_terminal_output.sh
 echo "====================================="
 
+echo "=== Testing human-readable size output ==="
+# To bypass the cache hit logic in download-reference.sh, file must not exist before script runs
+DUMMY_OUTPUT="$TMP_DIR/dummy_size_missing.mp4"
+rm -f "$DUMMY_OUTPUT"
+cat > "$TMP_DIR/yt-dlp" << 'YTSTUB'
+#!/bin/bash
+out=""
+for arg in "$@"; do
+  if [ "${arg:0:1}" = "/" ] || [ "${arg:0:4}" = "/tmp" ]; then
+    out="$arg"
+    break
+  fi
+done
+# Check if -o was used explicitly instead
+if [ -z "$out" ]; then
+  while [ "$#" -gt 0 ]; do
+    if [ "$1" = "-o" ]; then shift; out="$1"; break; fi
+    shift
+  done
+fi
+mkdir -p "${out%/*}"
+printf '%*s' 1536 '' > "$out"
+YTSTUB
+chmod +x "$TMP_DIR/yt-dlp"
+set +e
+output="$(
+  PATH="$TMP_DIR:$PATH" \
+  bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$DUMMY_OUTPUT" 2>&1
+)"
+set -e
+if ! grep -q "Size: 1.5 KB" <<< "$output"; then
+  echo "FAIL: download-reference.sh did not print human-readable size for 1.5 KB" >&2
+  printf '%s\n' "$output" >&2
+  false
+fi
+echo "PASS: download-reference.sh prints human-readable file size"
+echo "====================================="
+
 echo "=== Testing Examples in CLI Output Should Be Actionable and Noticeable ==="
 assert_colored_example() {
   local output="$1"
