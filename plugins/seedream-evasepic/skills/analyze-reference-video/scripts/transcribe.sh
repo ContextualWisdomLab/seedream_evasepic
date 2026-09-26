@@ -58,6 +58,12 @@ if [ ! -f "$AUDIO" ]; then
   exit 1
 fi
 
+AUDIO_BASE="${AUDIO%.*}"
+if [ -L "$AUDIO_BASE.txt" ] || [ -L "$AUDIO_BASE.segments.json" ]; then
+  printf "%b\n" "${RED}Error: Output paths cannot be symlinks to prevent overwriting sensitive files.${NC}" >&2
+  exit 1
+fi
+
 # Try whisper CLI first
 if command -v whisper >/dev/null 2>&1; then
   terminal_print_value "${CYAN}Transcribing with whisper CLI (model: " "$MODEL" ")...${NC}"
