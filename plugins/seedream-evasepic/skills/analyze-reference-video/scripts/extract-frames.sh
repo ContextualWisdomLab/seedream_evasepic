@@ -124,7 +124,10 @@ FPS=${FPS:-unknown}
 } > "$OUT_DIR/metadata.txt"
 
 terminal_print_value "${CYAN}Video: " "${VIDEO##*/}" "${NC}"
-printf "%b\n" "${CYAN}Duration: ${NC}${DURATION}s | ${CYAN}Resolution: ${NC}$RESOLUTION | ${CYAN}FPS: ${NC}$FPS"
+SAFE_DURATION="$(terminal_safe_text "$DURATION")"
+SAFE_RESOLUTION="$(terminal_safe_text "$RESOLUTION")"
+SAFE_FPS="$(terminal_safe_text "$FPS")"
+printf "%b%s%b%s%b%s\n" "${CYAN}Duration: ${NC}" "${SAFE_DURATION}s" " | ${CYAN}Resolution: ${NC}" "${SAFE_RESOLUTION}" " | ${CYAN}FPS: ${NC}" "${SAFE_FPS}"
 
 # Extract evenly-spaced frames across the full duration.
 # Keep the awk program literal fixed; pass dynamic values via -v so data cannot become awk code.
