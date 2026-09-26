@@ -88,10 +88,17 @@ PATH="$temporary_directory:$PATH" \
 assert_neutralized_file "$download_output" 'download-reference.sh'
 
 extract_output="$temporary_directory/extract.out"
+touch "$temporary_directory/$script_value.mp4"
+cat >"$temporary_directory/ffprobe" <<STUB
+#!/bin/bash
+printf 'duration=%s\nwidth=%s\nheight=1080\nr_frame_rate=%s\ncodec_type=video\n' "\$script_value" "\$script_value" "\$script_value"
+STUB
+chmod +x "$temporary_directory/ffprobe"
+
 FFMPEG=/bin/true \
-FFPROBE=/bin/true \
+FFPROBE="$temporary_directory/ffprobe" \
   bash "$SCRIPT_DIRECTORY/extract-frames.sh" \
-    "$temporary_directory/$script_value.mp4.missing" \
+    "$temporary_directory/$script_value.mp4" \
     "$temporary_directory/frames" >"$extract_output" 2>&1 || true
 assert_neutralized_file "$extract_output" 'extract-frames.sh'
 
@@ -107,7 +114,7 @@ assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path erro
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
 printf '=== Testing static terminal-output contract ===\n'
-if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO)' \
+if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO|\$DURATION|\$RESOLUTION|\$FPS)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \
   "$SCRIPT_DIRECTORY/extract-frames.sh" \
   "$SCRIPT_DIRECTORY/transcribe.sh"; then
