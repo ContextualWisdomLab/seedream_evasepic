@@ -6,27 +6,41 @@
 # bidirectional/invisible format control is rendered as visible text before the
 # value is mixed with trusted ANSI styling.
 
+# Precompute control character replacements to avoid expensive printf sub-calls
+declare -a _C0_CTRL _C0_REPL _C1_CTRL _C1_REPL
+for _code in {1..31}; do
+  printf -v _octal '%03o' "$_code"
+  printf -v _control '%b' "\\${_octal}"
+  _C0_CTRL[$_code]="$_control"
+
+  # Assign to temporary scalar first to support old Bash
+  printf -v _replacement '\\x%02X' "$_code"
+  _C0_REPL[$_code]="$_replacement"
+done
+for _code in {128..159}; do
+  printf -v _octal '%03o' "$_code"
+  printf -v _control '%b' "\\302\\${_octal}"
+  _C1_CTRL[$_code]="$_control"
+
+  printf -v _replacement '\\u%04X' "$_code"
+  _C1_REPL[$_code]="$_replacement"
+done
+
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
   local value="${1-}"
-  local code octal control replacement
+  local _code
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
-  for code in {1..31}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\${octal}"
-    printf -v replacement '\\x%02X' "$code"
-    value=${value//"$control"/"$replacement"}
+  for _code in {1..31}; do
+    value=${value//"${_C0_CTRL[_code]}"/"${_C0_REPL[_code]}"}
   done
   value=${value//$'\177'/\\x7F}
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
-  for code in {128..159}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\302\\${octal}"
-    printf -v replacement '\\u%04X' "$code"
-    value=${value//"$control"/"$replacement"}
+  for _code in {128..159}; do
+    value=${value//"${_C1_CTRL[_code]}"/"${_C1_REPL[_code]}"}
   done
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
