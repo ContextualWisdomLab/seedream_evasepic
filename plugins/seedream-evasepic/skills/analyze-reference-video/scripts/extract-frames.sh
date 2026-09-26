@@ -31,6 +31,9 @@ for arg in "$@"; do
 done
 
 VIDEO="${1:-}"
+if [[ "$VIDEO" == -* ]]; then
+  VIDEO="./$VIDEO"
+fi
 OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 

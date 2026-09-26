@@ -29,6 +29,9 @@ for arg in "$@"; do
 done
 
 AUDIO="${1:-}"
+if [[ "$AUDIO" == -* ]]; then
+  AUDIO="./$AUDIO"
+fi
 MODEL="${2:-base}"
 
 case "$MODEL" in
