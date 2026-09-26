@@ -300,3 +300,53 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing human-readable file size format ==="
+HUMAN_TEST_DIR="$(mktemp -d)"
+HUMAN_TEST_FILE="$HUMAN_TEST_DIR/human_test.mp4"
+dd if=/dev/zero of="$HUMAN_TEST_FILE" bs=1500 count=1 2>/dev/null
+cat > "$HUMAN_TEST_DIR/yt-dlp" << 'MOCK'
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    out_file="$1"
+    mkdir -p -- "${out_file%/*}"
+    break
+  fi
+  shift
+done
+MOCK
+chmod +x "$HUMAN_TEST_DIR/yt-dlp"
+# We need to symlink awk for the cache hit path to use
+ln -s -- "$(command -v awk)" "$HUMAN_TEST_DIR/awk"
+
+set +e
+# Ensure cache hit does not occur by mocking yt-dlp to recreate it
+rm -f "$HUMAN_TEST_FILE"
+cat > "$HUMAN_TEST_DIR/yt-dlp" << 'MOCK'
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    out_file="$1"
+    mkdir -p -- "${out_file%/*}"
+    dd if=/dev/zero of="$out_file" bs=1500 count=1 2>/dev/null
+    break
+  fi
+  shift
+done
+MOCK
+human_output="$(
+  PATH="$HUMAN_TEST_DIR:$PATH" \
+    /bin/bash "$SCRIPT_DIR/download-reference.sh" \
+      "https://example.invalid/human-video" "$HUMAN_TEST_FILE" 2>&1
+)"
+set -e
+if ! grep -q -F "Size: 1.46 KiB" <<< "$human_output"; then
+  echo "FAIL: download-reference.sh did not print human-readable size for 1500 bytes (expected 1.46 KiB)" >&2
+  printf 'Output:\n%s\n' "$human_output" >&2
+  exit 1
+fi
+rm -rf -- "$HUMAN_TEST_DIR"
+echo "PASS: download-reference.sh prints human-readable file sizes"
+echo "====================================="
