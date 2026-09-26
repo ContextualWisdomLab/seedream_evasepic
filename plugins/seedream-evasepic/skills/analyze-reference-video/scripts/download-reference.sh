@@ -104,6 +104,7 @@ terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
 FILE_SIZE_HR="$(awk -v bytes="$FILE_SIZE_BYTES" 'BEGIN {
+  if (bytes == "") bytes = 0
   split("B KiB MiB GiB TiB", units, " ")
   unit=1
   while (bytes >= 1024 && unit < 5) {
