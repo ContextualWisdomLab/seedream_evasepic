@@ -301,7 +301,7 @@ echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal 
 echo "====================================="
 
 echo "=== Testing Argument Injection Prevention ==="
-test_inject_out="$(bash "$SCRIPT_DIR/extract-frames.sh" "-v" "-o" 12 2>&1)" || true
+test_inject_out="$(FFMPEG=/bin/true FFPROBE=/bin/true bash "$SCRIPT_DIR/extract-frames.sh" "-v" "-o" 12 2>&1)" || true
 if ! echo "$test_inject_out" | grep -q 'Error: video not found: ./-v'; then
   echo "FAIL: extract-frames.sh did not prevent argument injection on VIDEO path" >&2
   echo "$test_inject_out" >&2
