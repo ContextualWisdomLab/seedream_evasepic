@@ -37,3 +37,6 @@
 ## 2026-09-27 - [Terminal Prefix/Suffix Sanitization]
 **Learning:** The `terminal_print_value` function previously passed `prefix` and `suffix` arguments directly to `printf '%b'`, which made it vulnerable to ANSI escape injection if attacker-controlled data was passed as the prefix/suffix. Strix penetration testing identified this vulnerability.
 **Action:** `terminal_safe_text` converts escape sequences to literal `\xNN` representations. Sanitizing the `prefix` and `suffix` through `terminal_safe_text` alongside the `value`, and then using `printf '%s'` (instead of `%b`) for all three arguments, fixes this vulnerability without breaking functionality, as the safe literal representations are printed verbatim.
+## 2026-09-27 - [GitHub Actions Internal Error Ignored]
+**Learning:** A GitHub Actions internal error (e.g., `GitHub Actions has encountered an internal error when running your job` or job cancelled with exit code 1) is a transient infrastructure issue on GitHub's side, not a codebase defect.
+**Action:** Ignore GitHub Actions internal errors and just submit again to re-trigger the CI.
