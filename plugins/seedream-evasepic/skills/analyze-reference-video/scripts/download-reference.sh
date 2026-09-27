@@ -36,6 +36,11 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+if [ -L "$OUTPUT" ]; then
+  terminal_print_value "${RED}Error: Output path is a symlink: " "$OUTPUT" "${NC}" >&2
+  exit 1
+fi
+
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.
