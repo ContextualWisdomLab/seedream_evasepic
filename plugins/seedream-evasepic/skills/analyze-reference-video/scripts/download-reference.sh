@@ -36,6 +36,12 @@ if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   exit 2
 fi
 
+# Mitigate TOCTOU symlink attacks on the target output path.
+if [ -L "$OUTPUT" ]; then
+  printf "%b\n" "${RED}Error: Output path is a symlink. Aborting.${NC}" >&2
+  exit 1
+fi
+
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.
