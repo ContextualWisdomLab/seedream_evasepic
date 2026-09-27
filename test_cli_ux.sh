@@ -124,6 +124,30 @@ fi
 echo "PASS: non-empty regular file skips yt-dlp and preserves the artifact"
 echo "====================================="
 
+echo "=== Testing malicious symlink output rejection ==="
+TEST_TMP_DIR="$(mktemp -d)"
+SYMLINK_OUTPUT="$TEST_TMP_DIR/symlink-reference.mp4"
+ln -s -- "/dev/null" "$SYMLINK_OUTPUT"
+
+set +e
+symlink_status=0
+symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$SYMLINK_OUTPUT" 2>&1)" || symlink_status=$?
+set -e
+
+if [ "$symlink_status" -ne 1 ]; then
+  echo "FAIL: download-reference.sh must exit with 1 when output is a symlink" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
+if ! grep -q -F "Output path cannot be a symlink" <<< "$symlink_output"; then
+  echo "FAIL: download-reference.sh must output specific error for symlink" >&2
+  printf '%s\n' "$symlink_output" >&2
+  exit 1
+fi
+rm -rf -- "$TEST_TMP_DIR"
+echo "PASS: download-reference.sh correctly rejects symlink output targets"
+echo "====================================="
+
 echo "=== Testing zero-byte output cache miss ==="
 EMPTY_OUTPUT="$TMP_DIR/empty-reference.mp4"
 EMPTY_ARGS_FILE="$TMP_DIR/empty-yt-dlp.args"
