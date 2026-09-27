@@ -64,8 +64,12 @@ terminal_print_value() {
   local prefix="${1-}"
   local value="${2-}"
   local suffix="${3-}"
+  local safe_prefix=""
   local safe_value=""
+  local safe_suffix=""
 
+  terminal_safe_text "$prefix" safe_prefix
   terminal_safe_text "$value" safe_value
-  printf '%b%s%b\n' "$prefix" "$safe_value" "$suffix"
+  terminal_safe_text "$suffix" safe_suffix
+  printf '%s%s%s\n' "$safe_prefix" "$safe_value" "$safe_suffix"
 }

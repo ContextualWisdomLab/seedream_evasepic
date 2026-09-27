@@ -34,3 +34,6 @@
 ## 2026-08-26 - [Bash Subshell Performance Overhead]
 **Learning:** In Bash, capturing function output via subshells (e.g., `$(my_func)`) introduces significant performance overhead (~40% execution time cost) due to process forking, especially in tight loops or frequently called rendering paths like `terminal-output.sh`.
 **Action:** Accept an optional output variable name as an argument and use `printf -v` to assign the result directly to that variable, falling back to standard output (e.g., `printf`) if the argument is omitted. This provides backward compatibility while allowing internal callers to opt into process-fork-free assignments.
+## 2026-09-27 - [Terminal Prefix/Suffix Sanitization]
+**Learning:** The `terminal_print_value` function previously passed `prefix` and `suffix` arguments directly to `printf '%b'`, which made it vulnerable to ANSI escape injection if attacker-controlled data was passed as the prefix/suffix. Strix penetration testing identified this vulnerability.
+**Action:** `terminal_safe_text` converts escape sequences to literal `\xNN` representations. Sanitizing the `prefix` and `suffix` through `terminal_safe_text` alongside the `value`, and then using `printf '%s'` (instead of `%b`) for all three arguments, fixes this vulnerability without breaking functionality, as the safe literal representations are printed verbatim.
