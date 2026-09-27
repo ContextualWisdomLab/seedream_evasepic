@@ -29,6 +29,11 @@ done
 URL="${1:-}"
 OUTPUT="${2:-}"
 
+if [[ "$OUTPUT" == *".."* ]]; then
+  printf "%b\n" "${RED}Error: Path traversal sequences (..) are not allowed in output path.${NC}" >&2
+  exit 1
+fi
+
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
@@ -39,11 +44,6 @@ fi
 # A non-empty regular output is an explicit caller-owned cache key. Return
 # before dependency discovery or network work, and render the path only through
 # the shared terminal-neutralization boundary.
-if [ -L "$OUTPUT" ]; then
-  printf "%b\n" "${RED}Error: Output path is a symlink. Aborting to prevent arbitrary file overwrite.${NC}" >&2
-  exit 1
-fi
-
 if [ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]; then
   terminal_print_value "${GREEN}File already exists, skipping download: " "$OUTPUT" "${NC}"
   exit 0
