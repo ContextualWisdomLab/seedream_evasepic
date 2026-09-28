@@ -9,6 +9,13 @@
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
   local value="${1-}"
+
+  # Fast path: bypass processing if the string contains no target control characters
+  if [[ "$value" != *[$'\001'-$'\037'$'\177\302\330\342\357']* ]]; then
+    printf '%s' "$value"
+    return
+  fi
+
   local code octal control replacement
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
