@@ -16,12 +16,13 @@ NC='\033[0m' # No Color
 SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=terminal-output.sh
 . "$SCRIPT_DIRECTORY/terminal-output.sh"
+SCRIPT_NAME="$(terminal_safe_text "${0##*/}")"
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Download Reference Video Script${NC}"
-    printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}"
-    printf "%b\n" "  Example: ${CYAN}${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}"
+    printf "%b%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <url> <output_path>${NC}"
+    printf "%b%s%b\n" "  Example: ${CYAN}" "$SCRIPT_NAME" " 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}"
     exit 0
   fi
 done
@@ -31,8 +32,8 @@ OUTPUT="${2:-}"
 
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
-  printf "%b\n" "  Example: ${CYAN}${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}" >&2
+  printf "%b%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <url> <output_path>${NC}" >&2
+  printf "%b%s%b\n" "  Example: ${CYAN}" "$SCRIPT_NAME" " 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}" >&2
   exit 2
 fi
 

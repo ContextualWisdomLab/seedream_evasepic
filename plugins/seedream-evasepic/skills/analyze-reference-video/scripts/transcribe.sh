@@ -17,13 +17,14 @@ NC='\033[0m' # No Color
 SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=terminal-output.sh
 . "$SCRIPT_DIRECTORY/terminal-output.sh"
+SCRIPT_NAME="$(terminal_safe_text "${0##*/}")"
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
     printf "%b\n" "${GREEN}Transcribe Audio Script${NC}"
-    printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}"
+    printf "%b%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <audio_path> [model]${NC}"
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)"
-    printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}"
+    printf "%b%s%b\n" "  Example: ${CYAN}" "$SCRIPT_NAME" " /tmp/audio.wav base${NC}"
     exit 0
   fi
 done
@@ -35,26 +36,26 @@ case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)
     terminal_print_value "${RED}Error: Invalid model specified: " "$MODEL" "${NC}" >&2
-    printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
+    printf "%b%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <audio_path> [model]${NC}" >&2
     printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-    printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}" >&2
+    printf "%b%s%b\n" "  Example: ${CYAN}" "$SCRIPT_NAME" " /tmp/audio.wav base${NC}" >&2
     exit 2
     ;;
 esac
 
 if [ -z "$AUDIO" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
+  printf "%b%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}" >&2
+  printf "%b%s%b\n" "  Example: ${CYAN}" "$SCRIPT_NAME" " /tmp/audio.wav base${NC}" >&2
   exit 2
 fi
 
 if [ ! -f "$AUDIO" ]; then
   terminal_print_value "${RED}Error: audio file not found: " "$AUDIO" "${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: ${0##*/} <audio_path> [model]${NC}" >&2
+  printf "%b%s%b\n" "${YELLOW}Usage: " "$SCRIPT_NAME" " <audio_path> [model]${NC}" >&2
   printf "%b\n" "  Models: tiny / base / small / medium / large (default: base)" >&2
-  printf "%b\n" "  Example: ${CYAN}${0##*/} /tmp/audio.wav base${NC}" >&2
+  printf "%b%s%b\n" "  Example: ${CYAN}" "$SCRIPT_NAME" " /tmp/audio.wav base${NC}" >&2
   exit 1
 fi
 
