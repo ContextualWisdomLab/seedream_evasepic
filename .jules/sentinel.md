@@ -40,3 +40,19 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+## 2026-08-14 - [CRITICAL] 심볼릭 링크를 통한 임의 파일 덮어쓰기 취약점 수정
+**Vulnerability:** 출력 경로($OUTPUT)를 검증 없이 디렉토리 생성 및 파일 저장에 사용하여 TOCTOU(Time-of-check to time-of-use) / 심볼릭 링크 공격을 통한 임의 파일 덮어쓰기가 가능함.
+**Learning:** 심볼릭 링크 방어를 위해 [ -L ]을 사용할 때, 파일의 최종 경로만 확인하는 것은 불충분함. 부모 디렉토리 중 하나라도 심볼릭 링크라면 취약점이 발생할 수 있으므로, 재귀적으로 부모 디렉토리를 순회하며 검증해야 함.
+**Prevention:** 출력 경로와 그 부모 디렉토리들을 루트나 현재 디렉토리에 도달할 때까지 역추적하여, 하나라도 심볼릭 링크인 경우 즉시 에러와 함께 종료하도록 검증 로직 추가.
+## 2026-08-14 - [CRITICAL] 캐시 확인 전 심볼릭 링크 명시적 검사를 통한 임의 파일 덮어쓰기 방지
+**Vulnerability:** 파일 캐시 확인 로직(`[ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]`)에서 대상을 심볼릭 링크로 지정할 경우, 캐시 미스로 처리된 후 `yt-dlp` 등에 의해 심볼릭 링크 타겟 경로의 임의 파일이 덮어쓰여지는 TOCTOU 취약점이 발생할 수 있음.
+**Learning:** `[ -f ]` 및 `[ -s ]` 검사는 심볼릭 링크를 해석하므로, 이를 우회하여 악의적인 덮어쓰기가 가능함. 심볼릭 링크 취약점을 완화할 때 `&& [ ! -L "$OUTPUT" ]`을 단순히 추가하면 심볼릭 링크를 캐시 미스로 간주하여 계속 실행되므로 임의 파일 덮어쓰기 취약점이 발생함. 부모 경로까지 검사하면 정상적인 시스템 심볼릭 링크(`\tmp` 등)까지 차단하여 기능 장애(Regression)가 발생할 수 있음.
+**Prevention:** 캐시 존재 여부를 확인하기 전에, 출력 대상 경로 자체를 명시적으로 확인하고 심볼릭 링크인 경우 즉시 중단(`if [ -L "$OUTPUT" ]; then exit 1; fi`)하도록 구현하여야 함.
+## 2026-08-14 - [CRITICAL] 경로 조작(Path Traversal)을 통한 임의 디렉토리 파일 쓰기 방지
+**Vulnerability:** 출력 경로($OUTPUT) 검증 누락으로 인해, `../` 와 같은 경로 탐색(Directory Traversal) 문자를 포함한 상대 경로를 악용하면 의도된 작업 디렉토리를 벗어나 시스템 상의 임의의 위치에 파일을 쓰거나 덮어쓸 수 있는 취약점(Path Traversal)이 발생함.
+**Learning:** 파일 경로나 디렉토리를 다루는 Bash 스크립트에서는 전달받은 경로에 `..` 시퀀스가 포함되어 있는지 검증하지 않으면 상위 디렉토리로의 접근을 허용하게 됨.
+**Prevention:** 출력 경로와 같은 사용자 입력값을 실제 파일 작업에 사용하기 전, Bash의 `case` 문 패턴 매칭(`*../*|*/..|..|*/../*`) 등을 활용해 경로 조작 문자가 포함되어 있는지 검사하고, 발견될 경우 에러와 함께 즉시 실행을 중단(`exit 1`)하도록 검증 로직을 추가해야 함.
+## 2026-08-14 - [HIGH] 출력 디렉토리 심볼릭 링크를 통한 임의 파일 쓰기 취약점 방지
+**Vulnerability:** 파일 출력 경로($OUTPUT) 자체의 심볼릭 링크를 검사하더라도, 해당 파일이 위치할 상위 디렉토리($OUT_DIR)가 공격자에 의해 심볼릭 링크로 조작된 상태라면, `mkdir -p`가 이를 따라가 목적지에 임의의 파일을 쓸 수 있는 취약점이 발견됨.
+**Learning:** 파일 경로 검증 시 출력 대상 파일명 뿐만 아니라, 파일을 생성할 디렉토리 경로에 대해서도 `[ -L ]` 검사를 수행해야 디렉토리를 통한 심볼릭 우회 공격을 막을 수 있음. 부모 경로를 모두 검사할 수 없을 때에는 직접적인 목적지 상위 디렉토리(`$OUT_DIR`)에 대한 검사로 공격을 방어할 수 있음.
+**Prevention:** 모든 상위 경로 구성 요소를 디렉토리 파일 디스크립터 기준으로 `O_NOFOLLOW`로 열고, 비공개 임시 디렉토리에 다운로드한 후 검증된 대상 디렉토리에서 노클로버 하드 링크로 원자적 게시한다. 게시 직전에 디렉토리 장치/아이노드 일치를 재검증하고 대상이 생겼거나 변경되면 실패 종료한다.
