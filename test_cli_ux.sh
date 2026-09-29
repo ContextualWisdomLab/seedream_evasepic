@@ -314,14 +314,17 @@ cat > "$TMP_WHISPER_DIR/whisper" <<'MOCK'
 echo "$@"
 MOCK
 chmod +x "$TMP_WHISPER_DIR/whisper"
+touch ./-v
 test_inject_out="$(PATH="$TMP_WHISPER_DIR:$PATH" bash "$SCRIPT_DIR/transcribe.sh" "-v" "base" 2>&1)" || true
-if ! echo "$test_inject_out" | grep -q 'Error: audio file not found: ./-v'; then
+if ! echo "$test_inject_out" | grep -q '\-\- \./\-v'; then
   echo "FAIL: transcribe.sh did not prevent argument injection on AUDIO path" >&2
   echo "$test_inject_out" >&2
   rm -rf "$TMP_WHISPER_DIR"
+  rm -f ./-v
   exit 1
 fi
 rm -rf "$TMP_WHISPER_DIR"
+rm -f ./-v
 
 # download-reference.sh does not check if the file exists when it's just the output, but it makes a directory. We can mock yt-dlp to see what it receives.
 TMP_DL_DIR="$(mktemp -d)"
