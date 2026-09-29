@@ -21,3 +21,4 @@
 **Learning:** CLI 스크립트에서 'Missing required argument(s)'와 같은 포괄적인 에러 메시지는 사용자가 어떤 인자를 누락했는지 즉각적으로 파악하기 어렵게 만듭니다. 구체적으로 어떤 인자(예: <url>)가 누락되었는지 명시하고, 선택적 인자(옵션)보다 필수 인자의 누락을 먼저 검증(Validation Order)해야만 올바른 에러 보고 우선순위를 보장할 수 있다는 점을 확인했습니다.
 **Action:** 모든 CLI 스크립트의 인자 파싱 로직을 수정하여, 선택적 인자 검증 전에 필수 인자의 누락을 개별적으로 검증하고 'Missing required argument: <인자명>' 형태의 명확한 에러 메시지를 출력하도록 변경했습니다.
 Triggering a new commit to re-run CI
+Triggering a new commit to re-run CI (CodeQL Async Pending Issue)
