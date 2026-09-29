@@ -9,6 +9,7 @@
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
   local value="${1-}"
+  local out_var="${2-}"
   local code octal control replacement
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
@@ -51,7 +52,11 @@ terminal_safe_text() {
   value=${value//$'\330\234'/\\u061C}     # ARABIC LETTER MARK
   value=${value//$'\357\273\277'/\\uFEFF} # ZERO WIDTH NO-BREAK SPACE/BOM
 
-  printf '%s' "$value"
+  if [ -n "$out_var" ]; then
+    printf -v "$out_var" '%s' "$value"
+  else
+    printf '%s' "$value"
+  fi
 }
 
 # Print trusted ANSI prefix/suffix around a neutralized untrusted value.
@@ -59,8 +64,12 @@ terminal_print_value() {
   local prefix="${1-}"
   local value="${2-}"
   local suffix="${3-}"
-  local safe_value
+  local safe_prefix=""
+  local safe_value=""
+  local safe_suffix=""
 
-  safe_value="$(terminal_safe_text "$value")"
-  printf '%b%s%b\n' "$prefix" "$safe_value" "$suffix"
+  terminal_safe_text "$prefix" safe_prefix
+  terminal_safe_text "$value" safe_value
+  terminal_safe_text "$suffix" safe_suffix
+  printf '%s%s%s\n' "$safe_prefix" "$safe_value" "$safe_suffix"
 }
