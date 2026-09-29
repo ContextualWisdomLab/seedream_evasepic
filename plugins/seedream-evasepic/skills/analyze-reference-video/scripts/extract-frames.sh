@@ -34,6 +34,9 @@ VIDEO="${1:-}"
 OUT_DIR="${2:-}"
 NUM_FRAMES="${3:-12}"
 
+if [[ "$VIDEO" == -* ]]; then VIDEO="./$VIDEO"; fi
+if [[ "$OUT_DIR" == -* ]]; then OUT_DIR="./$OUT_DIR"; fi
+
 if [ -z "$VIDEO" ] || [ -z "$OUT_DIR" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <video_path> <output_dir> [num_frames]${NC}" >&2
