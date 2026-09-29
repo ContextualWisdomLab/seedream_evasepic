@@ -20,6 +20,37 @@ bash "$SCRIPT_DIR/transcribe.sh"
 echo "Exit code: $?"
 echo "====================================="
 
+echo "=== Testing human readable file size ==="
+TEST_TMP_DIR="$(mktemp -d)"
+
+cat > "$TEST_TMP_DIR/yt-dlp" <<'EOF'
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    echo "dummy video data" > "$1"
+    break
+  fi
+  shift
+done
+EOF
+chmod +x "$TEST_TMP_DIR/yt-dlp"
+
+DUMMY_HUMAN_SIZE="$TEST_TMP_DIR/dummy-human-size.mp4"
+
+PATH="$TEST_TMP_DIR:$PATH" \
+  bash "$SCRIPT_DIR/download-reference.sh" \
+    "https://example.invalid/empty-video" "$DUMMY_HUMAN_SIZE" > "$TEST_TMP_DIR/human-size-output" 2>&1
+
+if ! grep -q "Size: 17 B" "$TEST_TMP_DIR/human-size-output"; then
+  echo "FAIL: download-reference.sh did not print human-readable size correctly" >&2
+  cat "$TEST_TMP_DIR/human-size-output" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh correctly prints human-readable size"
+echo "====================================="
+rm -rf -- "$TEST_TMP_DIR"
+
 echo "=== Testing yt-dlp argument separator ==="
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf -- "$TMP_DIR"' EXIT
@@ -298,37 +329,5 @@ transcribe_error_output="$(bash "$SCRIPT_DIR/transcribe.sh" "dummy_nonexistent.w
 assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
-echo "====================================="
-echo "=== Testing human-readable size output ==="
-TEST_TMP_DIR="$(mktemp -d)"
-DUMMY_FILE="$TEST_TMP_DIR/dummy_output.mp4"
-# We need to test the path where yt-dlp runs or mock it, because if the file exists it returns early.
-# Instead of mocking yt-dlp, let's mock it using a script directory
-MOCK_DIR="$TEST_TMP_DIR/mock_bin"
-mkdir -p "$MOCK_DIR"
-cat << 'EOF' > "$MOCK_DIR/yt-dlp"
-#!/bin/bash
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    -o) OUTPUT="$2"; shift ;;
-    *) ;;
-  esac
-  shift
-done
-dd if=/dev/zero of="$OUTPUT" bs=1024 count=1500 >/dev/null 2>&1
-exit 0
-EOF
-chmod +x "$MOCK_DIR/yt-dlp"
-
-PATH="$MOCK_DIR:$PATH"
-output="$(bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$DUMMY_FILE" 2>&1 || true)"
-if grep -q "1.46 MB" <<< "$output"; then
-  echo "PASS: size output is human readable"
-else
-  echo "FAIL: size output is not human readable" >&2
-  printf '%s\n' "$output" >&2
-  exit 1
-fi
-rm -rf "$TEST_TMP_DIR"
 echo "====================================="
 
