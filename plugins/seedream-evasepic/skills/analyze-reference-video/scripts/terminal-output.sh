@@ -10,8 +10,15 @@
 terminal_safe_text() {
   local value="${1-}"
 
-  # Fast path: bypass processing if the string contains no target control characters
-  if [[ "$value" != *[$'\001'-$'\037'$'\177\302\330\342\357']* ]]; then
+  # Fast path: bypass processing if the string contains no target control characters.
+  # ASCII control bytes map 1:1 in UTF-8 so a bracket expression is safe, while
+  # multibyte UTF-8 lead bytes must be checked explicitly to avoid being ignored
+  # as invalid standalone characters in UTF-8 locales.
+  if [[ "$value" != *[$'\001'-$'\037'$'\177']* ]] && \
+     [[ "$value" != *$'\302'* ]] && \
+     [[ "$value" != *$'\330'* ]] && \
+     [[ "$value" != *$'\342'* ]] && \
+     [[ "$value" != *$'\357'* ]]; then
     printf '%s' "$value"
     return
   fi
