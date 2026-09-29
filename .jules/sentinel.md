@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2026-08-25 - [HIGH] 심볼릭 링크를 통한 임의의 파일 덮어쓰기 취약점 (Arbitrary File Overwrite via Symlink)
+**Vulnerability:** `download-reference.sh`의 캐시 로직은 `[ -f "$OUTPUT" ] && [ -s "$OUTPUT" ]` 만을 검사합니다. 만약 `$OUTPUT`이 존재하지 않거나 빈 파일을 가리키는 심볼릭 링크라면, 캐시 적중 조건을 우회하여 `yt-dlp`가 해당 링크를 따라 대상 파일을 덮어쓰게 됩니다.
+**Learning:** `[ -f ]`는 심볼릭 링크를 따라가기 때문에 심볼릭 링크 공격을 막기에는 불충분합니다. 같은 조건문에 `&& [ ! -L "$OUTPUT" ]`를 추가하는 것만으로는 심볼릭 링크를 캐시 미스로 처리하게 되어 결과적으로 스크립트가 실행되고 파일을 덮어쓰게 됩니다.
+**Prevention:** 캐시 존재 여부를 판단하기 전에 `if [ -L "$OUTPUT" ]; then 리턴상태 1; fi`를 사용하여 명시적으로 심볼릭 링크를 검사하고 중단해야 합니다.

@@ -124,6 +124,23 @@ fi
 echo "PASS: non-empty regular file skips yt-dlp and preserves the artifact"
 echo "====================================="
 
+echo "=== Testing symlink abort ==="
+TEST_TMP_DIR="$(mktemp -d)"
+SYMLINK_OUTPUT="$TEST_TMP_DIR/symlink-reference.mp4"
+ln -s -- "/tmp/dummy.mp4" "$SYMLINK_OUTPUT"
+set +e
+symlink_output="$(bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$SYMLINK_OUTPUT" 2>&1)"
+symlink_status=$?
+set -e
+if [ "$symlink_status" -eq 0 ] || ! grep -q -F "Error: symlink detected, aborting:" <<< "$symlink_output"; then
+  echo "FAIL: script must abort when output is a symlink" >&2
+  rm -rf -- "$TEST_TMP_DIR"
+  exit 1
+fi
+rm -rf -- "$TEST_TMP_DIR"
+echo "PASS: script correctly aborts on symlink output"
+echo "====================================="
+
 echo "=== Testing zero-byte output cache miss ==="
 EMPTY_OUTPUT="$TMP_DIR/empty-reference.mp4"
 EMPTY_ARGS_FILE="$TMP_DIR/empty-yt-dlp.args"
