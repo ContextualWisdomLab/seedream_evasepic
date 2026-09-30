@@ -44,6 +44,14 @@ assert_neutralized_file() {
   fi
 }
 
+printf '=== Testing terminal_safe_text fast-path optimization ===\n'
+fast_path_value="safe_value_without_any_controls"
+fast_safe_value="$(terminal_safe_text "$fast_path_value")"
+if [[ "$fast_safe_value" != "$fast_path_value" ]]; then
+  fail "fast-path modified a safe string: $fast_safe_value"
+fi
+printf 'PASS: terminal_safe_text fast-path returns safe strings unmodified\n'
+
 printf '=== Testing terminal_safe_text control neutralization ===\n'
 malicious_value=$'safe\033[31mPWNED\033[0m\nFORGED\rLINE\tBELL\007'
 malicious_value+=$'\302\233CSI\342\200\256RTL\342\200\250NEXT'
