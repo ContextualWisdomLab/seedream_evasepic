@@ -147,6 +147,22 @@ fi
 echo "PASS: zero-byte regular file remains a cache miss"
 echo "====================================="
 
+echo "=== Testing ffmpeg normalized input contract ==="
+if grep -n -F -- '-i -- "$VIDEO"' "$SCRIPT_DIR/extract-frames.sh"; then
+  echo "FAIL: ffmpeg must not receive -- as the input filename after -i" >&2
+  exit 1
+fi
+if [ "$(grep -c -F -- '-i "$VIDEO"' "$SCRIPT_DIR/extract-frames.sh")" -ne 2 ]; then
+  echo "FAIL: both ffmpeg branches must pass the normalized video path directly" >&2
+  exit 1
+fi
+if ! grep -q -F '[[ "$VIDEO" == -* ]]' "$SCRIPT_DIR/extract-frames.sh"; then
+  echo "FAIL: dash-prefixed video paths must be normalized before ffmpeg invocation" >&2
+  exit 1
+fi
+echo "PASS: ffmpeg receives a normalized path without a synthetic -- input"
+echo "====================================="
+
 echo "=== Testing awk fallback variable binding ==="
 if grep -n -F 'awk "BEGIN' "$SCRIPT_DIR/extract-frames.sh"; then
   echo "FAIL: extract-frames.sh must not interpolate shell variables into an awk program string" >&2
