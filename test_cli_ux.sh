@@ -256,6 +256,65 @@ fi
 echo "PASS: extract-frames.sh reports a missing ffprobe before metadata processing"
 echo "====================================="
 
+echo "=== Testing human readable file size logic ==="
+HR_TEST_DIR="$TMP_DIR/hr_sizes"
+mkdir -p "$HR_TEST_DIR"
+HR_ARGS_FILE="$HR_TEST_DIR/args"
+
+# Create mock yt-dlp that creates a file of the requested size and succeeds
+cat > "$TMP_DIR/yt-dlp" <<'EOF'
+#!/bin/bash
+# Mock arguments
+output=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    output="${1:-}"
+    break
+  fi
+  shift
+done
+
+if [ -n "$output" ] && [ -n "${MOCK_SIZE:-}" ]; then
+  mkdir -p -- "${output%/*}"
+  # Use seek to create a sparse file instantly instead of writing zeros
+  dd if=/dev/zero of="$output" bs=1 count=0 seek="$MOCK_SIZE" 2>/dev/null
+fi
+exit 0
+EOF
+chmod +x "$TMP_DIR/yt-dlp"
+
+# Helper to mock size testing (mocking yt-dlp success without downloading)
+test_human_size() {
+  local test_size=$1
+  local expected_label=$2
+  local test_file="$HR_TEST_DIR/test_${test_size}.mp4"
+
+  rm -f "$test_file"
+
+  local hr_out
+  hr_out="$(
+    PATH="$TMP_DIR:$PATH" \
+    MOCK_SIZE="$test_size" \
+    YT_DLP_ARGS_FILE="$HR_ARGS_FILE" \
+    bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid/ok" "$test_file" 2>&1
+  )"
+
+  if ! grep -q -F "(${expected_label})" <<< "$hr_out"; then
+    echo "FAIL: Size $test_size did not produce expected human-readable size (${expected_label})" >&2
+    echo "Output: $hr_out" >&2
+    exit 1
+  fi
+}
+
+test_human_size 500 "500 B"
+test_human_size 1500 "1.4 KB"
+test_human_size 1500000 "1.4 MB"
+test_human_size 1500000000 "1.3 GB"
+
+echo "PASS: human readable file sizes formats are correctly applied"
+echo "====================================="
+
 echo "=== Testing tr process removal for performance ==="
 if grep -n -F 'tr -d' "$SCRIPT_DIR/download-reference.sh"; then
   echo "FAIL: download-reference.sh must use native bash parameter expansion instead of tr" >&2

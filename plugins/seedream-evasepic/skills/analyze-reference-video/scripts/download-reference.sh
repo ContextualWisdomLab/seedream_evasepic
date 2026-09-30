@@ -103,5 +103,14 @@ terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 # Optimization: Use native bash parameter expansion instead of spawning a tr process
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
-terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes" "${NC}"
+if [ "$FILE_SIZE_BYTES" -lt 1024 ]; then
+  HUMAN_SIZE="${FILE_SIZE_BYTES} B"
+elif [ "$FILE_SIZE_BYTES" -lt 1048576 ]; then
+  HUMAN_SIZE="$((FILE_SIZE_BYTES / 1024)).$(((FILE_SIZE_BYTES % 1024) * 10 / 1024)) KB"
+elif [ "$FILE_SIZE_BYTES" -lt 1073741824 ]; then
+  HUMAN_SIZE="$((FILE_SIZE_BYTES / 1048576)).$(((FILE_SIZE_BYTES % 1048576) * 10 / 1048576)) MB"
+else
+  HUMAN_SIZE="$((FILE_SIZE_BYTES / 1073741824)).$(((FILE_SIZE_BYTES % 1073741824) * 10 / 1073741824)) GB"
+fi
+terminal_print_value "${CYAN}Size: " "${FILE_SIZE_BYTES} bytes (${HUMAN_SIZE})" "${NC}"
 
