@@ -300,3 +300,18 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing stacked PR workflow admission ==="
+CLI_UX_WORKFLOW=".github/workflows/cli-ux.yml"
+if grep -Eq '^[[:space:]]+branches:' "$CLI_UX_WORKFLOW"; then
+  echo "FAIL: CLI UX must validate stacked PR bases, not only develop/main" >&2
+  exit 1
+fi
+for required_path in '"scripts/terminal-output.sh"' '"tests/test_terminal_output.sh"'; do
+  if ! grep -Fq -- "$required_path" "$CLI_UX_WORKFLOW"; then
+    echo "FAIL: CLI UX path filter omits $required_path" >&2
+    exit 1
+  fi
+done
+echo "PASS: CLI UX admits stacked PRs and shared terminal-output owners"
+echo "====================================="
