@@ -31,8 +31,8 @@ OUTPUT="${2:-}"
 
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
-  printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
-  printf "%b\n" "  Example: ${CYAN}${0##*/} 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}" >&2
+  printf "%b%s%b\n" "${YELLOW}Usage: " "${0##*/}" " <url> <output_path>${NC}" >&2
+  printf "%b%s%b\n" "  Example: ${CYAN}" "${0##*/}" " 'https://youtube.com/shorts/abc123' /tmp/ref.mp4${NC}" >&2
   exit 2
 fi
 
