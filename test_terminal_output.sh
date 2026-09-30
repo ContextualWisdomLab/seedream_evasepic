@@ -117,3 +117,18 @@ if grep -nE 'print\(f?"[^\"]*\{(audio|out_base)' "$SCRIPT_DIRECTORY/transcribe.s
   fail 'Python fallback still prints a user-controlled path to the terminal'
 fi
 printf 'PASS: static contract keeps untrusted values out of terminal control sinks\n'
+
+printf '=== Testing terminal_safe_text fast-path optimization ===\n'
+terminal_safe_text_output="$(terminal_safe_text "safe text without controls")"
+if [ "$terminal_safe_text_output" != "safe text without controls" ]; then
+  fail "terminal_safe_text fast-path modified a safe string"
+fi
+
+export LC_ALL=en_US.UTF-8
+terminal_safe_text_c1="$(terminal_safe_text $'\xc2\x9b')"
+if [ "$terminal_safe_text_c1" = $'\xc2\x9b' ]; then
+  fail "terminal_safe_text fast-path failed to catch C1 control in UTF-8 locale"
+fi
+export LC_ALL=C
+
+printf 'PASS: terminal_safe_text fast-path correctly handles safe strings and multibyte controls\n'
