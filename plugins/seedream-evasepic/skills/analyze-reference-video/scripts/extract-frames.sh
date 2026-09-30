@@ -127,7 +127,7 @@ terminal_print_value "${CYAN}Video: " "${VIDEO##*/}" "${NC}"
 SAFE_DURATION=$(terminal_safe_text "$DURATION")
 SAFE_RESOLUTION=$(terminal_safe_text "$RESOLUTION")
 SAFE_FPS=$(terminal_safe_text "$FPS")
-printf "${CYAN}Duration: ${NC}%ss | ${CYAN}Resolution: ${NC}%s | ${CYAN}FPS: ${NC}%s\n" "$SAFE_DURATION" "$SAFE_RESOLUTION" "$SAFE_FPS"
+printf "%bDuration: %b%ss | %bResolution: %b%s | %bFPS: %b%s\n" "$CYAN" "$NC" "$SAFE_DURATION" "$CYAN" "$NC" "$SAFE_RESOLUTION" "$CYAN" "$NC" "$SAFE_FPS"
 
 # Extract evenly-spaced frames across the full duration.
 # Keep the awk program literal fixed; pass dynamic values via -v so data cannot become awk code.
