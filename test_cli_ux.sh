@@ -300,3 +300,15 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing human-readable file size format ==="
+if grep -n -F '${FILE_SIZE_BYTES} bytes' "$SCRIPT_DIR/download-reference.sh" >/dev/null 2>&1; then
+  echo "FAIL: download-reference.sh still outputs raw bytes instead of human-readable format" >&2
+  exit 1
+fi
+if ! grep -q -F 'split("B KiB MiB GiB TiB", units, " ");' "$SCRIPT_DIR/download-reference.sh"; then
+  echo "FAIL: download-reference.sh is missing human-readable file size conversion logic" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh outputs human-readable file sizes"
+echo "====================================="
