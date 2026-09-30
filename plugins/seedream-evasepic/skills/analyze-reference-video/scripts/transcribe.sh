@@ -31,6 +31,8 @@ done
 AUDIO="${1:-}"
 MODEL="${2:-base}"
 
+[[ "$AUDIO" != /* ]] && [[ "$AUDIO" == -* ]] && AUDIO="./$AUDIO"
+
 case "$MODEL" in
   tiny|base|small|medium|large) ;;
   *)

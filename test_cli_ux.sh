@@ -300,3 +300,48 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing Argument Injection Prevention ==="
+test_inject_out="$(FFMPEG=/bin/true FFPROBE=/bin/true bash "$SCRIPT_DIR/extract-frames.sh" "-v" "-o" 12 2>&1)" || true
+if ! echo "$test_inject_out" | grep -q 'Error: video not found: ./-v'; then
+  echo "FAIL: extract-frames.sh did not prevent argument injection on VIDEO path" >&2
+  echo "$test_inject_out" >&2
+  exit 1
+fi
+
+TMP_WHISPER_DIR="$(mktemp -d)"
+cat > "$TMP_WHISPER_DIR/whisper" <<'MOCK'
+#!/bin/bash
+echo "$@"
+MOCK
+chmod +x "$TMP_WHISPER_DIR/whisper"
+touch ./-v
+test_inject_out="$(PATH="$TMP_WHISPER_DIR:$PATH" bash "$SCRIPT_DIR/transcribe.sh" "-v" "base" 2>&1)" || true
+if ! echo "$test_inject_out" | grep -q '\-\- \./\-v'; then
+  echo "FAIL: transcribe.sh did not prevent argument injection on AUDIO path" >&2
+  echo "$test_inject_out" >&2
+  rm -rf "$TMP_WHISPER_DIR"
+  rm -f ./-v
+  exit 1
+fi
+rm -rf "$TMP_WHISPER_DIR"
+rm -f ./-v
+
+# download-reference.sh does not check if the file exists when it's just the output, but it makes a directory. We can mock yt-dlp to see what it receives.
+TMP_DL_DIR="$(mktemp -d)"
+cat > "$TMP_DL_DIR/yt-dlp" <<'MOCK'
+#!/bin/bash
+echo "$@"
+MOCK
+chmod +x "$TMP_DL_DIR/yt-dlp"
+
+test_inject_out="$(PATH="$TMP_DL_DIR:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy" "-o" 2>&1)" || true
+if ! echo "$test_inject_out" | grep -q 'Target: ./-o'; then
+  echo "FAIL: download-reference.sh did not prevent argument injection on OUTPUT path" >&2
+  echo "$test_inject_out" >&2
+  rm -rf "$TMP_DL_DIR"
+  exit 1
+fi
+rm -rf "$TMP_DL_DIR"
+
+echo "PASS: Argument injection prevention verified."
+echo "====================================="

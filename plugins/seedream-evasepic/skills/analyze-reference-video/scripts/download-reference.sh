@@ -29,6 +29,8 @@ done
 URL="${1:-}"
 OUTPUT="${2:-}"
 
+[[ "$OUTPUT" != /* ]] && [[ "$OUTPUT" == -* ]] && OUTPUT="./$OUTPUT"
+
 if [ -z "$URL" ] || [ -z "$OUTPUT" ]; then
   printf "%b\n" "${RED}Error: Missing required argument(s).${NC}" >&2
   printf "%b\n" "${YELLOW}Usage: ${0##*/} <url> <output_path>${NC}" >&2
