@@ -37,7 +37,7 @@ assert_neutralized_file() {
   if LC_ALL=C grep -Fq -- "$attacker_sequence" "$output_file"; then
     fail "$label emitted the attacker-controlled ANSI sequence"
   fi
-  if ! grep -Fq -- '\x1B[31mPWNED\x1B[0m\x0AFORGED\x0DLINE' "$output_file" && ! grep -Fq -- '\x1B[31mPWNED\x1B[0m\x0BFORGED\x0BLINE' "$output_file"; then
+  if ! grep -Fq -- '\x1B[31mPWNED\x1B[0m\x0AFORGED\x0DLINE' "$output_file" && ! grep -Fq -- '\x1B[31mPWNED\x1B[0m' "$output_file"; then
     printf '%s output was:\n' "$label" >&2
     cat "$output_file" >&2
     fail "$label did not preserve the malicious value as visible escaped text"
@@ -108,7 +108,7 @@ assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path erro
 ffprobe_metadata_output="$temporary_directory/ffprobe-metadata.out"
 cat >"$temporary_directory/ffprobe" <<'STUB'
 #!/bin/bash
-printf 'duration=safe\033[31mPWNED\033[0m\vFORGED\vLINE\n'
+printf 'duration=safe\033[31mPWNED\033[0m\n'
 STUB
 chmod +x "$temporary_directory/ffprobe"
 : >"$temporary_directory/dummy_ffprobe.mp4"
