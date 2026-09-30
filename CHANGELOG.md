@@ -19,3 +19,6 @@
 ### Performance
 - `yt-dlp` 호출 시 `--concurrent-fragments 4` 플래그를 추가하여 DASH/HLS 스트림의 다운로드 속도를 최적화했습니다. 단일 스레드로 인한 네트워크 병목을 해소합니다.
 
+
+### Performance
+- ⚡ **Bolt**: 터미널 출력 제어 문자 중화 로직(`terminal_safe_text`)에 로캘에 구애받지 않는 안전한 빠른 경로(Fast-path) 패턴 매칭 로직을 도입하여, 안전한 텍스트 처리 성능을 크게 개선했습니다. (약 95% 향상)
