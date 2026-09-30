@@ -1,13 +1,15 @@
 name: CLI UX
 
 on:
+  # No base-branch filter: stacked PRs must validate before prerequisite merge.
   pull_request:
-    branches: [develop, main]
     paths:
       - ".github/workflows/cli-ux.yml"
       - "plugins/seedream-evasepic/skills/analyze-reference-video/scripts/**"
       - "test_cli_ux.sh"
       - "test_terminal_output.sh"
+      - "scripts/terminal-output.sh"
+      - "tests/test_terminal_output.sh"
       - "CHANGELOG.md"
       - "docs/doctoring/**"
 
