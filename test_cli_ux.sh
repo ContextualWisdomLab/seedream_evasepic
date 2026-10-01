@@ -300,10 +300,37 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
-
 echo "=== Testing human-readable file size format in download-reference.sh ==="
-if ! grep -q "awk -v bytes=.*BEGIN" "$SCRIPT_DIR/download-reference.sh"; then
-  echo "FAIL: download-reference.sh does not format file size with awk" >&2
+DUMMY_SIZE_OUTPUT="$TMP_DIR/dummy-size.mp4"
+rm -f -- "$DUMMY_SIZE_OUTPUT"
+TMP_BIN="$TMP_DIR/mock-bin"
+mkdir -p -- "$TMP_BIN"
+cat > "$TMP_BIN/yt-dlp" <<"EOF"
+#!/bin/bash
+output=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    output="${1:-}"
+    break
+  fi
+  shift
+done
+if [ -n "$output" ]; then
+  mkdir -p -- "$(dirname -- "$output")"
+  dd if=/dev/zero of="$output" bs=1 count=0 seek=1572864 2>/dev/null
+fi
+exit 0
+EOF
+chmod +x "$TMP_BIN/yt-dlp"
+ln -sf -- "$(command -v wc)" "$TMP_BIN/wc"
+ln -sf -- "$(command -v awk)" "$TMP_BIN/awk"
+ln -sf -- "$(command -v dirname)" "$TMP_BIN/dirname"
+ln -sf -- "$(command -v mkdir)" "$TMP_BIN/mkdir"
+size_test_output="$(PATH="$TMP_BIN:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$DUMMY_SIZE_OUTPUT" 2>&1)"
+if ! LC_ALL=C grep -Fq "1.50 MiB" <<< "$size_test_output"; then
+  echo "FAIL: download-reference.sh does not format file size correctly. Expected 1.50 MiB" >&2
+  printf "%s\n" "$size_test_output" >&2
   exit 1
 fi
 echo "PASS: download-reference.sh formats file sizes human-readably"
