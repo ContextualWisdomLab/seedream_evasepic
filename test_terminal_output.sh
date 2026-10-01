@@ -113,6 +113,10 @@ if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|
   "$SCRIPT_DIRECTORY/transcribe.sh"; then
   fail 'a user-controlled value is still sent through %b'
 fi
+if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$DURATION|\$RESOLUTION|\$FPS)' \
+  "$SCRIPT_DIRECTORY/extract-frames.sh"; then
+  fail 'a user-controlled ffprobe metadata value is still sent through %b'
+fi
 if grep -nE 'print\(f?"[^\"]*\{(audio|out_base)' "$SCRIPT_DIRECTORY/transcribe.sh"; then
   fail 'Python fallback still prints a user-controlled path to the terminal'
 fi
