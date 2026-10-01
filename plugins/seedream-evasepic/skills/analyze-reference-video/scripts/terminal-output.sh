@@ -8,8 +8,17 @@
 
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
+  # Requires C locale so character-level pattern evaluation does not silently
+  # skip multibyte lead bytes.
   local LC_ALL=C
   local value="${1-}"
+
+  # Fast-path for safe strings to avoid processing overhead.
+  if [[ "$value" != *[[:cntrl:]$'\177'$'\302'$'\330'$'\342'$'\357']* ]]; then
+    printf '%s' "$value"
+    return
+  fi
+
   local code octal control replacement
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
