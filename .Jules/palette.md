@@ -4,3 +4,6 @@
 ## 2024-10-18 - Help Output Before Dependencies
 **Learning:** CLI tools should provide help flags (`-h`, `--help`) without requiring system dependencies to be installed first. Users may need documentation to understand what dependencies are even needed, so help output should be the very first step in script execution.
 **Action:** Always parse argument flags like `-h` and `--help` immediately after variable initialization and before checking for required system tools like `ffmpeg` or `yt-dlp`.
+## 2024-10-18 - Human-Readable File Sizes in CLI Output
+**Learning:** Raw byte counts for large files (e.g. video files downloaded) are cognitively heavy and hard for users to quickly process. Converting these raw byte counts to human-readable IEC units (KiB, MiB, GiB) using base-1024 math significantly improves CLI UX.
+**Action:** Always format raw byte sizes using base-1024 math (e.g. using `awk`) in script outputs for better readability instead of raw bytes or SI decimal labels (KB, MB).
