@@ -10,6 +10,13 @@
 terminal_safe_text() {
   local LC_ALL=C
   local value="${1-}"
+
+  # Fast-path: if the string contains no control bytes or relevant UTF-8 lead bytes, return it directly.
+  if [[ "$value" != *[$'\001'-$'\037'$'\177'$'\302\330\342\357']* ]]; then
+    printf '%s' "$value"
+    return
+  fi
+
   local code octal control replacement
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).

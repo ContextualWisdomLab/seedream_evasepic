@@ -19,3 +19,7 @@
 ### Performance
 - `yt-dlp` 호출 시 `--concurrent-fragments 4` 플래그를 추가하여 DASH/HLS 스트림의 다운로드 속도를 최적화했습니다. 단일 스레드로 인한 네트워크 병목을 해소합니다.
 
+
+## [Unreleased]
+### Performance
+* **analyze-reference-video:** `terminal_safe_text` 함수에 빠른 경로(fast-path) 패턴 검사를 추가하여 불필요한 Bash 문자열 치환 연산을 건너뛰도록 최적화했습니다.
