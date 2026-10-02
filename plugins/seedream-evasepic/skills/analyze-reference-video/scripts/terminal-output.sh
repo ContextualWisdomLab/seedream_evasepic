@@ -8,6 +8,9 @@
 
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
+  # Requires C locale so character-level pattern evaluation does not silently
+  # skip multibyte lead bytes.
+  local LC_ALL=C
   local value="${1-}"
   local code octal control replacement
 
