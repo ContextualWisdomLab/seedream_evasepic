@@ -48,6 +48,11 @@ printf '=== Testing terminal_safe_text control neutralization ===\n'
 malicious_value=$'safe\033[31mPWNED\033[0m\nFORGED\rLINE\tBELL\007'
 malicious_value+=$'\302\233CSI\342\200\256RTL\342\200\250NEXT'
 safe_value="$(terminal_safe_text "$malicious_value")"
+
+utf8_value=$'안녕\302\233'
+safe_utf8_value="$(export LC_ALL=en_US.UTF-8; terminal_safe_text "$utf8_value")"
+[[ "$safe_utf8_value" == *'안녕'* ]] || fail 'terminal_safe_text corrupted valid UTF-8 characters'
+[[ "$safe_utf8_value" != *$'\302\233'* ]] || fail 'terminal_safe_text retained Unicode C1 CSI with valid UTF-8 characters'
 assert_no_ascii_control "$safe_value" 'terminal_safe_text'
 [[ "$safe_value" != *$'\302\233'* ]] || fail 'terminal_safe_text retained Unicode C1 CSI'
 [[ "$safe_value" != *$'\342\200\256'* ]] || fail 'terminal_safe_text retained RIGHT-TO-LEFT OVERRIDE'
