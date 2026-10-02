@@ -51,12 +51,7 @@ terminal_safe_text() {
   value=${value//$'\330\234'/\\u061C}     # ARABIC LETTER MARK
   value=${value//$'\357\273\277'/\\uFEFF} # ZERO WIDTH NO-BREAK SPACE/BOM
 
-  local out_var="${2-}"
-  if [[ -n "$out_var" ]]; then
-    printf -v "$out_var" '%s' "$value"
-  else
-    printf '%s' "$value"
-  fi
+  printf '%s' "$value"
 }
 
 # Print trusted ANSI prefix/suffix around a neutralized untrusted value.
@@ -66,6 +61,6 @@ terminal_print_value() {
   local suffix="${3-}"
   local safe_value
 
-  terminal_safe_text "$value" safe_value
+  safe_value="$(terminal_safe_text "$value")"
   printf '%b%s%b\n' "$prefix" "$safe_value" "$suffix"
 }

@@ -31,6 +31,3 @@
 ## 2024-07-25 - [Bash 성능 개선] yt-dlp DASH/HLS 스트림 다운로드 병렬화 최적화
 **Learning:** yt-dlp를 사용하여 DASH/HLS 스트림 비디오를 다운로드할 때 기본적으로 단일 스레드로 진행하여 네트워크 I/O 병목이 발생할 수 있습니다.
 **Action:** yt-dlp 호출 시 `--concurrent-fragments N` (예: `--concurrent-fragments 4`) 플래그를 추가하여 프래그먼트들을 병렬로 다운로드하도록 최적화함으로써 다운로드 속도를 크게 향상시킵니다.
-## 2026-10-02 - Bash Subshell Overhead vs Dynamic Variable Binding
-**Learning:** Returning strings from bash functions using command substitution (e.g., `val="$(func)"`) forces the shell to spawn a subshell process, which introduces significant overhead when called frequently (like in string sanitization).
-**Action:** When a function needs to return a string, modify it to accept an output variable name as an argument. Use `printf -v "$var_name" '%s' "$value"` to bind the result dynamically in the current shell scope, avoiding the subshell completely. Maintain backwards compatibility by falling back to `printf '%s' "$value"` if no variable name is provided.
