@@ -104,7 +104,7 @@ terminal_print_value "${GREEN}Downloaded: " "$OUTPUT" "${NC}"
 FILE_SIZE_BYTES="$(wc -c < "$OUTPUT")"
 FILE_SIZE_BYTES="${FILE_SIZE_BYTES//[[:space:]]/}"
 if command -v awk >/dev/null 2>&1; then
-  HUMAN_SIZE="$(awk -v size="$FILE_SIZE_BYTES" 'BEGIN {
+  if HUMAN_SIZE="$(awk -v size="$FILE_SIZE_BYTES" 'BEGIN {
     split("B KiB MiB GiB TiB", units, " ");
     u = 1;
     while (size >= 1024 && u < 5) {
@@ -116,8 +116,11 @@ if command -v awk >/dev/null 2>&1; then
     } else {
       printf "%.2f %s", size, units[u];
     }
-  }')"
-  SIZE_DISPLAY="${HUMAN_SIZE} (${FILE_SIZE_BYTES} bytes)"
+  }')"; then
+    SIZE_DISPLAY="${HUMAN_SIZE} (${FILE_SIZE_BYTES} bytes)"
+  else
+    SIZE_DISPLAY="${FILE_SIZE_BYTES} bytes"
+  fi
 else
   SIZE_DISPLAY="${FILE_SIZE_BYTES} bytes"
 fi

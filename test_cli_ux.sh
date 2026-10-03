@@ -362,3 +362,30 @@ if ! echo "$no_awk_output" | grep -Fq "Size: 2097152 bytes"; then
 fi
 echo "PASS: successful download reports exact bytes when awk is unavailable"
 echo "====================================="
+
+echo "=== Testing successful download when awk conversion fails ==="
+FAILING_AWK_BIN="$TMP_DIR/failing-awk-bin"
+FAILING_AWK_OUTPUT="$TMP_DIR/failing-awk-size.mp4"
+cp -R "$NO_AWK_BIN" "$FAILING_AWK_BIN"
+cat << 'STUB' > "$FAILING_AWK_BIN/awk"
+#!/bin/bash
+exit 7
+STUB
+chmod +x "$FAILING_AWK_BIN/awk"
+
+set +e
+failing_awk_output="$({ PATH="$FAILING_AWK_BIN" /bin/bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid/failing-awk" "$FAILING_AWK_OUTPUT"; } 2>&1)"
+failing_awk_status=$?
+set -e
+if [ "$failing_awk_status" -ne 0 ]; then
+  echo "FAIL: failed optional awk conversion must not turn a successful download into a failure" >&2
+  echo "$failing_awk_output" >&2
+  exit 1
+fi
+if ! echo "$failing_awk_output" | grep -Fq "Size: 2097152 bytes"; then
+  echo "FAIL: failed awk conversion must fall back to the exact byte count" >&2
+  echo "$failing_awk_output" >&2
+  exit 1
+fi
+echo "PASS: failed awk conversion falls back to exact bytes"
+echo "====================================="
