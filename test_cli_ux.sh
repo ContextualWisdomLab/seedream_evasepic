@@ -81,6 +81,7 @@ EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
 CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
 mkdir -p -- "$CACHE_HIT_PATH"
 ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
+ln -s -- "$(command -v awk)" "$CACHE_HIT_PATH/awk"
 printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
 cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
 
@@ -300,3 +301,63 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing human-readable file size output ==="
+TEST_SIZE_OUTPUT="$TMP_DIR/test-size.mp4"
+MOCK_BIN="$TMP_DIR/mock-yt-dlp-bin"
+mkdir -p "$MOCK_BIN"
+cat << 'STUB' > "$MOCK_BIN/yt-dlp"
+#!/bin/bash
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "-o" ]]; then
+    OUTPUT="$2"
+    dd if=/dev/zero of="$OUTPUT" bs=1 count=0 seek=2097152 2>/dev/null
+    break
+  fi
+  shift
+done
+exit 0
+STUB
+chmod +x "$MOCK_BIN/yt-dlp"
+
+size_test_output="$(PATH="$MOCK_BIN:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$TEST_SIZE_OUTPUT" 2>&1 || true)"
+if ! echo "$size_test_output" | grep -Fq "Size: 2.00 MiB (2097152 bytes)"; then
+  echo "FAIL: download-reference.sh did not print correct human-readable file size" >&2
+  echo "$size_test_output" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh formats file size correctly"
+echo "====================================="
+
+echo "=== Testing human-readable file size output fallback (awk fails) ==="
+TEST_SIZE_OUTPUT_FALLBACK="$TMP_DIR/test-size-fallback.mp4"
+MOCK_BIN_FALLBACK="$TMP_DIR/mock-yt-dlp-bin-fallback"
+mkdir -p "$MOCK_BIN_FALLBACK"
+cat << 'STUB' > "$MOCK_BIN_FALLBACK/yt-dlp"
+#!/bin/bash
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "-o" ]]; then
+    OUTPUT="$2"
+    dd if=/dev/zero of="$OUTPUT" bs=1 count=0 seek=2097152 2>/dev/null
+    break
+  fi
+  shift
+done
+exit 0
+STUB
+chmod +x "$MOCK_BIN_FALLBACK/yt-dlp"
+
+cat << 'STUB' > "$MOCK_BIN_FALLBACK/awk"
+#!/bin/bash
+exit 1
+STUB
+chmod +x "$MOCK_BIN_FALLBACK/awk"
+
+size_test_output_fallback="$(PATH="$MOCK_BIN_FALLBACK:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$TEST_SIZE_OUTPUT_FALLBACK" 2>&1 || true)"
+if ! echo "$size_test_output_fallback" | grep -Fq "Size: 2097152 bytes"; then
+  echo "FAIL: download-reference.sh did not fallback correctly when awk fails" >&2
+  echo "$size_test_output_fallback" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh correctly falls back when awk fails"
+echo "====================================="
