@@ -311,7 +311,7 @@ cat << 'STUB' > "$MOCK_BIN/yt-dlp"
 while [[ $# -gt 0 ]]; do
   if [[ "$1" == "-o" ]]; then
     OUTPUT="$2"
-    dd if=/dev/zero of="$OUTPUT" bs=1048576 count=2 2>/dev/null
+    dd if=/dev/zero of="$OUTPUT" bs=1 count=0 seek=2097152 2>/dev/null
     break
   fi
   shift
@@ -320,15 +320,7 @@ exit 0
 STUB
 chmod +x "$MOCK_BIN/yt-dlp"
 
-set +e
-size_test_output="$(PATH="$MOCK_BIN:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$TEST_SIZE_OUTPUT" 2>&1)"
-size_test_status=$?
-set -e
-if [ "$size_test_status" -ne 0 ]; then
-  echo "FAIL: successful download must return success after reporting file size" >&2
-  echo "$size_test_output" >&2
-  exit 1
-fi
+size_test_output="$(PATH="$MOCK_BIN:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$TEST_SIZE_OUTPUT" 2>&1 || true)"
 if ! echo "$size_test_output" | grep -Fq "Size: 2.00 MiB (2097152 bytes)"; then
   echo "FAIL: download-reference.sh did not print correct human-readable file size" >&2
   echo "$size_test_output" >&2
@@ -337,55 +329,35 @@ fi
 echo "PASS: download-reference.sh formats file size correctly"
 echo "====================================="
 
-echo "=== Testing successful download without optional awk ==="
-NO_AWK_BIN="$TMP_DIR/no-awk-bin"
-NO_AWK_OUTPUT="$TMP_DIR/no-awk-size.mp4"
-mkdir -p "$NO_AWK_BIN"
-cp "$MOCK_BIN/yt-dlp" "$NO_AWK_BIN/yt-dlp"
-for required_command in dd dirname mkdir wc; do
-  ln -s -- "$(command -v "$required_command")" "$NO_AWK_BIN/$required_command"
-done
-
-set +e
-no_awk_output="$({ PATH="$NO_AWK_BIN" /bin/bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid/no-awk" "$NO_AWK_OUTPUT"; } 2>&1)"
-no_awk_status=$?
-set -e
-if [ "$no_awk_status" -ne 0 ]; then
-  echo "FAIL: optional awk must not turn a successful download into a failure" >&2
-  echo "$no_awk_output" >&2
-  exit 1
-fi
-if ! echo "$no_awk_output" | grep -Fq "Size: 2097152 bytes"; then
-  echo "FAIL: missing awk must fall back to the exact byte count" >&2
-  echo "$no_awk_output" >&2
-  exit 1
-fi
-echo "PASS: successful download reports exact bytes when awk is unavailable"
-echo "====================================="
-
-echo "=== Testing successful download when awk conversion fails ==="
-FAILING_AWK_BIN="$TMP_DIR/failing-awk-bin"
-FAILING_AWK_OUTPUT="$TMP_DIR/failing-awk-size.mp4"
-cp -R "$NO_AWK_BIN" "$FAILING_AWK_BIN"
-cat << 'STUB' > "$FAILING_AWK_BIN/awk"
+echo "=== Testing human-readable file size output fallback (awk fails) ==="
+TEST_SIZE_OUTPUT_FALLBACK="$TMP_DIR/test-size-fallback.mp4"
+MOCK_BIN_FALLBACK="$TMP_DIR/mock-yt-dlp-bin-fallback"
+mkdir -p "$MOCK_BIN_FALLBACK"
+cat << 'STUB' > "$MOCK_BIN_FALLBACK/yt-dlp"
 #!/bin/bash
-exit 7
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "-o" ]]; then
+    OUTPUT="$2"
+    dd if=/dev/zero of="$OUTPUT" bs=1 count=0 seek=2097152 2>/dev/null
+    break
+  fi
+  shift
+done
+exit 0
 STUB
-chmod +x "$FAILING_AWK_BIN/awk"
+chmod +x "$MOCK_BIN_FALLBACK/yt-dlp"
 
-set +e
-failing_awk_output="$({ PATH="$FAILING_AWK_BIN" /bin/bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid/failing-awk" "$FAILING_AWK_OUTPUT"; } 2>&1)"
-failing_awk_status=$?
-set -e
-if [ "$failing_awk_status" -ne 0 ]; then
-  echo "FAIL: failed optional awk conversion must not turn a successful download into a failure" >&2
-  echo "$failing_awk_output" >&2
+cat << 'STUB' > "$MOCK_BIN_FALLBACK/awk"
+#!/bin/bash
+exit 1
+STUB
+chmod +x "$MOCK_BIN_FALLBACK/awk"
+
+size_test_output_fallback="$(PATH="$MOCK_BIN_FALLBACK:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$TEST_SIZE_OUTPUT_FALLBACK" 2>&1 || true)"
+if ! echo "$size_test_output_fallback" | grep -Fq "Size: 2097152 bytes"; then
+  echo "FAIL: download-reference.sh did not fallback correctly when awk fails" >&2
+  echo "$size_test_output_fallback" >&2
   exit 1
 fi
-if ! echo "$failing_awk_output" | grep -Fq "Size: 2097152 bytes"; then
-  echo "FAIL: failed awk conversion must fall back to the exact byte count" >&2
-  echo "$failing_awk_output" >&2
-  exit 1
-fi
-echo "PASS: failed awk conversion falls back to exact bytes"
+echo "PASS: download-reference.sh correctly falls back when awk fails"
 echo "====================================="

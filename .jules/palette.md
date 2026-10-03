@@ -19,4 +19,4 @@
 
 ## 2025-05-20 - [CLI UX Enhancement] Human-readable File Sizes
 **Learning:** 큰 용량의 파일 크기를 단순히 바이트 단위로만 표시하면 사용자가 직관적으로 파일 크기를 체감하기 어렵다는 것을 확인했습니다.
-**Action:** `awk`를 사용할 수 있으면 `KiB`, `MiB`, `GiB`와 같은 사람이 읽기 쉬운(human-readable) 이진 접두사 단위를 제공하고, 사용할 수 없으면 정확한 바이트 수로 안전하게 대체합니다.
+**Action:** 파일 크기를 표시할 때는 항상 POSIX `awk` 등을 사용하여 `KiB`, `MiB`, `GiB`와 같은 사람이 읽기 쉬운(human-readable) 이진 접두사 단위로 변환하여 제공하여 사용자의 인지 부하를 줄이겠습니다.
