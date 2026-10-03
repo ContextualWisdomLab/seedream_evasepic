@@ -311,7 +311,7 @@ cat << 'STUB' > "$MOCK_BIN/yt-dlp"
 while [[ $# -gt 0 ]]; do
   if [[ "$1" == "-o" ]]; then
     OUTPUT="$2"
-    dd if=/dev/zero of="$OUTPUT" bs=1 count=0 seek=2097152 2>/dev/null
+    dd if=/dev/zero of="$OUTPUT" bs=1048576 count=2 2>/dev/null
     break
   fi
   shift
@@ -320,11 +320,45 @@ exit 0
 STUB
 chmod +x "$MOCK_BIN/yt-dlp"
 
-size_test_output="$(PATH="$MOCK_BIN:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$TEST_SIZE_OUTPUT" 2>&1 || true)"
+set +e
+size_test_output="$(PATH="$MOCK_BIN:$PATH" bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid" "$TEST_SIZE_OUTPUT" 2>&1)"
+size_test_status=$?
+set -e
+if [ "$size_test_status" -ne 0 ]; then
+  echo "FAIL: successful download must return success after reporting file size" >&2
+  echo "$size_test_output" >&2
+  exit 1
+fi
 if ! echo "$size_test_output" | grep -Fq "Size: 2.00 MiB (2097152 bytes)"; then
   echo "FAIL: download-reference.sh did not print correct human-readable file size" >&2
   echo "$size_test_output" >&2
   exit 1
 fi
 echo "PASS: download-reference.sh formats file size correctly"
+echo "====================================="
+
+echo "=== Testing successful download without optional awk ==="
+NO_AWK_BIN="$TMP_DIR/no-awk-bin"
+NO_AWK_OUTPUT="$TMP_DIR/no-awk-size.mp4"
+mkdir -p "$NO_AWK_BIN"
+cp "$MOCK_BIN/yt-dlp" "$NO_AWK_BIN/yt-dlp"
+for required_command in dd dirname mkdir wc; do
+  ln -s -- "$(command -v "$required_command")" "$NO_AWK_BIN/$required_command"
+done
+
+set +e
+no_awk_output="$({ PATH="$NO_AWK_BIN" /bin/bash "$SCRIPT_DIR/download-reference.sh" "https://example.invalid/no-awk" "$NO_AWK_OUTPUT"; } 2>&1)"
+no_awk_status=$?
+set -e
+if [ "$no_awk_status" -ne 0 ]; then
+  echo "FAIL: optional awk must not turn a successful download into a failure" >&2
+  echo "$no_awk_output" >&2
+  exit 1
+fi
+if ! echo "$no_awk_output" | grep -Fq "Size: 2097152 bytes"; then
+  echo "FAIL: missing awk must fall back to the exact byte count" >&2
+  echo "$no_awk_output" >&2
+  exit 1
+fi
+echo "PASS: successful download reports exact bytes when awk is unavailable"
 echo "====================================="
