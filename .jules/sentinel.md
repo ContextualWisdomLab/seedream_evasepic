@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2026-10-03 - [CRITICAL] Bash 다국어(UTF-8) 환경에서의 제어 문자 패턴 매칭 우회 취약점 수정
+**Vulnerability:** `terminal-output.sh` 스크립트에서 C0, C1 및 기타 제어 문자를 필터링하기 위해 Bash의 매개변수 확장(`value=${value//"$control"/"$replacement"}`)을 사용하고 있었으나, `LC_ALL=C`가 설정되지 않아 기본 UTF-8 환경에서 일부 멀티바이트 시퀀스가 필터링을 우회할 수 있는 취약점이 존재했습니다.
+**Learning:** Bash는 UTF-8 환경에서 패턴 매칭을 수행할 때 문자 단위로 처리하므로, 바이트 시퀀스 매칭(`\302`나 `\330` 같은)이 유효한 멀티바이트 문자의 일부로 포함될 경우 패턴 매칭을 무시하는 현상이 발생합니다.
+**Prevention:** 터미널 보안을 위해 특정 제어 문자 바이트를 필터링할 때는 함수 내부에 `local LC_ALL=C`를 명시적으로 설정하여 Bash가 문자 단위가 아닌 바이트 단위로 패턴을 매칭하도록 강제해야 합니다.

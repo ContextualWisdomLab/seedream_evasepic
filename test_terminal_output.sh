@@ -56,6 +56,25 @@ assert_no_ascii_control "$safe_value" 'terminal_safe_text'
 [[ "$safe_value" == *'\u009BCSI\u202ERTL\u2028NEXT'* ]] || fail 'Unicode controls were not rendered visibly'
 printf 'PASS: terminal_safe_text neutralizes actual C0, C1, line, and bidi controls\n'
 
+
+printf '=== Testing valid UTF-8 multibyte characters ===\n'
+valid_unicode="가나다 123 !@#"
+safe_unicode="$(terminal_safe_text "$valid_unicode")"
+if [[ "$safe_unicode" != "$valid_unicode" ]]; then
+  fail 'terminal_safe_text corrupted valid UTF-8 text'
+fi
+printf 'PASS: terminal_safe_text preserves valid UTF-8 characters\n'
+
+printf '=== Testing C1 control neutralization bypass ===\n'
+# A malicious payload that attempts to hide C1 controls inside invalid or obscure multibyte sequences
+# to bypass the parameter expansion in a UTF-8 locale.
+malicious_bypass="prefix"
+malicious_bypass+=$'\302\200' # U+0080
+malicious_bypass+="suffix"
+safe_bypass="$(terminal_safe_text "$malicious_bypass")"
+[[ "$safe_bypass" == *'\u0080'* ]] || fail 'terminal_safe_text failed to neutralize C1 control U+0080'
+printf 'PASS: terminal_safe_text neutralizes C1 controls even in complex sequences\n'
+
 printf '=== Testing script output with actual ESC and newline bytes ===\n'
 temporary_directory="$(mktemp -d)"
 trap 'rm -rf -- "$temporary_directory"' EXIT
