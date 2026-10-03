@@ -90,6 +90,9 @@ for forbidden_command in yt-dlp brew pip3 pip; do
     exit 1
   fi
 done
+ln -s -- "$(command -v awk)" "$CACHE_HIT_PATH/awk"
+ln -s -- "$(command -v wc)" "$CACHE_HIT_PATH/wc"
+
 
 set +e
 cached_output="$(
