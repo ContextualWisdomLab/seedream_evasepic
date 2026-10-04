@@ -300,3 +300,38 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing human-readable file size formatting ==="
+DUMMY_VIDEO="$TMP_DIR/human-size-test.mp4"
+
+PATH_TEST_DIR="$(mktemp -d)"
+cat > "$PATH_TEST_DIR/yt-dlp" <<'EOF'
+#!/bin/bash
+out=""
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "-o" ]]; then
+    out="$2"
+    break
+  fi
+  shift
+done
+head -c 1234567 /dev/zero > "$out"
+EOF
+chmod +x "$PATH_TEST_DIR/yt-dlp"
+
+rm -f "$DUMMY_VIDEO"
+
+set +e
+download_output="$(
+  PATH="$PATH_TEST_DIR:$PATH" \
+    bash "$SCRIPT_DIR/download-reference.sh" "dummy_url" "$DUMMY_VIDEO" 2>&1
+)"
+download_status=$?
+set -e
+if ! grep -q -E "Size: 1.18 MiB" <<< "$download_output"; then
+  echo "FAIL: download-reference.sh did not format file size as human-readable MiB" >&2
+  printf "%s\n" "$download_output" >&2
+  exit 1
+fi
+echo "PASS: download-reference.sh formats file size as human-readable using POSIX awk"
+echo "====================================="
