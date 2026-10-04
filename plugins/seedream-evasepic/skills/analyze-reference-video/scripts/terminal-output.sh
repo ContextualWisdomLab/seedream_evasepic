@@ -8,6 +8,8 @@
 
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
+  # Security: Required to prevent bash multibyte pattern matching bypasses for C1 controls in UTF-8 locales
+  local LC_ALL=C
   local value="${1-}"
   local code octal control replacement
 
