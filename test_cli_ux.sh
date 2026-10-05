@@ -81,6 +81,7 @@ EXPECTED_CACHED_OUTPUT="$TMP_DIR/cached-reference.expected"
 CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
 mkdir -p -- "$CACHE_HIT_PATH"
 ln -s -- "$(command -v dirname)" "$CACHE_HIT_PATH/dirname"
+ln -s -- "$(command -v awk)" "$CACHE_HIT_PATH/awk"
 printf 'existing-video-payload\n\001\377\n' > "$CACHED_OUTPUT"
 cp -- "$CACHED_OUTPUT" "$EXPECTED_CACHED_OUTPUT"
 
@@ -300,3 +301,37 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+echo "=== Testing human-readable file size format ==="
+TEST_OUTPUT="$TMP_DIR/filesize-reference.mp4"
+TEST_ARGS_FILE="$TMP_DIR/filesize-yt-dlp.args"
+
+
+rm -f "$TEST_OUTPUT"
+mkdir -p "$TMP_DIR/mock-bin"
+cat << 'MOCK' > "$TMP_DIR/mock-bin/yt-dlp"
+#!/bin/bash
+while [[ $# -gt 0 ]]; do
+  if [ "$1" = "-o" ]; then
+    dd if=/dev/zero of="$2" bs=1024 count=1075 2>/dev/null
+    break
+  fi
+  shift
+done
+MOCK
+chmod +x "$TMP_DIR/mock-bin/yt-dlp"
+
+test_output_text="$(
+  PATH="$TMP_DIR/mock-bin:$PATH" \
+  YT_DLP_ARGS_FILE="$TEST_ARGS_FILE" \
+    bash "$SCRIPT_DIR/download-reference.sh" \
+      "https://example.invalid/filesize-video" "$TEST_OUTPUT" 2>&1
+)"
+
+if ! grep -q -E "Size: 1.0[0-9] MiB" <<< "$test_output_text"; then
+  echo "FAIL: file size is not printed in human readable MiB format" >&2
+  printf "%s\n" "$test_output_text" >&2
+  exit 1
+fi
+
+echo "PASS: file size is printed in human-readable binary prefix units"
+echo "====================================="
