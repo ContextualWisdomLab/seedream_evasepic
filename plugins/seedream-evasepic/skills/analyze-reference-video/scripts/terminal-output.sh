@@ -8,6 +8,7 @@
 
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
+  local output_var="${2-}"
   local value="${1-}"
   local code octal control replacement
 
@@ -51,7 +52,11 @@ terminal_safe_text() {
   value=${value//$'\330\234'/\\u061C}     # ARABIC LETTER MARK
   value=${value//$'\357\273\277'/\\uFEFF} # ZERO WIDTH NO-BREAK SPACE/BOM
 
-  printf '%s' "$value"
+  if [[ -n "$output_var" ]]; then
+    printf -v "$output_var" '%s' "$value"
+  else
+    printf '%s' "$value"
+  fi
 }
 
 # Print trusted ANSI prefix/suffix around a neutralized untrusted value.
@@ -61,6 +66,6 @@ terminal_print_value() {
   local suffix="${3-}"
   local safe_value
 
-  safe_value="$(terminal_safe_text "$value")"
+  terminal_safe_text "$value" safe_value
   printf '%b%s%b\n' "$prefix" "$safe_value" "$suffix"
 }
