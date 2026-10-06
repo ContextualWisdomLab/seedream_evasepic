@@ -107,7 +107,7 @@ assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path erro
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
 printf '=== Testing static terminal-output contract ===\n'
-if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO)' \
+if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO|\$DURATION|\$RESOLUTION|\$FPS)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \
   "$SCRIPT_DIRECTORY/extract-frames.sh" \
   "$SCRIPT_DIRECTORY/transcribe.sh"; then
