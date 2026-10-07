@@ -64,13 +64,20 @@ if command -v whisper >/dev/null 2>&1; then
   OUT_DIR="${AUDIO%/*}"
   [ "$OUT_DIR" = "$AUDIO" ] && OUT_DIR="."
   [ -z "$OUT_DIR" ] && OUT_DIR="/"
-  whisper \
+  if ! whisper \
     --model "$MODEL" \
     --output_format txt \
     --output_format json \
     --output_dir "$OUT_DIR" \
     --verbose False \
-    -- "$AUDIO"
+    -- "$AUDIO"; then
+    printf "\n" >&2
+    printf "%b\n" "${RED}Error: whisper CLI failed to transcribe the audio.${NC}" >&2
+    printf "%b\n" "${CYAN}Actionable steps:${NC}" >&2
+    printf "%b\n" "${CYAN}  1. If out of memory, try a smaller model (e.g., 'tiny' or 'base')${NC}" >&2
+    printf "%b\n" "${CYAN}  2. Verify that the audio file is not corrupted${NC}" >&2
+    exit 1
+  fi
   AUDIO_BASE="${AUDIO%.*}"
   terminal_print_value "${GREEN}Transcript saved to " "$OUT_DIR/${AUDIO_BASE##*/}.txt" "${NC}"
   exit 0
@@ -103,10 +110,18 @@ out_base = os.path.splitext(audio)[0]
 
 # The model name was allowlisted by Bash. User-controlled paths are deliberately
 # omitted from terminal output; they remain available only to file APIs.
-print(f"\033[0;36mLoading whisper model: {model_name}...\033[0m")
-model = whisper.load_model(model_name)
-print("\033[0;36mTranscribing audio...\033[0m")
-result = model.transcribe(audio)
+try:
+    print(f"\033[0;36mLoading whisper model: {model_name}...\033[0m")
+    model = whisper.load_model(model_name)
+    print("\033[0;36mTranscribing audio...\033[0m")
+    result = model.transcribe(audio)
+except Exception as e:
+    import sys
+    print(f"\n\033[0;31mError: whisper Python module failed to transcribe the audio.\033[0m", file=sys.stderr)
+    print(f"\033[0;36mActionable steps:\033[0m", file=sys.stderr)
+    print(f"\033[0;36m  1. If out of memory, try a smaller model (e.g., 'tiny' or 'base')\033[0m", file=sys.stderr)
+    print(f"\033[0;36m  2. Verify that the audio file is not corrupted\033[0m", file=sys.stderr)
+    sys.exit(1)
 
 # Write plain text
 with open(out_base + ".txt", "w") as f:

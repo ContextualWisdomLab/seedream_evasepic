@@ -48,11 +48,32 @@ fi
 if ! command -v yt-dlp >/dev/null 2>&1; then
   printf "%b\n" "${CYAN}yt-dlp not found. Trying to install...${NC}" >&2
   if command -v brew >/dev/null 2>&1; then
-    brew install yt-dlp
+    if ! brew install yt-dlp; then
+      printf "\n" >&2
+      printf "%b\n" "${RED}Error: brew install yt-dlp failed.${NC}" >&2
+      printf "%b\n" "${CYAN}Actionable steps:${NC}" >&2
+      printf "%b\n" "${CYAN}  1. Run 'brew doctor' to check for Homebrew issues${NC}" >&2
+      printf "%b\n" "${CYAN}  2. Try installing manually: brew install yt-dlp${NC}" >&2
+      exit 1
+    fi
   elif command -v pip3 >/dev/null 2>&1; then
-    pip3 install --user yt-dlp
+    if ! pip3 install --user yt-dlp; then
+      printf "\n" >&2
+      printf "%b\n" "${RED}Error: pip3 install yt-dlp failed.${NC}" >&2
+      printf "%b\n" "${CYAN}Actionable steps:${NC}" >&2
+      printf "%b\n" "${CYAN}  1. Verify your network connection${NC}" >&2
+      printf "%b\n" "${CYAN}  2. Try installing manually: pip3 install --user yt-dlp${NC}" >&2
+      exit 1
+    fi
   elif command -v pip >/dev/null 2>&1; then
-    pip install --user yt-dlp
+    if ! pip install --user yt-dlp; then
+      printf "\n" >&2
+      printf "%b\n" "${RED}Error: pip install yt-dlp failed.${NC}" >&2
+      printf "%b\n" "${CYAN}Actionable steps:${NC}" >&2
+      printf "%b\n" "${CYAN}  1. Verify your network connection${NC}" >&2
+      printf "%b\n" "${CYAN}  2. Try installing manually: pip install --user yt-dlp${NC}" >&2
+      exit 1
+    fi
   else
     printf "%b\n" "${RED}Error: cannot auto-install yt-dlp. Install manually:${NC}" >&2
     printf "%b\n" "${CYAN}  brew install yt-dlp   (macOS)${NC}" >&2
