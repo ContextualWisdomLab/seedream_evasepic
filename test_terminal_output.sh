@@ -117,3 +117,17 @@ if grep -nE 'print\(f?"[^\"]*\{(audio|out_base)' "$SCRIPT_DIRECTORY/transcribe.s
   fail 'Python fallback still prints a user-controlled path to the terminal'
 fi
 printf 'PASS: static contract keeps untrusted values out of terminal control sinks\n'
+
+printf '=== Testing terminal_safe_text UTF-8 preservation ===\n'
+korean_text="안녕하세요 가나다"
+safe_korean="$(terminal_safe_text "$korean_text")"
+if [[ "$safe_korean" != "$korean_text" ]]; then
+  fail "terminal_safe_text corrupted valid Korean UTF-8 text"
+fi
+
+emoji_text="🛡️🚀🌍"
+safe_emoji="$(terminal_safe_text "$emoji_text")"
+if [[ "$safe_emoji" != "$emoji_text" ]]; then
+  fail "terminal_safe_text corrupted valid Emoji UTF-8 text"
+fi
+printf 'PASS: terminal_safe_text preserves valid UTF-8 multibyte characters\n'
