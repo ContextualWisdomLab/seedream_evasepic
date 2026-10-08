@@ -45,6 +45,10 @@ assert_neutralized_file() {
 }
 
 printf '=== Testing terminal_safe_text control neutralization ===\n'
+malicious_value_ko=$'ko\354\225\210\302\233'
+safe_value_ko="$(terminal_safe_text "$malicious_value_ko")"
+[[ "$safe_value_ko" == 'ko안\u009B' ]] || fail 'terminal_safe_text corrupted valid UTF-8 Korean characters or failed to escape C1 control'
+
 malicious_value=$'safe\033[31mPWNED\033[0m\nFORGED\rLINE\tBELL\007'
 malicious_value+=$'\302\233CSI\342\200\256RTL\342\200\250NEXT'
 safe_value="$(terminal_safe_text "$malicious_value")"

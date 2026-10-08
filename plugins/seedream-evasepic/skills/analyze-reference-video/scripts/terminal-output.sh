@@ -10,6 +10,8 @@
 terminal_safe_text() {
   local value="${1-}"
   local code octal control replacement
+  # Security: Required to prevent bash multibyte pattern matching bypasses for C1 controls in UTF-8 locales
+  local LC_ALL=C
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
   for code in {1..31}; do
