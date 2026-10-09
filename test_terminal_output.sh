@@ -106,6 +106,13 @@ bash "$SCRIPT_DIRECTORY/transcribe.sh" \
 assert_neutralized_file "$transcribe_path_output" 'transcribe.sh audio-path error'
 printf 'PASS: all user-facing script values neutralize actual control bytes\n'
 
+printf '=== Testing multibyte characters preservation ===\n'
+multibyte_safe="$(terminal_safe_text "안녕😀하세요")"
+if [[ "$multibyte_safe" != "안녕😀하세요" ]]; then
+  fail "terminal_safe_text corrupted valid multibyte characters: $multibyte_safe"
+fi
+printf 'PASS: terminal_safe_text preserves valid multibyte characters like Korean and Emojis\n'
+
 printf '=== Testing static terminal-output contract ===\n'
 if grep -nE 'printf[[:space:]]+"%b[^\"]*"[^#]*(\$URL|\$OUTPUT|\$VIDEO|\$OUT_DIR|\$MODEL|\$AUDIO)' \
   "$SCRIPT_DIRECTORY/download-reference.sh" \
