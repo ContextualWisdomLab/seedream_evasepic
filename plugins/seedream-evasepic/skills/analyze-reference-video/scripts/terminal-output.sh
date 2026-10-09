@@ -6,27 +6,48 @@
 # bidirectional/invisible format control is rendered as visible text before the
 # value is mixed with trusted ANSI styling.
 
-# Return a terminal-safe representation of one untrusted value.
-terminal_safe_text() {
-  local value="${1-}"
-  local code octal control replacement
+# Precompute static arrays for fast replacement
+declare -a _TERMINAL_SAFE_C0_CONTROLS
+declare -a _TERMINAL_SAFE_C0_REPLACEMENTS
+declare -a _TERMINAL_SAFE_C1_CONTROLS
+declare -a _TERMINAL_SAFE_C1_REPLACEMENTS
 
-  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+_init_terminal_safe_arrays() {
+  local code octal control tmp
+
   for code in {1..31}; do
     printf -v octal '%03o' "$code"
     printf -v control '%b' "\\${octal}"
-    printf -v replacement '\\x%02X' "$code"
-    value=${value//"$control"/"$replacement"}
+    printf -v tmp '\\x%02X' "$code"
+    _TERMINAL_SAFE_C0_CONTROLS[$code]="$control"
+    _TERMINAL_SAFE_C0_REPLACEMENTS[$code]="$tmp"
+  done
+
+  for code in {128..159}; do
+    printf -v octal '%03o' "$code"
+    printf -v control '%b' "\\302\\${octal}"
+    printf -v tmp '\\u%04X' "$code"
+    _TERMINAL_SAFE_C1_CONTROLS[$code]="$control"
+    _TERMINAL_SAFE_C1_REPLACEMENTS[$code]="$tmp"
+  done
+}
+_init_terminal_safe_arrays
+
+# Return a terminal-safe representation of one untrusted value.
+terminal_safe_text() {
+  local value="${1-}"
+  local code
+
+  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+  for code in {1..31}; do
+    value=${value//"${_TERMINAL_SAFE_C0_CONTROLS[$code]}"/"${_TERMINAL_SAFE_C0_REPLACEMENTS[$code]}"}
   done
   value=${value//$'\177'/\\x7F}
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
   for code in {128..159}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\302\\${octal}"
-    printf -v replacement '\\u%04X' "$code"
-    value=${value//"$control"/"$replacement"}
+    value=${value//"${_TERMINAL_SAFE_C1_CONTROLS[$code]}"/"${_TERMINAL_SAFE_C1_REPLACEMENTS[$code]}"}
   done
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
