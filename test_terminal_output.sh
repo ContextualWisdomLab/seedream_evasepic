@@ -56,6 +56,14 @@ assert_no_ascii_control "$safe_value" 'terminal_safe_text'
 [[ "$safe_value" == *'\u009BCSI\u202ERTL\u2028NEXT'* ]] || fail 'Unicode controls were not rendered visibly'
 printf 'PASS: terminal_safe_text neutralizes actual C0, C1, line, and bidi controls\n'
 
+printf '=== Testing multibyte UTF-8 preservation ===\n'
+multibyte_value="안녕하세요 🚀"
+safe_multibyte="$(terminal_safe_text "$multibyte_value")"
+if [[ "$safe_multibyte" != "$multibyte_value" ]]; then
+  fail "terminal_safe_text corrupted valid UTF-8 characters: expected '$multibyte_value', got '$safe_multibyte'"
+fi
+printf 'PASS: terminal_safe_text preserves valid UTF-8 characters (Korean, Emoji)\n'
+
 printf '=== Testing script output with actual ESC and newline bytes ===\n'
 temporary_directory="$(mktemp -d)"
 trap 'rm -rf -- "$temporary_directory"' EXIT
