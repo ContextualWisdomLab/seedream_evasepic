@@ -6,27 +6,46 @@
 # bidirectional/invisible format control is rendered as visible text before the
 # value is mixed with trusted ANSI styling.
 
-# Return a terminal-safe representation of one untrusted value.
-terminal_safe_text() {
-  local value="${1-}"
-  local code octal control replacement
+# 성능 최적화: `printf -v`를 반복 호출하는 오버헤드를 제거하기 위해
+# 로드 시점에 제어 문자 및 치환 문자열을 전역 배열로 사전 계산합니다.
+declare -a _C0_CONTROL _C0_REPLACE _C1_CONTROL _C1_REPLACE
 
-  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+_init_terminal_safe_text() {
+  local code octal control tmp
   for code in {1..31}; do
     printf -v octal '%03o' "$code"
     printf -v control '%b' "\\${octal}"
-    printf -v replacement '\\x%02X' "$code"
-    value=${value//"$control"/"$replacement"}
+    _C0_CONTROL[code]=$control
+    printf -v tmp '\\x%02X' "$code"
+    _C0_REPLACE[code]=$tmp
+  done
+
+  for code in {128..159}; do
+    printf -v octal '%03o' "$code"
+    printf -v control '%b' "\\302\\${octal}"
+    _C1_CONTROL[code]=$control
+    printf -v tmp '\\u%04X' "$code"
+    _C1_REPLACE[code]=$tmp
+  done
+}
+_init_terminal_safe_text
+unset -f _init_terminal_safe_text
+
+# Return a terminal-safe representation of one untrusted value.
+terminal_safe_text() {
+  local value="${1-}"
+  local code
+
+  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+  for code in {1..31}; do
+    value=${value//"${_C0_CONTROL[code]}"/"${_C0_REPLACE[code]}"}
   done
   value=${value//$'\177'/\\x7F}
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
   for code in {128..159}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\302\\${octal}"
-    printf -v replacement '\\u%04X' "$code"
-    value=${value//"$control"/"$replacement"}
+    value=${value//"${_C1_CONTROL[code]}"/"${_C1_REPLACE[code]}"}
   done
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
