@@ -22,12 +22,18 @@ terminal_safe_text() {
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
-  for code in {128..159}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\302\\${octal}"
-    printf -v replacement '\\u%04X' "$code"
-    value=${value//"$control"/"$replacement"}
-  done
+  # Security: Required to prevent bash multibyte pattern matching bypasses for C1 controls in UTF-8 locales.
+  # We scope this to a subshell to avoid corrupting valid UTF-8 text during single-byte C0 replacements.
+  value="$(
+    LC_ALL=C
+    for code in {128..159}; do
+      printf -v octal '%03o' "$code"
+      printf -v control '%b' "\\302\\${octal}"
+      printf -v replacement '\\u%04X' "$code"
+      value=${value//"$control"/"$replacement"}
+    done
+    printf '%s' "$value"
+  )"
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
   # from changing terminal line structure or the visual ordering of a path/URL.
