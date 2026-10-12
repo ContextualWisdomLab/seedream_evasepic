@@ -40,3 +40,7 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+## 2026-10-12 - [다국어 패턴 매칭 우회 방지]
+**Vulnerability:** [기본 UTF-8 로캘에서 bash의 다중 바이트 패턴 매칭을 우회하여 제어 문자가 필터링되지 않는 문제]
+**Learning:** [bash가 패턴을 문자 단위로 평가하므로 유효한 다중 바이트 문자의 일부일 경우 명시적 부분 문자열 일치가 무시됨]
+**Prevention:** [정확한 다중 바이트 시퀀스를 대상으로 하는 패턴 매칭 작업에는 반드시 `local LC_ALL=C`를 사용하여 바이트 단위 검사를 강제해야 함]

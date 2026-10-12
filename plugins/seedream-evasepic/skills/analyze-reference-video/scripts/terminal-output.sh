@@ -22,6 +22,8 @@ terminal_safe_text() {
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
+  # Security: Required to prevent bash multibyte pattern matching bypasses for C1 controls in UTF-8 locales
+  local LC_ALL=C
   for code in {128..159}; do
     printf -v octal '%03o' "$code"
     printf -v control '%b' "\\302\\${octal}"
