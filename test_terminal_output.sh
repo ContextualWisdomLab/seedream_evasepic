@@ -56,6 +56,17 @@ assert_no_ascii_control "$safe_value" 'terminal_safe_text'
 [[ "$safe_value" == *'\u009BCSI\u202ERTL\u2028NEXT'* ]] || fail 'Unicode controls were not rendered visibly'
 printf 'PASS: terminal_safe_text neutralizes actual C0, C1, line, and bidi controls\n'
 
+printf '=== Testing Korean character preservation ===\n'
+korean_value=$'안녕\302\200세상'
+safe_korean="$(terminal_safe_text "$korean_value")"
+if [[ "$safe_korean" != *"안녕"* ]] || [[ "$safe_korean" != *"세상"* ]]; then
+  fail 'terminal_safe_text corrupted valid UTF-8 Korean characters'
+fi
+if [[ "$safe_korean" != *'\u0080'* ]]; then
+  fail 'terminal_safe_text failed to neutralize C1 control in Korean string'
+fi
+printf 'PASS: terminal_safe_text preserves valid UTF-8 Korean characters\n'
+
 printf '=== Testing script output with actual ESC and newline bytes ===\n'
 temporary_directory="$(mktemp -d)"
 trap 'rm -rf -- "$temporary_directory"' EXIT
