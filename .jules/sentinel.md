@@ -40,3 +40,8 @@
 **Vulnerability:** Moving an untrusted value from `%b` to `%s` prevents backslash text such as `\033` from being decoded, but it does not neutralize an actual ESC byte, C0/C1 control, CR/LF, Unicode line separator, or bidirectional override already present in the value. A terminal can still interpret those bytes, forge lines, move the cursor, clear output, or visually reorder a path.
 **Learning:** Format-string separation and output neutralization are distinct controls. `%s` is necessary but not sufficient when the downstream component is an interactive terminal. Trusted color sequences may use `%b`; every untrusted value must first pass a centralized terminal renderer that converts control and format characters into visible escape notation.
 **Prevention:** Route URL, path, model, and external-result values through `terminal_safe_text`/`terminal_print_value`; omit untrusted paths from the Python fallback; test with actual ESC, CR, LF, BEL, Unicode C1 CSI, line-separator, and right-to-left-override characters rather than only literal backslash sequences. Keep the regression suite failing if raw user-controlled control bytes reach any terminal sink.
+
+## 2026-08-06 - [CRITICAL] UTF-8 환경에서 멀티바이트 패턴 매칭 우회 취약점 수정
+**Vulnerability:** Bash의 기본 UTF-8 환경(locale)에서는 `$'\302\233'`와 같은 멀티바이트 문자 패턴을 치환할 때, 해당 바이트가 유효한 멀티바이트 문자의 일부로 평가되어 패턴 매칭이 무시(bypass)되는 취약점이 있었습니다.
+**Learning:** Bash 패턴 매칭을 사용하여 특정 바이트(예: UTF-8 멀티바이트 리드 바이트인 `\302` 등)를 검출하고 보안 필터링을 수행할 때는 함수 내에서 `local LC_ALL=C`를 설정하는 것이 필수적입니다.
+**Prevention:** `terminal_safe_text` 내에 `local LC_ALL=C`를 적용한 헬퍼 함수 `_neutralize_multibyte_controls`를 분리하여 단일 바이트 및 멀티바이트 제어 문자 필터링 시 패턴 매칭 우회를 방지하며, 유효한 UTF-8 텍스트(예: 한국어, 이모지)가 손상되지 않도록 범위를 엄격하게 지정합니다.

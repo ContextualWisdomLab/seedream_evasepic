@@ -117,3 +117,18 @@ if grep -nE 'print\(f?"[^\"]*\{(audio|out_base)' "$SCRIPT_DIRECTORY/transcribe.s
   fail 'Python fallback still prints a user-controlled path to the terminal'
 fi
 printf 'PASS: static contract keeps untrusted values out of terminal control sinks\n'
+
+printf '=== Testing multibyte character preservation ===\n'
+multibyte_value=$'안녕\302\233😀'
+export LC_ALL=en_US.UTF-8
+safe_multibyte="$(terminal_safe_text "$multibyte_value")"
+if [[ "$safe_multibyte" != *'안녕'* ]]; then
+  fail 'terminal_safe_text corrupted valid Korean text'
+fi
+if [[ "$safe_multibyte" != *'😀'* ]]; then
+  fail 'terminal_safe_text corrupted valid Emoji'
+fi
+if [[ "$safe_multibyte" != *'\u009B'* ]]; then
+  fail 'terminal_safe_text failed to neutralize CSI in UTF-8 locale'
+fi
+printf 'PASS: terminal_safe_text preserves valid UTF-8 and neutralizes controls in UTF-8 locales\n'
