@@ -6,19 +6,10 @@
 # bidirectional/invisible format control is rendered as visible text before the
 # value is mixed with trusted ANSI styling.
 
-# Return a terminal-safe representation of one untrusted value.
-terminal_safe_text() {
-  local value="${1-}"
+# Security: Required to prevent bash multibyte pattern matching bypasses for C1 controls in UTF-8 locales
+_neutralize_multibyte_controls() {
+  local LC_ALL=C
   local code octal control replacement
-
-  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
-  for code in {1..31}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\${octal}"
-    printf -v replacement '\\x%02X' "$code"
-    value=${value//"$control"/"$replacement"}
-  done
-  value=${value//$'\177'/\\x7F}
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
@@ -50,6 +41,23 @@ terminal_safe_text() {
   value=${value//$'\342\201\251'/\\u2069} # POP DIRECTIONAL ISOLATE
   value=${value//$'\330\234'/\\u061C}     # ARABIC LETTER MARK
   value=${value//$'\357\273\277'/\\uFEFF} # ZERO WIDTH NO-BREAK SPACE/BOM
+}
+
+# Return a terminal-safe representation of one untrusted value.
+terminal_safe_text() {
+  local value="${1-}"
+  local code octal control replacement
+
+  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+  for code in {1..31}; do
+    printf -v octal '%03o' "$code"
+    printf -v control '%b' "\\${octal}"
+    printf -v replacement '\\x%02X' "$code"
+    value=${value//"$control"/"$replacement"}
+  done
+  value=${value//$'\177'/\\x7F}
+
+  _neutralize_multibyte_controls
 
   printf '%s' "$value"
 }
