@@ -20,6 +20,16 @@ terminal_safe_text() {
   done
   value=${value//$'\177'/\\x7F}
 
+  _neutralize_multibyte_controls
+
+  printf '%s' "$value"
+}
+
+_neutralize_multibyte_controls() {
+  # Security: Required to prevent bash multibyte pattern matching bypasses for C1 controls in UTF-8 locales
+  local LC_ALL=C
+  local code octal control replacement
+
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
   for code in {128..159}; do
@@ -50,8 +60,6 @@ terminal_safe_text() {
   value=${value//$'\342\201\251'/\\u2069} # POP DIRECTIONAL ISOLATE
   value=${value//$'\330\234'/\\u061C}     # ARABIC LETTER MARK
   value=${value//$'\357\273\277'/\\uFEFF} # ZERO WIDTH NO-BREAK SPACE/BOM
-
-  printf '%s' "$value"
 }
 
 # Print trusted ANSI prefix/suffix around a neutralized untrusted value.
