@@ -6,27 +6,48 @@
 # bidirectional/invisible format control is rendered as visible text before the
 # value is mixed with trusted ANSI styling.
 
-# Return a terminal-safe representation of one untrusted value.
-terminal_safe_text() {
-  local value="${1-}"
-  local code octal control replacement
+# Precalculate static string formats for control characters at load time to avoid
+# slow printf -v operations inside the frequently called terminal_safe_text function.
+declare -a _C0_CONTROL
+declare -a _C0_REPLACEMENT
+declare -a _C1_CONTROL
+declare -a _C1_REPLACEMENT
 
-  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+_init_terminal_controls() {
+  local code octal control replacement tmp
   for code in {1..31}; do
     printf -v octal '%03o' "$code"
     printf -v control '%b' "\\${octal}"
-    printf -v replacement '\\x%02X' "$code"
-    value=${value//"$control"/"$replacement"}
+    _C0_CONTROL[code]="$control"
+    printf -v tmp '\\x%02X' "$code"
+    _C0_REPLACEMENT[code]="$tmp"
+  done
+  for code in {128..159}; do
+    printf -v octal '%03o' "$code"
+    printf -v control '%b' "\\302\\${octal}"
+    _C1_CONTROL[code]="$control"
+    printf -v tmp '\\u%04X' "$code"
+    _C1_REPLACEMENT[code]="$tmp"
+  done
+}
+_init_terminal_controls
+unset -f _init_terminal_controls
+
+# Return a terminal-safe representation of one untrusted value.
+terminal_safe_text() {
+  local value="${1-}"
+  local code
+
+  # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
+  for code in {1..31}; do
+    value=${value//"${_C0_CONTROL[code]}"/"${_C0_REPLACEMENT[code]}"}
   done
   value=${value//$'\177'/\\x7F}
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
   for code in {128..159}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\302\\${octal}"
-    printf -v replacement '\\u%04X' "$code"
-    value=${value//"$control"/"$replacement"}
+    value=${value//"${_C1_CONTROL[code]}"/"${_C1_REPLACEMENT[code]}"}
   done
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
