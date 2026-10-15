@@ -12,7 +12,7 @@ declare -a _TERMINAL_C0_CONTROL _TERMINAL_C0_REPLACE
 declare -a _TERMINAL_C1_CONTROL _TERMINAL_C1_REPLACE
 
 _init_terminal_safe_text() {
-  local code octal control replacement tmp
+  local code octal tmp
   for code in {1..31}; do
     printf -v octal '%03o' "$code"
     printf -v tmp '%b' "\\${octal}"
