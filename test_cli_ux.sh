@@ -301,13 +301,32 @@ echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal 
 echo "====================================="
 
 
+
 echo "=== Testing download-reference.sh Human-Readable File Size ==="
 DUMMY_OUTPUT="$TMP_DIR/dummy_size.mp4"
 DUMMY_URL="https://example.invalid/dummy_size"
 
+CACHE_HIT_PATH="$TMP_DIR/cache-hit-bin"
+mkdir -p -- "$CACHE_HIT_PATH"
+
+# We must let yt-dlp create the file with the expected size to bypass the cache-hit short circuit.
+cat > "$CACHE_HIT_PATH/yt-dlp" <<'EOF'
+#!/bin/bash
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    output="${1:-}"
+    break
+  fi
+  shift
+done
+head -c "$MOCK_SIZE" /dev/zero > "$output"
+EOF
+chmod +x "$CACHE_HIT_PATH/yt-dlp"
+
 # 500 bytes (should be B)
-head -c 500 /dev/zero > "$DUMMY_OUTPUT"
-output=$(bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1)
+rm -f "$DUMMY_OUTPUT"
+output=$(PATH="$CACHE_HIT_PATH:$PATH" MOCK_SIZE=500 bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1 || true)
 if ! grep -q "Size: .* 500 B" <<< "$output" && ! grep -q "Size: .*500 B" <<< "$output"; then
   echo "FAIL: 500 bytes did not show as 500 B" >&2
   echo "$output" >&2
@@ -315,8 +334,8 @@ if ! grep -q "Size: .* 500 B" <<< "$output" && ! grep -q "Size: .*500 B" <<< "$o
 fi
 
 # 1536 bytes (should be 1.5 KB)
-head -c 1536 /dev/zero > "$DUMMY_OUTPUT"
-output=$(bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1)
+rm -f "$DUMMY_OUTPUT"
+output=$(PATH="$CACHE_HIT_PATH:$PATH" MOCK_SIZE=1536 bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1 || true)
 if ! grep -q "Size: .* 1.5 KB" <<< "$output" && ! grep -q "Size: .*1.5 KB" <<< "$output"; then
   echo "FAIL: 1536 bytes did not show as 1.5 KB" >&2
   echo "$output" >&2
@@ -324,8 +343,8 @@ if ! grep -q "Size: .* 1.5 KB" <<< "$output" && ! grep -q "Size: .*1.5 KB" <<< "
 fi
 
 # 1.5 MB (should be 1.5 MB)
-head -c 1572864 /dev/zero > "$DUMMY_OUTPUT"
-output=$(bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1)
+rm -f "$DUMMY_OUTPUT"
+output=$(PATH="$CACHE_HIT_PATH:$PATH" MOCK_SIZE=1572864 bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1 || true)
 if ! grep -q "Size: .* 1.5 MB" <<< "$output" && ! grep -q "Size: .*1.5 MB" <<< "$output"; then
   echo "FAIL: 1572864 bytes did not show as 1.5 MB" >&2
   echo "$output" >&2
