@@ -300,3 +300,36 @@ assert_colored_example "$transcribe_error_output" "transcribe.sh error output"
 echo "PASS: all three scripts keep Cyan Example highlighting and reset terminal color"
 echo "====================================="
 
+
+echo "=== Testing download-reference.sh Human-Readable File Size ==="
+DUMMY_OUTPUT="$TMP_DIR/dummy_size.mp4"
+DUMMY_URL="https://example.invalid/dummy_size"
+
+# 500 bytes (should be B)
+head -c 500 /dev/zero > "$DUMMY_OUTPUT"
+output=$(bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1)
+if ! grep -q "Size: .* 500 B" <<< "$output" && ! grep -q "Size: .*500 B" <<< "$output"; then
+  echo "FAIL: 500 bytes did not show as 500 B" >&2
+  echo "$output" >&2
+  exit 1
+fi
+
+# 1536 bytes (should be 1.5 KB)
+head -c 1536 /dev/zero > "$DUMMY_OUTPUT"
+output=$(bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1)
+if ! grep -q "Size: .* 1.5 KB" <<< "$output" && ! grep -q "Size: .*1.5 KB" <<< "$output"; then
+  echo "FAIL: 1536 bytes did not show as 1.5 KB" >&2
+  echo "$output" >&2
+  exit 1
+fi
+
+# 1.5 MB (should be 1.5 MB)
+head -c 1572864 /dev/zero > "$DUMMY_OUTPUT"
+output=$(bash "$SCRIPT_DIR/download-reference.sh" "$DUMMY_URL" "$DUMMY_OUTPUT" 2>&1)
+if ! grep -q "Size: .* 1.5 MB" <<< "$output" && ! grep -q "Size: .*1.5 MB" <<< "$output"; then
+  echo "FAIL: 1572864 bytes did not show as 1.5 MB" >&2
+  echo "$output" >&2
+  exit 1
+fi
+echo "PASS: Human-readable file size format is correct"
+echo "====================================="
