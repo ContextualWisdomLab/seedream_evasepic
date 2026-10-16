@@ -6,27 +6,48 @@
 # bidirectional/invisible format control is rendered as visible text before the
 # value is mixed with trusted ANSI styling.
 
+# Global arrays to cache string format replacements for performance.
+_TERMINAL_SAFE_C0_CONTROL=()
+_TERMINAL_SAFE_C0_REPLACE=()
+_TERMINAL_SAFE_C1_CONTROL=()
+_TERMINAL_SAFE_C1_REPLACE=()
+
+# Optimization: Pre-compute static format strings at load time to avoid slow subshells/printf in loop
+_init_terminal_safe_text() {
+  local code octal tmp_control tmp_replacement
+  for code in {1..31}; do
+    printf -v octal '%03o' "$code"
+    printf -v tmp_control '%b' "\\${octal}"
+    printf -v tmp_replacement '\\x%02X' "$code"
+    _TERMINAL_SAFE_C0_CONTROL[$code]="$tmp_control"
+    _TERMINAL_SAFE_C0_REPLACE[$code]="$tmp_replacement"
+  done
+  for code in {128..159}; do
+    printf -v octal '%03o' "$code"
+    printf -v tmp_control '%b' "\\302\\${octal}"
+    printf -v tmp_replacement '\\u%04X' "$code"
+    _TERMINAL_SAFE_C1_CONTROL[$code]="$tmp_control"
+    _TERMINAL_SAFE_C1_REPLACE[$code]="$tmp_replacement"
+  done
+}
+_init_terminal_safe_text
+unset -f _init_terminal_safe_text
+
 # Return a terminal-safe representation of one untrusted value.
 terminal_safe_text() {
   local value="${1-}"
-  local code octal control replacement
+  local code
 
   # Neutralize the C0 set (except NUL, which cannot exist in a Bash variable).
   for code in {1..31}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\${octal}"
-    printf -v replacement '\\x%02X' "$code"
-    value=${value//"$control"/"$replacement"}
+    value=${value//"${_TERMINAL_SAFE_C0_CONTROL[$code]}"/"${_TERMINAL_SAFE_C0_REPLACE[$code]}"}
   done
   value=${value//$'\177'/\\x7F}
 
   # Neutralize Unicode U+0080..U+009F when supplied as valid UTF-8. These are
   # the C1 control characters defined alongside ECMA-48 control functions.
   for code in {128..159}; do
-    printf -v octal '%03o' "$code"
-    printf -v control '%b' "\\302\\${octal}"
-    printf -v replacement '\\u%04X' "$code"
-    value=${value//"$control"/"$replacement"}
+    value=${value//"${_TERMINAL_SAFE_C1_CONTROL[$code]}"/"${_TERMINAL_SAFE_C1_REPLACE[$code]}"}
   done
 
   # Keep Unicode line, paragraph, bidirectional, and invisible format controls
