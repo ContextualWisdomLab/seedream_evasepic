@@ -4,3 +4,6 @@
 ## 2024-10-18 - Help Output Before Dependencies
 **Learning:** CLI tools should provide help flags (`-h`, `--help`) without requiring system dependencies to be installed first. Users may need documentation to understand what dependencies are even needed, so help output should be the very first step in script execution.
 **Action:** Always parse argument flags like `-h` and `--help` immediately after variable initialization and before checking for required system tools like `ffmpeg` or `yt-dlp`.
+## 2024-10-24 - [CLI UX] Human-readable File Sizes
+**Learning:** 터미널 출력에서 바이트(bytes) 단위의 숫자를 그대로 보여주면, 특히 영상과 같은 큰 파일의 경우 사용자가 실제 파일 크기를 직관적으로 체감하기 어렵다는 것을 배웠습니다.
+**Action:** 숫자가 길어지는 바이트 단위 대신, `awk`를 사용하여 KB, MB, GB 등의 사람이 읽기 쉬운 단위(Human-readable)로 변환하여 출력함으로써, 사용자가 리소스의 크기를 더 빠르고 정확하게 인지할 수 있도록 스크립트 출력을 개선합니다.
