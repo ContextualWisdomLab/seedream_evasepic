@@ -6,6 +6,13 @@
 # bidirectional/invisible format control is rendered as visible text before the
 # value is mixed with trusted ANSI styling.
 
+# Global arrays to cache string format replacements for performance.
+_TERMINAL_SAFE_C0_CONTROL=()
+_TERMINAL_SAFE_C0_REPLACE=()
+_TERMINAL_SAFE_C1_CONTROL=()
+_TERMINAL_SAFE_C1_REPLACE=()
+
+# Optimization: Pre-compute static format strings at load time to avoid slow subshells/printf in loop
 _init_terminal_safe_text() {
   local code octal tmp_control tmp_replacement
   for code in {1..31}; do

@@ -56,6 +56,19 @@ assert_no_ascii_control "$safe_value" 'terminal_safe_text'
 [[ "$safe_value" == *'\u009BCSI\u202ERTL\u2028NEXT'* ]] || fail 'Unicode controls were not rendered visibly'
 printf 'PASS: terminal_safe_text neutralizes actual C0, C1, line, and bidi controls\n'
 
+printf '=== Testing terminal_safe_text array caching optimization ===\n'
+# Ensure global arrays are properly initialized and populated
+[[ -n "${_TERMINAL_SAFE_C0_CONTROL[1]:-}" ]] || fail '_TERMINAL_SAFE_C0_CONTROL array not initialized'
+[[ -n "${_TERMINAL_SAFE_C1_CONTROL[128]:-}" ]] || fail '_TERMINAL_SAFE_C1_CONTROL array not initialized'
+[[ "${_TERMINAL_SAFE_C0_REPLACE[1]}" == '\x01' ]] || fail 'C0 cache replacement value is incorrect'
+[[ "${_TERMINAL_SAFE_C1_REPLACE[128]}" == '\u0080' ]] || fail 'C1 cache replacement value is incorrect'
+
+# Run safe value conversion multiple times to test cache lookup speed/robustness
+for i in {1..10}; do
+    terminal_safe_text "$malicious_value" >/dev/null
+done
+printf 'PASS: terminal_safe_text performance cache arrays are valid\n'
+
 printf '=== Testing script output with actual ESC and newline bytes ===\n'
 temporary_directory="$(mktemp -d)"
 trap 'rm -rf -- "$temporary_directory"' EXIT
